@@ -1,0 +1,12 @@
+apiVersion: operator.ibm.com/v1alpha1
+kind: Metering
+metadata:
+  name: example-metering
+spec:
+  # Add fields here. was 3
+  operatorVersion: v1.0
+  dm:
+    enabled: true
+    size: 1
+    imageRepo: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager
+    imageTag: 3.3.1
