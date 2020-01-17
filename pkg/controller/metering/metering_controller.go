@@ -47,7 +47,7 @@ const dataManagerImageTag = "3.3.1"
 
 //const readerDaemonSetName = "metering-reader"
 
-var trueVar bool = true
+var trueVar = true
 var defaultMode int32 = 420
 var seconds60 int64 = 60
 var nodeSelector = map[string]string{"management": "true"}

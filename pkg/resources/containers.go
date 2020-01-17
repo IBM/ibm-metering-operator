@@ -22,8 +22,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var trueVar bool = true
-var falseVar bool = false
+var trueVar = true
+var falseVar = false
 var user99 int64 = 99
 var cpu100 = resource.NewMilliQuantity(100, resource.DecimalSI)          // 100m
 var cpu500 = resource.NewMilliQuantity(500, resource.DecimalSI)          // 500m
