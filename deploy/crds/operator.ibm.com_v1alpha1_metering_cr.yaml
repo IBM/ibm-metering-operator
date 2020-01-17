@@ -1,0 +1,21 @@
+apiVersion: operator.ibm.com/v1alpha1
+kind: Metering
+metadata:
+  name: example-metering
+spec:
+  # Add fields here
+  operatorVersion: v1.0
+  dm:
+    enabled: true
+    size: 1
+    imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager
+    #imageTagPostfix: -20200114
+  mongodb:
+    host: mongodb
+    port: "27017"
+    usernameSecret: icp-mongodb-admin
+    usernameKey: user
+    passwordSecret: icp-mongodb-admin
+    passwordKey: password
+    clustercertssecret: cluster-ca-cert
+    clientcertssecret: icp-mongodb-client-cert
