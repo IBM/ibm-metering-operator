@@ -37,9 +37,9 @@ spec:
               properties:
                 enabled:
                   type: boolean
-                imageRepo:
+                imageRegistry:
                   type: string
-                imageTag:
+                imageTagPostfix:
                   type: string
                 size:
                   description: Size is the size of the deployment
@@ -48,6 +48,27 @@ spec:
               required:
               - enabled
               - size
+              type: object
+            mongodb:
+              description: MeteringSpecMongoDB defines the MongoDB configuration in
+                the the metering spec
+              properties:
+                clientcertssecret:
+                  type: string
+                clustercertssecret:
+                  type: string
+                host:
+                  type: string
+                passwordKey:
+                  type: string
+                passwordSecret:
+                  type: string
+                port:
+                  type: string
+                usernameKey:
+                  type: string
+                usernameSecret:
+                  type: string
               type: object
             operatorVersion:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -61,17 +82,12 @@ spec:
               properties:
                 enabled:
                   type: boolean
-                imageRepo:
+                imageRegistry:
                   type: string
-                imageTag:
+                imageTagPostfix:
                   type: string
-                size:
-                  description: Size is the size of the deployment
-                  format: int32
-                  type: integer
               required:
               - enabled
-              - size
               type: object
           type: object
         status:

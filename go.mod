@@ -1,10 +1,12 @@
-module github.com/cs-operators/metering-operator
+module github.com/ibm/metering-operator
 
 go 1.13
 
 require (
+	github.com/jetstack/cert-manager v0.12.0 // indirect
 	github.com/operator-framework/operator-sdk v0.13.0
 	github.com/spf13/pflag v1.0.5
+	github.ibm.com/IBMPrivateCloud/icp-cert-manager v3.2.1+incompatible
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/client-go v12.0.0+incompatible

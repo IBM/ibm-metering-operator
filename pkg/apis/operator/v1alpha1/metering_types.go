@@ -1,3 +1,19 @@
+//
+// Copyright 2020 IBM Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 package v1alpha1
 
 import (
@@ -15,24 +31,35 @@ type MeteringSpec struct {
 	OperatorVersion string                  `json:"operatorVersion,omitempty"`
 	DataManager     MeteringSpecDataManager `json:"dm,omitempty"`
 	Reader          MeteringSpecReader      `json:"reader,omitempty"`
+	MongoDB         MeteringSpecMongoDB     `json:"mongodb,omitempty"`
 }
 
 // MeteringSpecDataManager defines the metering-datamanager configuration in the the metering spec
 type MeteringSpecDataManager struct {
 	Enabled bool `json:"enabled"`
 	// Size is the size of the deployment
-	Size      int32  `json:"size"`
-	ImageRepo string `json:"imageRepo,omitempty"`
-	ImageTag  string `json:"imageTag,omitempty"`
+	Size            int32  `json:"size"`
+	ImageRegistry   string `json:"imageRegistry,omitempty"`
+	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
 }
 
 // MeteringSpecReader defines the metering-reader configuration in the the metering spec
 type MeteringSpecReader struct {
-	Enabled bool `json:"enabled"`
-	// Size is the size of the deployment
-	Size      int32  `json:"size"`
-	ImageRepo string `json:"imageRepo,omitempty"`
-	ImageTag  string `json:"imageTag,omitempty"`
+	Enabled         bool   `json:"enabled"`
+	ImageRegistry   string `json:"imageRegistry,omitempty"`
+	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
+}
+
+// MeteringSpecMongoDB defines the MongoDB configuration in the the metering spec
+type MeteringSpecMongoDB struct {
+	Host               string `json:"host,omitempty"`
+	Port               string `json:"port,omitempty"`
+	UsernameSecret     string `json:"usernameSecret,omitempty"`
+	UsernameKey        string `json:"usernameKey,omitempty"`
+	PasswordSecret     string `json:"passwordSecret,omitempty"`
+	PasswordKey        string `json:"passwordKey,omitempty"`
+	ClusterCertsSecret string `json:"clustercertssecret,omitempty"`
+	ClientCertsSecret  string `json:"clientcertssecret,omitempty"`
 }
 
 // MeteringStatus defines the observed state of Metering
