@@ -42,6 +42,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
+const meteringComponentName = "meteringsvc"
+const meteringReleaseName = "metering"
 const dataManagerDeploymentName = "metering-dm"
 const dataManagerImageTag = "3.3.1"
 
@@ -276,7 +278,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 // deploymentForDataMgr returns a DataManager Deployment object
 func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Metering) *appsv1.Deployment {
-	reqLogger := log.WithValues("deploymentForDataMgr", "Entry", "instance.Name", instance.Name)
+	reqLogger := log.WithValues("func", "deploymentForDataMgr", "instance.Name", instance.Name)
 	labels1 := labelsForMeteringMeta(dataManagerDeploymentName)
 	labels2 := labelsForMeteringSelect(instance.Name, dataManagerDeploymentName)
 	labels3 := labelsForMeteringPod(instance.Name, dataManagerDeploymentName)
@@ -630,21 +632,22 @@ func buildCommonVolumes(instance *operatorv1alpha1.Metering) []corev1.Volume {
 // belonging to the given metering CR name.
 //CS??? need separate func for each image to set "instanceName"???
 func labelsForMeteringPod(instanceName string, deploymentName string) map[string]string {
-	return map[string]string{"app": deploymentName, "component": "meteringsvc", "metering_cr": instanceName,
-		"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": "meteringsvc", "release": "metering"}
-	//CS??? return map[string]string{"app": deploymentName, "component": "meteringsvc", "metering_cr": instanceName}
-	//CS??? return map[string]string{"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": "meteringsvc",
+	return map[string]string{"app": deploymentName, "component": meteringComponentName, "metering_cr": instanceName,
+		"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": meteringComponentName, "release": meteringReleaseName}
+	//CS??? return map[string]string{"app": deploymentName, "component": meteringComponentName, "metering_cr": instanceName}
+	//CS??? return map[string]string{"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": meteringComponentName,
 	//CS??? "metering_cr": instanceName}
 }
 
 //CS??? need separate func for each image to set "app"???
 func labelsForMeteringSelect(instanceName string, deploymentName string) map[string]string {
-	return map[string]string{"app": deploymentName, "component": "meteringsvc", "metering_cr": instanceName}
+	return map[string]string{"app": deploymentName, "component": meteringComponentName, "metering_cr": instanceName}
 }
 
 //CS???
 func labelsForMeteringMeta(deploymentName string) map[string]string {
-	return map[string]string{"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": "meteringsvc", "release": "metering"}
+	return map[string]string{"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": meteringComponentName,
+		"release": meteringReleaseName}
 }
 
 // getPodNames returns the pod names of the array of pods passed in
