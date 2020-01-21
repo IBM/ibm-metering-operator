@@ -4,7 +4,7 @@ metadata:
   name: example-metering
 spec:
   # Add fields here
-  operatorVersion: v1.0
+  operatorVersion: "1.0.0"
   dm:
     enabled: true
     size: 1
