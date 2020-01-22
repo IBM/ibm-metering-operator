@@ -24,7 +24,8 @@ import (
 
 var trueVar = true
 var falseVar = false
-var user99 int64 = 99
+
+//CS??? var user99 int64 = 99
 var cpu100 = resource.NewMilliQuantity(100, resource.DecimalSI)          // 100m
 var cpu500 = resource.NewMilliQuantity(500, resource.DecimalSI)          // 500m
 var cpu1000 = resource.NewMilliQuantity(1000, resource.DecimalSI)        // 1000m
@@ -109,8 +110,13 @@ var receiverCertVolumeMount = corev1.VolumeMount{
 	Name:      "icp-metering-receiver-certs",
 	MountPath: "/sec/icp-metering-receiver-secret",
 }
+var apiCertVolumeMount = corev1.VolumeMount{
+	Name:      "icp-metering-api-certs",
+	MountPath: "/sec/icp-metering-api-secret",
+}
 
 var dmSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, receiverCertVolumeMount)
+var rdrSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, apiCertVolumeMount)
 
 var commonInitVolumeMounts = []corev1.VolumeMount{
 	{
@@ -137,11 +143,26 @@ var commonSecurityContext = corev1.SecurityContext{
 	Privileged:               &falseVar,
 	ReadOnlyRootFilesystem:   &trueVar,
 	RunAsNonRoot:             &trueVar,
-	RunAsUser:                &user99,
+	//CS??? RunAsUser:                &user99,
 	Capabilities: &corev1.Capabilities{
 		Drop: []corev1.Capability{
 			"ALL",
 		},
+	},
+}
+
+var CommonMainVolumeMounts = []corev1.VolumeMount{
+	{
+		Name:      "mongodb-ca-cert",
+		MountPath: "/certs/mongodb-ca",
+	},
+	{
+		Name:      "mongodb-client-cert",
+		MountPath: "/certs/mongodb-client",
+	},
+	{
+		Name:      "loglevel",
+		MountPath: "/etc/config",
 	},
 }
 
@@ -205,14 +226,6 @@ var DmMainContainer = corev1.Container{
 	Name:            "metering-dm",
 	ImagePullPolicy: corev1.PullAlways,
 	VolumeMounts: []corev1.VolumeMount{
-		{
-			Name:      "mongodb-ca-cert",
-			MountPath: "/certs/mongodb-ca",
-		},
-		{
-			Name:      "mongodb-client-cert",
-			MountPath: "/certs/mongodb-client",
-		},
 		{
 			Name:      "icp-metering-receiver-certs",
 			MountPath: "/certs/metering-receiver",
@@ -355,14 +368,14 @@ var RdrSecretCheckContainer = corev1.Container{
 	Env: []corev1.EnvVar{
 		{
 			Name:  "SECRET_LIST",
-			Value: "icp-serviceid-apikey-secret icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
+			Value: "icp-metering-api-secret icp-serviceid-apikey-secret icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
 		},
 		{
 			Name:  "SECRET_DIR_LIST",
-			Value: "icp-serviceid-apikey-secret muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
+			Value: "icp-metering-api-secret icp-serviceid-apikey-secret muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
 		},
 	},
-	VolumeMounts:    commonSecretCheckVolumeMounts,
+	VolumeMounts:    rdrSecretCheckVolumeMounts,
 	Resources:       commonInitResources,
 	SecurityContext: &commonSecurityContext,
 }
@@ -386,20 +399,12 @@ var RdrInitContainer = corev1.Container{
 var RdrMainContainer = corev1.Container{
 	Image: "metering-data-manager",
 	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager:3.3.1",
-	Name:            "metering-dm",
+	Name:            "metering-reader",
 	ImagePullPolicy: corev1.PullAlways,
 	VolumeMounts: []corev1.VolumeMount{
 		{
-			Name:      "mongodb-ca-cert",
-			MountPath: "/certs/mongodb-ca",
-		},
-		{
-			Name:      "mongodb-client-cert",
-			MountPath: "/certs/mongodb-client",
-		},
-		{
-			Name:      "icp-metering-receiver-certs",
-			MountPath: "/certs/metering-receiver",
+			Name:      "icp-metering-api-certs",
+			MountPath: "/certs/metering-api",
 		},
 	},
 	// CommonEnvVars and mongoDBEnvVars will be added by the controller
@@ -489,6 +494,7 @@ var RdrMainContainer = corev1.Container{
 			},
 		},
 		{
+			//CS??? add to CRD?
 			Name:  "CLUSTER_NAME",
 			Value: "mycluster",
 		},
@@ -500,10 +506,11 @@ var RdrMainContainer = corev1.Container{
 			Name:  "DEFAULT_IAM_PAP_SERVICE_PORT",
 			Value: "39001",
 		},
-	}, //CS??? TODO
+	},
 	Ports: []corev1.ContainerPort{
 		{ContainerPort: 3000},
-		{ContainerPort: 5000},
+		{ContainerPort: 4000},
+		{ContainerPort: 4002},
 	},
 	LivenessProbe: &corev1.Probe{
 		Handler: corev1.Handler{
