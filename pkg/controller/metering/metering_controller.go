@@ -192,11 +192,11 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	/*CS???
 	reqLogger.Info("CS??? TEST, checking API Certificate")
 	// Check if the Certificate already exists, if not create a new one
-	currentApiCertificate := &certmgr.Certificate{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: apiCertificateName, Namespace: instance.Namespace}, currentApiCertificate)
+	currentAPICertificate := &certmgr.Certificate{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: apiCertificateName, Namespace: instance.Namespace}, currentAPICertificate)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Certificate
-		newCertificate := r.certificateForApi(instance)
+		newCertificate := r.certificateForAPI(instance)
 		reqLogger.Info("Creating a new API Certificate", "Deployment.Namespace", newCertificate.Namespace, "Deployment.Name", newCertificate.Name)
 		err = r.client.Create(context.TODO(), newCertificate)
 		if err != nil {
@@ -264,11 +264,11 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	reqLogger.Info("CS??? got DM Deployment, checking API Certificate")
 	// Check if the Certificate already exists, if not create a new one
-	currentApiCertificate := &certmgr.Certificate{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: apiCertificateName, Namespace: instance.Namespace}, currentApiCertificate)
+	currentAPICertificate := &certmgr.Certificate{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: apiCertificateName, Namespace: instance.Namespace}, currentAPICertificate)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Certificate
-		newCertificate := r.certificateForApi(instance)
+		newCertificate := r.certificateForAPI(instance)
 		reqLogger.Info("Creating a new API Certificate", "Deployment.Namespace", newCertificate.Namespace, "Deployment.Name", newCertificate.Name)
 		err = r.client.Create(context.TODO(), newCertificate)
 		if err != nil {
@@ -668,9 +668,9 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 	return daemon
 }
 
-// certificateForApi returns a Certificate object
-func (r *ReconcileMetering) certificateForApi(instance *operatorv1alpha1.Metering) *certmgr.Certificate {
-	reqLogger := log.WithValues("func", "certificateForApi", "instance.Name", instance.Name)
+// certificateForAPI returns a Certificate object
+func (r *ReconcileMetering) certificateForAPI(instance *operatorv1alpha1.Metering) *certmgr.Certificate {
+	reqLogger := log.WithValues("func", "certificateForAPI", "instance.Name", instance.Name)
 	reqLogger.Info("CS??? Entry")
 	labels := labelsForMeteringSelect(instance.Name, readerDaemonSetName)
 
