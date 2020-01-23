@@ -143,7 +143,6 @@ var commonSecurityContext = corev1.SecurityContext{
 	Privileged:               &falseVar,
 	ReadOnlyRootFilesystem:   &trueVar,
 	RunAsNonRoot:             &trueVar,
-	//CS??? RunAsUser:                &user99,
 	Capabilities: &corev1.Capabilities{
 		Drop: []corev1.Capability{
 			"ALL",
@@ -164,6 +163,11 @@ var CommonMainVolumeMounts = []corev1.VolumeMount{
 		Name:      "loglevel",
 		MountPath: "/etc/config",
 	},
+}
+
+var CommonIngressAnnotations = map[string]string{
+	"app.kubernetes.io/managed-by": "operator",
+	"kubernetes.io/ingress.class":  "ibm-icp-management",
 }
 
 var DmSecretCheckContainer = corev1.Container{
@@ -289,10 +293,6 @@ var DmMainContainer = corev1.Container{
 		{
 			Name:  "HC_RECEIVER_SSL_KEY",
 			Value: "/certs/metering-receiver/tls.key",
-		},
-		{
-			Name:  "CLUSTER_NAME",
-			Value: "mycluster",
 		},
 		{
 			Name:  "DEFAULT_IAM_TOKEN_SERVICE_PORT",
@@ -492,11 +492,6 @@ var RdrMainContainer = corev1.Container{
 					FieldPath: "spec.nodeName",
 				},
 			},
-		},
-		{
-			//CS??? add to CRD?
-			Name:  "CLUSTER_NAME",
-			Value: "mycluster",
 		},
 		{
 			Name:  "DEFAULT_IAM_TOKEN_SERVICE_PORT",

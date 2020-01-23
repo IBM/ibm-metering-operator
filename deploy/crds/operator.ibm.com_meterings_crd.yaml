@@ -35,19 +35,23 @@ spec:
               description: MeteringSpecDataManager defines the metering-datamanager
                 configuration in the the metering spec
               properties:
-                enabled:
-                  type: boolean
                 imageRegistry:
                   type: string
                 imageTagPostfix:
                   type: string
-                size:
-                  description: Size is the size of the deployment
-                  format: int32
-                  type: integer
-              required:
-              - enabled
-              - size
+              type: object
+            external:
+              description: MeteringSpecExternal defines the external cluster configuration
+                in the the metering spec
+              properties:
+                cfcRouterUrl:
+                  type: string
+                clusterIP:
+                  type: string
+                clusterName:
+                  type: string
+                clusterPort:
+                  type: string
               type: object
             mongodb:
               description: MeteringSpecMongoDB defines the MongoDB configuration in
@@ -80,14 +84,10 @@ spec:
               description: MeteringSpecReader defines the metering-reader configuration
                 in the the metering spec
               properties:
-                enabled:
-                  type: boolean
                 imageRegistry:
                   type: string
                 imageTagPostfix:
                   type: string
-              required:
-              - enabled
               type: object
           type: object
         status:

@@ -6,8 +6,9 @@ spec:
   # Add fields here
   operatorVersion: "1.0.0"
   dm:
-    enabled: true
-    size: 1
+    imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager
+    #imageTagPostfix: -20200114
+  reader:
     imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager
     #imageTagPostfix: -20200114
   mongodb:
@@ -19,3 +20,5 @@ spec:
     passwordKey: password
     clustercertssecret: cluster-ca-cert
     clientcertssecret: icp-mongodb-client-cert
+  external:
+    clusterName: mycluster
