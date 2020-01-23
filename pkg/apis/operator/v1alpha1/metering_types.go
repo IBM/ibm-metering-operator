@@ -32,20 +32,17 @@ type MeteringSpec struct {
 	DataManager     MeteringSpecDataManager `json:"dm,omitempty"`
 	Reader          MeteringSpecReader      `json:"reader,omitempty"`
 	MongoDB         MeteringSpecMongoDB     `json:"mongodb,omitempty"`
+	External        MeteringSpecExternal    `json:"external,omitempty"`
 }
 
 // MeteringSpecDataManager defines the metering-datamanager configuration in the the metering spec
 type MeteringSpecDataManager struct {
-	Enabled bool `json:"enabled"`
-	// Size is the size of the deployment
-	Size            int32  `json:"size"`
 	ImageRegistry   string `json:"imageRegistry,omitempty"`
 	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
 }
 
 // MeteringSpecReader defines the metering-reader configuration in the the metering spec
 type MeteringSpecReader struct {
-	Enabled         bool   `json:"enabled"`
 	ImageRegistry   string `json:"imageRegistry,omitempty"`
 	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
 }
@@ -60,6 +57,14 @@ type MeteringSpecMongoDB struct {
 	PasswordKey        string `json:"passwordKey,omitempty"`
 	ClusterCertsSecret string `json:"clustercertssecret,omitempty"`
 	ClientCertsSecret  string `json:"clientcertssecret,omitempty"`
+}
+
+// MeteringSpecExternal defines the external cluster configuration in the the metering spec
+type MeteringSpecExternal struct {
+	ClusterIP    string `json:"clusterIP,omitempty"`
+	ClusterPort  string `json:"clusterPort,omitempty"`
+	ClusterName  string `json:"clusterName,omitempty"`
+	CfcRouterURL string `json:"cfcRouterUrl,omitempty"`
 }
 
 // MeteringStatus defines the observed state of Metering
