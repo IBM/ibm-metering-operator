@@ -99,7 +99,7 @@ test:
 ############################################################
 
 coverage:
-	@common/scripts/codecov.sh
+	@common/scripts/codecov.sh ${BUILD_LOCALLY}
 
 ############################################################
 # install operator sdk section
