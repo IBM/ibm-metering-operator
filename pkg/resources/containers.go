@@ -22,10 +22,18 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var trueVar = true
-var falseVar = false
+const DefaultImageRegistry = "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64"
+const DefaultDmImageName = "metering-data-manager"
+const DefaultDmImageTag = "3.3.1"
+const DefaultUIImageName = "metering-ui"
+const DefaultUIImageTag = "3.3.1"
 
-//CS??? var user99 int64 = 99
+var TrueVar = true
+var FalseVar = false
+var Replica1 int32 = 1
+var Seconds60 int64 = 60
+var ManagementNodeSelector = map[string]string{"management": "true"}
+
 var cpu100 = resource.NewMilliQuantity(100, resource.DecimalSI)          // 100m
 var cpu500 = resource.NewMilliQuantity(500, resource.DecimalSI)          // 500m
 var cpu1000 = resource.NewMilliQuantity(1000, resource.DecimalSI)        // 1000m
@@ -61,7 +69,7 @@ var CommonEnvVars = []corev1.EnvVar{
 					Name: "icp-serviceid-apikey-secret",
 				},
 				Key:      "ICP_API_KEY",
-				Optional: &trueVar,
+				Optional: &TrueVar,
 			},
 		},
 	},
@@ -114,9 +122,14 @@ var apiCertVolumeMount = corev1.VolumeMount{
 	Name:      "icp-metering-api-certs",
 	MountPath: "/sec/icp-metering-api-secret",
 }
+var platformOidcVolumeMount = corev1.VolumeMount{
+	Name:      "platform-oidc-credentials",
+	MountPath: "/sec/platform-oidc-credentials",
+}
 
 var dmSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, receiverCertVolumeMount)
 var rdrSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, apiCertVolumeMount)
+var uiSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, platformOidcVolumeMount)
 
 var commonInitVolumeMounts = []corev1.VolumeMount{
 	{
@@ -139,10 +152,10 @@ var commonInitResources = corev1.ResourceRequirements{
 }
 
 var commonSecurityContext = corev1.SecurityContext{
-	AllowPrivilegeEscalation: &falseVar,
-	Privileged:               &falseVar,
-	ReadOnlyRootFilesystem:   &trueVar,
-	RunAsNonRoot:             &trueVar,
+	AllowPrivilegeEscalation: &FalseVar,
+	Privileged:               &FalseVar,
+	ReadOnlyRootFilesystem:   &TrueVar,
+	RunAsNonRoot:             &TrueVar,
 	Capabilities: &corev1.Capabilities{
 		Drop: []corev1.Capability{
 			"ALL",
@@ -229,6 +242,7 @@ var DmMainContainer = corev1.Container{
 	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager:3.3.1",
 	Name:            "metering-dm",
 	ImagePullPolicy: corev1.PullAlways,
+	// CommonMainVolumeMounts will be added by the controller
 	VolumeMounts: []corev1.VolumeMount{
 		{
 			Name:      "icp-metering-receiver-certs",
@@ -401,6 +415,7 @@ var RdrMainContainer = corev1.Container{
 	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager:3.3.1",
 	Name:            "metering-reader",
 	ImagePullPolicy: corev1.PullAlways,
+	// CommonMainVolumeMounts will be added by the controller
 	VolumeMounts: []corev1.VolumeMount{
 		{
 			Name:      "icp-metering-api-certs",
@@ -531,6 +546,176 @@ var RdrMainContainer = corev1.Container{
 				Port: intstr.IntOrString{
 					Type:   intstr.Int,
 					IntVal: 3000,
+				},
+				Scheme: "",
+			},
+		},
+		InitialDelaySeconds: 15,
+		TimeoutSeconds:      15,
+		PeriodSeconds:       30,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
+	Resources: corev1.ResourceRequirements{
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    *cpu500,
+			corev1.ResourceMemory: *memory512},
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    *cpu100,
+			corev1.ResourceMemory: *memory128},
+	},
+	SecurityContext: &commonSecurityContext,
+}
+
+var UISecretCheckContainer = corev1.Container{
+	Image:           "metering-data-manager",
+	Name:            "metering-ui-secret-check",
+	ImagePullPolicy: corev1.PullAlways,
+	Command: []string{
+		"sh",
+		"-c",
+		secretCheckCmd,
+	},
+	Env: []corev1.EnvVar{
+		{
+			Name:  "SECRET_LIST",
+			Value: "platform-oidc-credentials icp-serviceid-apikey-secret icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
+		},
+		{
+			Name:  "SECRET_DIR_LIST",
+			Value: "platform-oidc-credentials icp-serviceid-apikey-secret muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
+		},
+	},
+	VolumeMounts:    uiSecretCheckVolumeMounts,
+	Resources:       commonInitResources,
+	SecurityContext: &commonSecurityContext,
+}
+
+var UIInitContainer = corev1.Container{
+	Image:           "metering-data-manager",
+	Name:            "metering-ui-init",
+	ImagePullPolicy: corev1.PullAlways,
+	Command: []string{
+		"node",
+		"/datamanager/lib/metering_init.js",
+		"verifyOnlyMongo",
+	},
+	// CommonEnvVars and mongoDBEnvVars will be added by the controller
+	Env:             []corev1.EnvVar{},
+	VolumeMounts:    commonInitVolumeMounts,
+	Resources:       commonInitResources,
+	SecurityContext: &commonSecurityContext,
+}
+
+var UIMainContainer = corev1.Container{
+	Image: "metering-ui",
+	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-ui:3.3.1",
+	Name:            "metering-ui",
+	ImagePullPolicy: corev1.PullAlways,
+	// CommonMainVolumeMounts will be added by the controller
+	VolumeMounts: []corev1.VolumeMount{},
+	// CommonEnvVars and mongoDBEnvVars will be added by the controller
+	Env: []corev1.EnvVar{
+		{
+			Name:  "HC_HCAPI_URI",
+			Value: "https://metering-server:9443",
+		},
+		{
+			Name:  "IS_PRIVATECLOUD",
+			Value: "true",
+		},
+		{
+			Name:  "ICP_DEFAULT_DASHBOARD",
+			Value: "cpi.icp.main",
+		},
+		{
+			Name:  "PLATFORM_IDENTITY_PROVIDER_URL",
+			Value: "https://platform-identity-provider:4300",
+		},
+		{
+			Name: "WLP_CLIENT_ID",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "platform-oidc-credentials",
+					},
+					Key:      "WLP_CLIENT_ID",
+					Optional: &TrueVar,
+				},
+			},
+		},
+		{
+			Name: "WLP_CLIENT_SECRET",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: "platform-oidc-credentials",
+					},
+					Key:      "WLP_CLIENT_SECRET",
+					Optional: &TrueVar,
+				},
+			},
+		},
+		{
+			Name:  "USE_PRIVATECLOUD_SECURITY",
+			Value: "true",
+		},
+		{
+			Name:  "PORT",
+			Value: "3130",
+		},
+		{
+			Name:  "PROXY_URI",
+			Value: "metering",
+		},
+		{
+			Name:  "DEFAULT_IAM_TOKEN_SERVICE_PORT",
+			Value: "10443",
+		},
+		{
+			Name:  "DEFAULT_IAM_PAP_SERVICE_PORT",
+			Value: "39001",
+		},
+		{
+			Name:  "DEFAULT_PLATFORM_IDENTITY_MANAGEMENT_SERVICE_PORT",
+			Value: "4500",
+		},
+		{
+			Name:  "DEFAULT_PLATFORM_HEADER_SERVICE_PORT",
+			Value: "3000",
+		},
+		{
+			Name:  "HC_DM_ALLOW_TEST",
+			Value: "false",
+		},
+	},
+	Ports: []corev1.ContainerPort{
+		{ContainerPort: 3130},
+	},
+	LivenessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/unsecure/c2c/status/livenessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3130,
+				},
+				Scheme: "",
+			},
+		},
+		InitialDelaySeconds: 305,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       300,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
+	ReadinessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/unsecure/c2c/status/readinessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3130,
 				},
 				Scheme: "",
 			},

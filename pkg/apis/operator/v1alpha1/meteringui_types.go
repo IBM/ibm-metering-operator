@@ -23,32 +23,32 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// MeteringSpec defines the desired state of Metering
-type MeteringSpec struct {
+// MeteringUISpec defines the desired state of MeteringUI
+type MeteringUISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	OperatorVersion string                  `json:"operatorVersion,omitempty"`
-	ImageRegistry   string                  `json:"imageRegistry,omitempty"`
-	IAMnamespace    string                  `json:"iamNamespace,omitempty"`
-	DataManager     MeteringSpecDataManager `json:"dm,omitempty"`
-	Reader          MeteringSpecReader      `json:"reader,omitempty"`
-	MongoDB         MeteringSpecMongoDB     `json:"mongodb,omitempty"`
-	External        MeteringSpecExternal    `json:"external,omitempty"`
+	OperatorVersion string                    `json:"operatorVersion,omitempty"`
+	ImageRegistry   string                    `json:"imageRegistry,omitempty"`
+	IAMnamespace    string                    `json:"iamNamespace,omitempty"`
+	UI              MeteringUISpecUI          `json:"ui,omitempty"`
+	DataManager     MeteringUISpecDataManager `json:"dm,omitempty"`
+	MongoDB         MeteringUISpecMongoDB     `json:"mongodb,omitempty"`
+	External        MeteringUISpecExternal    `json:"external,omitempty"`
 }
 
-// MeteringSpecDataManager defines the metering-datamanager configuration in the the metering spec
-type MeteringSpecDataManager struct {
+// MeteringUISpecUI defines the metering-ui configuration in the the MeteringUI spec
+type MeteringUISpecUI struct {
 	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
 }
 
-// MeteringSpecReader defines the metering-reader configuration in the the metering spec
-type MeteringSpecReader struct {
+// MeteringUISpecDataManager defines the metering-datamanager configuration in the the MeteringUI spec
+type MeteringUISpecDataManager struct {
 	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
 }
 
-// MeteringSpecMongoDB defines the MongoDB configuration in the the metering spec
-type MeteringSpecMongoDB struct {
+// MeteringUISpecMongoDB defines the MongoDB configuration in the the MeteringUI spec
+type MeteringUISpecMongoDB struct {
 	Host               string `json:"host,omitempty"`
 	Port               string `json:"port,omitempty"`
 	UsernameSecret     string `json:"usernameSecret,omitempty"`
@@ -59,45 +59,45 @@ type MeteringSpecMongoDB struct {
 	ClientCertsSecret  string `json:"clientcertssecret,omitempty"`
 }
 
-// MeteringSpecExternal defines the external cluster configuration in the the metering spec
-type MeteringSpecExternal struct {
+// MeteringUISpecExternal defines the external cluster configuration in the the MeteringUI spec
+type MeteringUISpecExternal struct {
 	ClusterIP    string `json:"clusterIP,omitempty"`
 	ClusterPort  string `json:"clusterPort,omitempty"`
 	ClusterName  string `json:"clusterName,omitempty"`
 	CfcRouterURL string `json:"cfcRouterUrl,omitempty"`
 }
 
-// MeteringStatus defines the observed state of Metering
-type MeteringStatus struct {
+// MeteringUIStatus defines the observed state of MeteringUI
+type MeteringUIStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	// Nodes are the names of the metering pods
+	// Nodes are the names of the metering-ui pods
 	Nodes []string `json:"nodes"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// Metering is the Schema for the meterings API
+// MeteringUI is the Schema for the meteringuis API
 // +kubebuilder:subresource:status
-// +kubebuilder:resource:path=meterings,scope=Namespaced
-type Metering struct {
+// +kubebuilder:resource:path=meteringuis,scope=Namespaced
+type MeteringUI struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MeteringSpec   `json:"spec,omitempty"`
-	Status MeteringStatus `json:"status,omitempty"`
+	Spec   MeteringUISpec   `json:"spec,omitempty"`
+	Status MeteringUIStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// MeteringList contains a list of Metering
-type MeteringList struct {
+// MeteringUIList contains a list of MeteringUI
+type MeteringUIList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Metering `json:"items"`
+	Items           []MeteringUI `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Metering{}, &MeteringList{})
+	SchemeBuilder.Register(&MeteringUI{}, &MeteringUIList{})
 }
