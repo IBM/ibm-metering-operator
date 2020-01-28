@@ -70,6 +70,7 @@ rules:
   - operator.ibm.com
   resources:
   - '*'
+  - meteringuis
   verbs:
   - create
   - delete

@@ -1,15 +1,13 @@
 apiVersion: operator.ibm.com/v1alpha1
-kind: Metering
+kind: MeteringUI
 metadata:
-  name: example-metering
+  name: example-meteringui
 spec:
-  # Add fields here
   operatorVersion: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
-  iamNamespace: kube-system
-  #dm:
+  #ui:
     #imageTagPostfix: -20200114
-  #reader:
+  #dm:
     #imageTagPostfix: -20200114
   mongodb:
     host: mongodb
@@ -22,3 +20,6 @@ spec:
     clientcertssecret: icp-mongodb-client-cert
   external:
     clusterName: mycluster
+    clusterIP: icp-console.apps.exile.os.fyre.ibm.com
+    clusterPort: "443"
+    cfcRouterUrl: https://icp-management-ingress:8443
