@@ -42,8 +42,6 @@ spec:
               description: MeteringUISpecExternal defines the external cluster configuration
                 in the the MeteringUI spec
               properties:
-                cfcRouterUrl:
-                  type: string
                 clusterIP:
                   type: string
                 clusterName:
@@ -54,6 +52,8 @@ spec:
             iamNamespace:
               type: string
             imageRegistry:
+              type: string
+            ingressNamespace:
               type: string
             mongodb:
               description: MeteringUISpecMongoDB defines the MongoDB configuration

@@ -28,13 +28,14 @@ type MeteringUISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	OperatorVersion string                    `json:"operatorVersion,omitempty"`
-	ImageRegistry   string                    `json:"imageRegistry,omitempty"`
-	IAMnamespace    string                    `json:"iamNamespace,omitempty"`
-	UI              MeteringUISpecUI          `json:"ui,omitempty"`
-	DataManager     MeteringUISpecDataManager `json:"dm,omitempty"`
-	MongoDB         MeteringUISpecMongoDB     `json:"mongodb,omitempty"`
-	External        MeteringUISpecExternal    `json:"external,omitempty"`
+	OperatorVersion  string                    `json:"operatorVersion,omitempty"`
+	ImageRegistry    string                    `json:"imageRegistry,omitempty"`
+	IAMnamespace     string                    `json:"iamNamespace,omitempty"`
+	IngressNamespace string                    `json:"ingressNamespace,omitempty"`
+	UI               MeteringUISpecUI          `json:"ui,omitempty"`
+	DataManager      MeteringUISpecDataManager `json:"dm,omitempty"`
+	MongoDB          MeteringUISpecMongoDB     `json:"mongodb,omitempty"`
+	External         MeteringUISpecExternal    `json:"external,omitempty"`
 }
 
 // MeteringUISpecUI defines the metering-ui configuration in the the MeteringUI spec
@@ -61,10 +62,9 @@ type MeteringUISpecMongoDB struct {
 
 // MeteringUISpecExternal defines the external cluster configuration in the the MeteringUI spec
 type MeteringUISpecExternal struct {
-	ClusterIP    string `json:"clusterIP,omitempty"`
-	ClusterPort  string `json:"clusterPort,omitempty"`
-	ClusterName  string `json:"clusterName,omitempty"`
-	CfcRouterURL string `json:"cfcRouterUrl,omitempty"`
+	ClusterIP   string `json:"clusterIP,omitempty"`
+	ClusterPort string `json:"clusterPort,omitempty"`
+	ClusterName string `json:"clusterName,omitempty"`
 }
 
 // MeteringUIStatus defines the observed state of MeteringUI

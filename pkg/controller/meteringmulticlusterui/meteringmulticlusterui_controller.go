@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-package meteringui
+package meteringmulticlusterui
 
 import (
 	"context"
@@ -42,21 +42,21 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const meteringUICrType = "meteringui_cr"
+const meteringMcmUICrType = "meteringmulticlusterui_cr"
 
 var commonVolumes = []corev1.Volume{}
 
 var mongoDBEnvVars = []corev1.EnvVar{}
 var clusterEnvVars = []corev1.EnvVar{}
 
-var log = logf.Log.WithName("controller_meteringui")
+var log = logf.Log.WithName("controller_meteringmcmui")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new MeteringUI Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new MeteringMultiClusterUI Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -64,13 +64,13 @@ func Add(mgr manager.Manager) error {
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileMeteringUI{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileMeteringMultiClusterUI{client: mgr.GetClient(), scheme: mgr.GetScheme()}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("meteringui-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("meteringmulticlusterui-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
@@ -78,8 +78,8 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	reqLogger := log.WithValues("func", "add")
 	reqLogger.Info("CS??? OS=" + gorun.GOOS + ", arch=" + gorun.GOARCH)
 
-	// Watch for changes to primary resource MeteringUI
-	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.MeteringUI{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource MeteringMultiClusterUI
+	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.MeteringMultiClusterUI{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource "Deployment" and requeue the owner Metering
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.MeteringUI{},
+		OwnerType:    &operatorv1alpha1.MeteringMultiClusterUI{},
 	})
 	if err != nil {
 		return err
@@ -97,7 +97,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource "Service" and requeue the owner Metering
 	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.MeteringUI{},
+		OwnerType:    &operatorv1alpha1.MeteringMultiClusterUI{},
 	})
 	if err != nil {
 		return err
@@ -106,7 +106,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource "Ingress" and requeue the owner Metering
 	err = c.Watch(&source.Kind{Type: &netv1.Ingress{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.MeteringUI{},
+		OwnerType:    &operatorv1alpha1.MeteringMultiClusterUI{},
 	})
 	if err != nil {
 		return err
@@ -115,65 +115,65 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileMeteringUI implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileMeteringUI{}
+// blank assignment to verify that ReconcileMeteringMultiClusterUI implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileMeteringMultiClusterUI{}
 
-// ReconcileMeteringUI reconciles a MeteringUI object
-type ReconcileMeteringUI struct {
+// ReconcileMeteringMultiClusterUI reconciles a MeteringMultiClusterUI object
+type ReconcileMeteringMultiClusterUI struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
 }
 
-// Reconcile reads that state of the cluster for a MeteringUI object and makes changes based on the state read
-// and what is in the MeteringUI.Spec
+// Reconcile reads that state of the cluster for a MeteringMultiClusterUI object and makes changes based on the state read
+// and what is in the MeteringMultiClusterUI.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
 // a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *ReconcileMeteringMultiClusterUI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling MeteringUI")
+	reqLogger.Info("Reconciling MeteringMultiClusterUI")
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
 
-	// Fetch the MeteringUI CR instance
-	instance := &operatorv1alpha1.MeteringUI{}
+	// Fetch the MeteringMultiClusterUI CR instance
+	instance := &operatorv1alpha1.MeteringMultiClusterUI{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
-			reqLogger.Info("MeteringUI resource not found. Ignoring since object must be deleted")
+			reqLogger.Info("MeteringMultiClusterUI resource not found. Ignoring since object must be deleted")
 			return reconcile.Result{}, nil
 		}
 		// Error reading the object - requeue the request.
-		reqLogger.Error(err, "Failed to get MeteringUI CR")
+		reqLogger.Error(err, "Failed to get MeteringMultiClusterUI CR")
 		return reconcile.Result{}, err
 	}
 
 	opVersion := instance.Spec.OperatorVersion
-	reqLogger.Info("got MeteringUI instance, version=" + opVersion + ", checking UI Service")
-	// Check if the UI Service already exists, if not create a new one
+	reqLogger.Info("got MeteringMultiClusterUI instance, version=" + opVersion + ", checking MCM UI Service")
+	// Check if the MCM UI Service already exists, if not create a new one
 	currentService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.UIDeploymentName, Namespace: instance.Namespace}, currentService)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.McmDeploymentName, Namespace: instance.Namespace}, currentService)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Service
-		newService := r.serviceForUI(instance)
-		reqLogger.Info("Creating a new UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
+		newService := r.serviceForMCMUI(instance)
+		reqLogger.Info("Creating a new MCM UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
 		err = r.client.Create(context.TODO(), newService)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
+			reqLogger.Error(err, "Failed to create new MCM UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
 			return reconcile.Result{}, err
 		}
 		// Service created successfully - return and requeue
 		needToRequeue = true
 	} else if err != nil {
-		reqLogger.Error(err, "Failed to get UI Service")
+		reqLogger.Error(err, "Failed to get MCM UI Service")
 		return reconcile.Result{}, err
 	}
 
@@ -183,58 +183,58 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
 	// set common cluster env vars based on the instance
 	clusterEnvVars = res.BuildUIClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace, instance.Spec.IngressNamespace,
-		instance.Spec.External.ClusterName, instance.Spec.External.ClusterIP, instance.Spec.External.ClusterPort, false)
+		instance.Spec.External.ClusterName, instance.Spec.External.ClusterIP, instance.Spec.External.ClusterPort, true)
 
 	// set common Volumes based on the instance
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.UIDeploymentName, "loglevel")
+		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.McmDeploymentName, "log4js")
 
-	reqLogger.Info("got UI Service, checking UI Deployment")
-	// Check if the UI Deployment already exists, if not create a new one
+	reqLogger.Info("got MCM UI Service, checking MCM UI Deployment")
+	// Check if the MCM UI Deployment already exists, if not create a new one
 	currentDeployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.UIDeploymentName, Namespace: instance.Namespace}, currentDeployment)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.McmDeploymentName, Namespace: instance.Namespace}, currentDeployment)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
-		newDeployment := r.deploymentForUI(instance)
-		reqLogger.Info("Creating a new UI Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
+		newDeployment := r.deploymentForMCMUI(instance)
+		reqLogger.Info("Creating a new MCM UI Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new UI Deployment", "Deployment.Namespace", newDeployment.Namespace,
+			reqLogger.Error(err, "Failed to create new MCM UI Deployment", "Deployment.Namespace", newDeployment.Namespace,
 				"Deployment.Name", newDeployment.Name)
 			return reconcile.Result{}, err
 		}
 		// Deployment created successfully - return and requeue
 		needToRequeue = true
 	} else if err != nil {
-		reqLogger.Error(err, "Failed to get UI Deployment")
+		reqLogger.Error(err, "Failed to get MCM UI Deployment")
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("got UI Deployment, checking Ingress")
+	reqLogger.Info("got MCM UI Deployment, checking Ingress")
 	// Check if the Ingress already exists, if not create a new one
 	currentIngress := &netv1.Ingress{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.UIIngressData.Name, Namespace: instance.Namespace}, currentIngress)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.McmIngressData.Name, Namespace: instance.Namespace}, currentIngress)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Ingress
-		newIngress := res.BuildIngress(instance.Namespace, res.UIIngressData)
-		// Set MeteringUI instance as the owner and controller of the Ingress
+		newIngress := res.BuildIngress(instance.Namespace, res.McmIngressData)
+		// Set MeteringMultiClusterUI instance as the owner and controller of the Ingress
 		err = controllerutil.SetControllerReference(instance, newIngress, r.scheme)
 		if err != nil {
-			reqLogger.Error(err, "Failed to set owner for UI Ingress", "Ingress.Namespace", newIngress.Namespace,
+			reqLogger.Error(err, "Failed to set owner for MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace,
 				"Ingress.Name", newIngress.Name)
 			return reconcile.Result{}, err
 		}
-		reqLogger.Info("Creating a new UI Ingress", "Ingress.Namespace", newIngress.Namespace, "Ingress.Name", newIngress.Name)
+		reqLogger.Info("Creating a new MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace, "Ingress.Name", newIngress.Name)
 		err = r.client.Create(context.TODO(), newIngress)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new UI Ingress", "Ingress.Namespace", newIngress.Namespace,
+			reqLogger.Error(err, "Failed to create new MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace,
 				"Ingress.Name", newIngress.Name)
 			return reconcile.Result{}, err
 		}
 		// Ingress created successfully - return and requeue
 		needToRequeue = true
 	} else if err != nil {
-		reqLogger.Error(err, "Failed to get UI Ingress")
+		reqLogger.Error(err, "Failed to get MCM UI Ingress")
 		return reconcile.Result{}, err
 	}
 
@@ -244,23 +244,23 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	reqLogger.Info("got UI Ingress, checking current UI deployment")
+	reqLogger.Info("got MCM UI Ingress, checking current MCM UI deployment")
 	// Ensure the image is the same as the spec
 	var expectedImage string
 	if instance.Spec.ImageRegistry == "" {
-		expectedImage = res.DefaultImageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag
+		expectedImage = res.DefaultImageRegistry + "/" + res.DefaultMcmUIImageName + ":" + res.DefaultMcmUIImageTag
 		reqLogger.Info("CS??? default expectedImage=" + expectedImage)
 	} else {
-		expectedImage = instance.Spec.ImageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag
+		expectedImage = instance.Spec.ImageRegistry + "/" + res.DefaultMcmUIImageName + ":" + res.DefaultMcmUIImageTag
 		reqLogger.Info("CS??? expectedImage=" + expectedImage)
 	}
 	if currentDeployment.Spec.Template.Spec.Containers[0].Image != expectedImage {
 		reqLogger.Info("CS??? curr image=" + currentDeployment.Spec.Template.Spec.Containers[0].Image + ", expect=" + expectedImage)
 		currentDeployment.Spec.Template.Spec.Containers[0].Image = expectedImage
-		reqLogger.Info("updating current UI deployment")
+		reqLogger.Info("updating current MCM UI deployment")
 		err = r.client.Update(context.TODO(), currentDeployment)
 		if err != nil {
-			reqLogger.Error(err, "Failed to update UI Deployment", "Deployment.Namespace", currentDeployment.Namespace,
+			reqLogger.Error(err, "Failed to update MCM UI Deployment", "Deployment.Namespace", currentDeployment.Namespace,
 				"Deployment.Name", currentDeployment.Name)
 			return reconcile.Result{}, err
 		}
@@ -268,16 +268,16 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	reqLogger.Info("Updating MeteringUI status")
-	// Update the MeteringUI status with the pod names
+	reqLogger.Info("Updating MeteringMultiClusterUI status")
+	// Update the MeteringMultiClusterUI status with the pod names
 	// List the pods for this instance's deployment
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.Namespace),
-		client.MatchingLabels(res.LabelsForSelector(res.UIDeploymentName, meteringUICrType, instance.Name)),
+		client.MatchingLabels(res.LabelsForSelector(res.McmDeploymentName, meteringMcmUICrType, instance.Name)),
 	}
 	if err = r.client.List(context.TODO(), podList, listOpts...); err != nil {
-		reqLogger.Error(err, "Failed to list pods", "MeteringUI.Namespace", instance.Namespace, "MeteringUI.Name", res.UIDeploymentName)
+		reqLogger.Error(err, "Failed to list pods", "MeteringMultiClusterUI.Namespace", instance.Namespace, "MeteringMultiClusterUI.Name", res.McmDeploymentName)
 		return reconcile.Result{}, err
 	}
 	reqLogger.Info("CS??? get pod names")
@@ -289,7 +289,7 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Info("CS??? put pod names in status")
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
-			reqLogger.Error(err, "Failed to update MeteringUI status")
+			reqLogger.Error(err, "Failed to update MeteringMultiClusterUI status")
 			return reconcile.Result{}, err
 		}
 	}
@@ -298,59 +298,59 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 	return reconcile.Result{}, nil
 }
 
-// deploymentForUI returns a UI Deployment object
-func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.MeteringUI) *appsv1.Deployment {
-	reqLogger := log.WithValues("func", "deploymentForUI", "instance.Name", instance.Name)
-	metaLabels := res.LabelsForMetadata(res.UIDeploymentName)
-	selectorLabels := res.LabelsForSelector(res.UIDeploymentName, meteringUICrType, instance.Name)
-	podLabels := res.LabelsForPodMetadata(res.UIDeploymentName, meteringUICrType, instance.Name)
+// deploymentForMCMUI returns an MCM UI Deployment object
+func (r *ReconcileMeteringMultiClusterUI) deploymentForMCMUI(instance *operatorv1alpha1.MeteringMultiClusterUI) *appsv1.Deployment {
+	reqLogger := log.WithValues("func", "deploymentForMCMUI", "instance.Name", instance.Name)
+	metaLabels := res.LabelsForMetadata(res.McmDeploymentName)
+	selectorLabels := res.LabelsForSelector(res.McmDeploymentName, meteringMcmUICrType, instance.Name)
+	podLabels := res.LabelsForPodMetadata(res.McmDeploymentName, meteringMcmUICrType, instance.Name)
 
 	var dmImage string
-	var uiImage string
+	var mcmImage string
 	if instance.Spec.ImageRegistry == "" {
 		dmImage = res.DefaultImageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag
 		reqLogger.Info("CS??? default dmImage=" + dmImage)
-		uiImage = res.DefaultImageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag
-		reqLogger.Info("CS??? default uiImage=" + uiImage)
+		mcmImage = res.DefaultImageRegistry + "/" + res.DefaultMcmUIImageName + ":" + res.DefaultMcmUIImageTag
+		reqLogger.Info("CS??? default mcmImage=" + mcmImage)
 	} else {
 		dmImage = instance.Spec.ImageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag
 		reqLogger.Info("CS??? dmImage=" + dmImage)
-		uiImage = instance.Spec.ImageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag
-		reqLogger.Info("CS??? uiImage=" + uiImage)
+		mcmImage = instance.Spec.ImageRegistry + "/" + res.DefaultMcmUIImageName + ":" + res.DefaultMcmUIImageTag
+		reqLogger.Info("CS??? mcmImage=" + mcmImage)
 	}
 
-	uiSecretCheckContainer := res.BaseSecretCheckContainer
-	uiSecretCheckContainer.Image = dmImage
-	uiSecretCheckContainer.Name = res.UIDeploymentName + "-secret-check"
+	mcmSecretCheckContainer := res.BaseSecretCheckContainer
+	mcmSecretCheckContainer.Image = dmImage
+	mcmSecretCheckContainer.Name = res.McmDeploymentName + "-secret-check"
 	// set the SECRET_LIST env var
-	uiSecretCheckContainer.Env[res.SecretListVarNdx].Value = res.APIKeyZecretName + " " +
+	mcmSecretCheckContainer.Env[res.SecretListVarNdx].Value = res.APIKeyZecretName + " " +
 		res.PlatformOidcZecretName + " " + res.CommonZecretCheckNames
 	// set the SECRET_DIR_LIST env var
-	uiSecretCheckContainer.Env[res.SecretDirVarNdx].Value = res.APIKeyZecretName + " " +
+	mcmSecretCheckContainer.Env[res.SecretDirVarNdx].Value = res.APIKeyZecretName + " " +
 		res.PlatformOidcZecretName + " " + res.CommonZecretCheckDirs
-	uiSecretCheckContainer.VolumeMounts = append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
+	mcmSecretCheckContainer.VolumeMounts = append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
 
-	uiInitContainer := res.BaseInitContainer
-	uiInitContainer.Image = dmImage
-	uiInitContainer.Name = res.UIDeploymentName + "-init"
-	uiInitContainer.Env = append(uiInitContainer.Env, res.CommonEnvVars...)
-	uiInitContainer.Env = append(uiInitContainer.Env, mongoDBEnvVars...)
+	mcmInitContainer := res.BaseInitContainer
+	mcmInitContainer.Image = dmImage
+	mcmInitContainer.Name = res.McmDeploymentName + "-init"
+	mcmInitContainer.Env = append(mcmInitContainer.Env, res.CommonEnvVars...)
+	mcmInitContainer.Env = append(mcmInitContainer.Env, mongoDBEnvVars...)
 
-	uiMainContainer := res.UIMainContainer
-	uiMainContainer.Image = uiImage
-	uiMainContainer.Name = res.UIDeploymentName
-	uiMainContainer.Env = append(uiMainContainer.Env, res.CommonEnvVars...)
-	uiMainContainer.Env = append(uiMainContainer.Env, res.IAMEnvVars...)
-	uiMainContainer.Env = append(uiMainContainer.Env, res.UIEnvVars...)
-	uiMainContainer.Env = append(uiMainContainer.Env, mongoDBEnvVars...)
-	uiMainContainer.Env = append(uiMainContainer.Env, clusterEnvVars...)
-	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
+	mcmMainContainer := res.McmUIMainContainer
+	mcmMainContainer.Image = mcmImage
+	mcmMainContainer.Name = res.McmDeploymentName
+	mcmMainContainer.Env = append(mcmMainContainer.Env, res.CommonEnvVars...)
+	mcmMainContainer.Env = append(mcmMainContainer.Env, res.IAMEnvVars...)
+	mcmMainContainer.Env = append(mcmMainContainer.Env, res.UIEnvVars...)
+	mcmMainContainer.Env = append(mcmMainContainer.Env, mongoDBEnvVars...)
+	mcmMainContainer.Env = append(mcmMainContainer.Env, clusterEnvVars...)
+	mcmMainContainer.VolumeMounts = append(mcmMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
-	uiVolumes := append(commonVolumes, res.APIKeyVolume, res.PlatformOidcVolume)
+	mcmVolumes := append(commonVolumes, res.APIKeyVolume, res.PlatformOidcVolume)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      res.UIDeploymentName,
+			Name:      res.McmDeploymentName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},
@@ -394,37 +394,37 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 							Operator: corev1.TolerationOpExists,
 						},
 					},
-					Volumes: uiVolumes,
+					Volumes: mcmVolumes,
 					InitContainers: []corev1.Container{
-						uiSecretCheckContainer,
-						uiInitContainer,
+						mcmSecretCheckContainer,
+						mcmInitContainer,
 					},
 					Containers: []corev1.Container{
-						uiMainContainer,
+						mcmMainContainer,
 					},
 				},
 			},
 		},
 	}
-	// Set MeteringUI instance as the owner and controller of the Deployment
+	// Set MeteringMultiClusterUI instance as the owner and controller of the Deployment
 	err := controllerutil.SetControllerReference(instance, deployment, r.scheme)
 	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for UI Deployment")
+		reqLogger.Error(err, "Failed to set owner for MCM UI Deployment")
 		return nil
 	}
 	return deployment
 }
 
-// serviceForUI returns a UI Service object
-func (r *ReconcileMeteringUI) serviceForUI(instance *operatorv1alpha1.MeteringUI) *corev1.Service {
-	reqLogger := log.WithValues("func", "serviceForUI", "instance.Name", instance.Name)
-	metaLabels := res.LabelsForMetadata(res.UIDeploymentName)
-	selectorLabels := res.LabelsForSelector(res.UIDeploymentName, meteringUICrType, instance.Name)
+// serviceForMCMUI returns an MCM UI Service object
+func (r *ReconcileMeteringMultiClusterUI) serviceForMCMUI(instance *operatorv1alpha1.MeteringMultiClusterUI) *corev1.Service {
+	reqLogger := log.WithValues("func", "serviceForMCMUI", "instance.Name", instance.Name)
+	metaLabels := res.LabelsForMetadata(res.McmDeploymentName)
+	selectorLabels := res.LabelsForSelector(res.McmDeploymentName, meteringMcmUICrType, instance.Name)
 
 	reqLogger.Info("CS??? Entry")
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      res.UIDeploymentName,
+			Name:      res.McmDeploymentName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},
@@ -432,11 +432,11 @@ func (r *ReconcileMeteringUI) serviceForUI(instance *operatorv1alpha1.MeteringUI
 			Type: corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
 				{
-					Name: "dashboard",
-					Port: 3130,
+					Name: "metering-mcm-dashboard",
+					Port: 3001,
 					TargetPort: intstr.IntOrString{
 						Type:   intstr.Int,
-						IntVal: 3130,
+						IntVal: 3001,
 					},
 				},
 			},
@@ -444,10 +444,10 @@ func (r *ReconcileMeteringUI) serviceForUI(instance *operatorv1alpha1.MeteringUI
 		},
 	}
 
-	// Set MeteringUI instance as the owner and controller of the Service
+	// Set MeteringMultiClusterUI instance as the owner and controller of the Service
 	err := controllerutil.SetControllerReference(instance, service, r.scheme)
 	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for UI Service")
+		reqLogger.Error(err, "Failed to set owner for MCM UI Service")
 		return nil
 	}
 	return service

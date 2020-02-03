@@ -14,6 +14,10 @@
 // limitations under the License.
 //
 
+// CS??? removed icp-serviceid-apikey-secret from CommonSecretCheckNames, CommonSecretCheckDirs,
+// CS???   and CommonSecretCheckVolumeMounts
+// Linter doesn't like "Secret" in string var names so use "Zecret"
+
 package resources
 
 import (
@@ -24,9 +28,11 @@ import (
 
 const DefaultImageRegistry = "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64"
 const DefaultDmImageName = "metering-data-manager"
-const DefaultDmImageTag = "3.3.1"
+const DefaultDmImageTag = "3.4.0"
 const DefaultUIImageName = "metering-ui"
-const DefaultUIImageTag = "3.3.1"
+const DefaultUIImageTag = "3.4.0"
+const DefaultMcmUIImageName = "metering-mcmui"
+const DefaultMcmUIImageTag = "3.4.0"
 
 var TrueVar = true
 var FalseVar = false
@@ -43,6 +49,24 @@ var memory256 = resource.NewQuantity(256*1024*1024, resource.BinarySI)   // 256M
 var memory512 = resource.NewQuantity(512*1024*1024, resource.BinarySI)   // 512Mi
 var memory2560 = resource.NewQuantity(2560*1024*1024, resource.BinarySI) // 2560Mi
 
+var CommonEnvVars = []corev1.EnvVar{
+	{
+		Name:  "NODE_TLS_REJECT_UNAUTHORIZED",
+		Value: "0",
+	},
+}
+
+var IAMEnvVars = []corev1.EnvVar{
+	{
+		Name:  "DEFAULT_IAM_TOKEN_SERVICE_PORT",
+		Value: "10443",
+	},
+	{
+		Name:  "DEFAULT_IAM_PAP_SERVICE_PORT",
+		Value: "39001",
+	},
+}
+
 var secretCheckCmd = `set -- $SECRET_LIST; ` +
 	`for secretDirName in $SECRET_DIR_LIST; do` +
 	`  while true; do` +
@@ -56,46 +80,11 @@ var secretCheckCmd = `set -- $SECRET_LIST; ` +
 	`done; ` +
 	`echo ` + "`date`" + `: All required secrets exist`
 
-var CommonEnvVars = []corev1.EnvVar{
-	{
-		Name:  "NODE_TLS_REJECT_UNAUTHORIZED",
-		Value: "0",
-	},
-	{
-		Name: "ICP_API_KEY",
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: "icp-serviceid-apikey-secret",
-				},
-				Key:      "ICP_API_KEY",
-				Optional: &TrueVar,
-			},
-		},
-	},
-	{
-		Name:  "HC_MONGO_ISSSL",
-		Value: "true",
-	},
-	{
-		Name:  "HC_MONGO_SSL_CA",
-		Value: "/certs/mongodb-ca/tls.crt",
-	},
-	{
-		Name:  "HC_MONGO_SSL_CERT",
-		Value: "/certs/mongodb-client/tls.crt",
-	},
-	{
-		Name:  "HC_MONGO_SSL_KEY",
-		Value: "/certs/mongodb-client/tls.key",
-	},
-}
+var CommonZecretCheckNames = "icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert"
 
-var commonSecretCheckVolumeMounts = []corev1.VolumeMount{
-	{
-		Name:      "icp-serviceid-apikey-secret",
-		MountPath: "/sec/icp-serviceid-apikey-secret",
-	},
+var CommonZecretCheckDirs = "muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert"
+
+var CommonSecretCheckVolumeMounts = []corev1.VolumeMount{
 	{
 		Name:      "mongodb-ca-cert",
 		MountPath: "/sec/cluster-ca-cert",
@@ -114,22 +103,81 @@ var commonSecretCheckVolumeMounts = []corev1.VolumeMount{
 	},
 }
 
-var receiverCertVolumeMount = corev1.VolumeMount{
-	Name:      "icp-metering-receiver-certs",
-	MountPath: "/sec/icp-metering-receiver-secret",
+const APICertName = "icp-metering-api-ca-cert"
+const APICertCommonName = "metering-server"
+const APICertZecretName = "icp-metering-api-secret"
+const APICertVolumeName = "icp-metering-api-certs"
+
+var APICertVolumeMount = corev1.VolumeMount{
+	Name:      APICertVolumeName,
+	MountPath: "/sec/" + APICertZecretName,
 }
-var apiCertVolumeMount = corev1.VolumeMount{
-	Name:      "icp-metering-api-certs",
-	MountPath: "/sec/icp-metering-api-secret",
-}
-var platformOidcVolumeMount = corev1.VolumeMount{
-	Name:      "platform-oidc-credentials",
-	MountPath: "/sec/platform-oidc-credentials",
+var APICertVolume = corev1.Volume{
+	Name: APICertVolumeName,
+	VolumeSource: corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  APICertZecretName,
+			DefaultMode: &DefaultMode,
+			Optional:    &TrueVar,
+		},
+	},
 }
 
-var dmSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, receiverCertVolumeMount)
-var rdrSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, apiCertVolumeMount)
-var uiSecretCheckVolumeMounts = append(commonSecretCheckVolumeMounts, platformOidcVolumeMount)
+const ReceiverCertName = "icp-metering-receiver-ca-cert"
+const ReceiverCertCommonName = "metering-receiver"
+const ReceiverCertZecretName = "icp-metering-receiver-secret"
+const ReceiverCertVolumeName = "icp-metering-receiver-certs"
+
+var ReceiverCertVolumeMount = corev1.VolumeMount{
+	Name:      ReceiverCertVolumeName,
+	MountPath: "/sec/" + ReceiverCertZecretName,
+}
+var ReceiverCertVolume = corev1.Volume{
+	Name: ReceiverCertVolumeName,
+	VolumeSource: corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  ReceiverCertZecretName,
+			DefaultMode: &DefaultMode,
+			Optional:    &TrueVar,
+		},
+	},
+}
+
+const PlatformOidcZecretName = "platform-oidc-credentials"
+const PlatformOidcVolumeName = "platform-oidc-credentials"
+
+var PlatformOidcVolumeMount = corev1.VolumeMount{
+	Name:      PlatformOidcVolumeName,
+	MountPath: "/sec/" + PlatformOidcZecretName,
+}
+var PlatformOidcVolume = corev1.Volume{
+	Name: PlatformOidcVolumeName,
+	VolumeSource: corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  PlatformOidcZecretName,
+			DefaultMode: &DefaultMode,
+			Optional:    &TrueVar,
+		},
+	},
+}
+
+const APIKeyZecretName = "icp-serviceid-apikey-secret"
+const APIKeyVolumeName = "icp-serviceid-apikey-secret"
+
+var APIKeyVolumeMount = corev1.VolumeMount{
+	Name:      APIKeyVolumeName,
+	MountPath: "/sec/" + APIKeyZecretName,
+}
+var APIKeyVolume = corev1.Volume{
+	Name: APIKeyVolumeName,
+	VolumeSource: corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  APIKeyZecretName,
+			DefaultMode: &DefaultMode,
+			Optional:    &TrueVar,
+		},
+	},
+}
 
 var commonInitVolumeMounts = []corev1.VolumeMount{
 	{
@@ -172,20 +220,24 @@ var CommonMainVolumeMounts = []corev1.VolumeMount{
 		Name:      "mongodb-client-cert",
 		MountPath: "/certs/mongodb-client",
 	},
-	{
-		Name:      "loglevel",
-		MountPath: "/etc/config",
-	},
 }
 
-var CommonIngressAnnotations = map[string]string{
-	"app.kubernetes.io/managed-by": "operator",
-	"kubernetes.io/ingress.class":  "ibm-icp-management",
+var LoglevelVolumeMount = corev1.VolumeMount{
+	Name:      "loglevel",
+	MountPath: "/etc/config",
 }
 
-var DmSecretCheckContainer = corev1.Container{
+var Log4jsVolumeMount = corev1.VolumeMount{
+	Name:      "log4js",
+	MountPath: "/etc/config",
+}
+
+const SecretListVarNdx = 0
+const SecretDirVarNdx = 1
+
+var BaseSecretCheckContainer = corev1.Container{
 	Image:           "metering-data-manager",
-	Name:            "metering-dm-secret-check",
+	Name:            "metering-secret-check",
 	ImagePullPolicy: corev1.PullAlways,
 	Command: []string{
 		"sh",
@@ -194,31 +246,25 @@ var DmSecretCheckContainer = corev1.Container{
 	},
 	Env: []corev1.EnvVar{
 		{
-			Name:  "SECRET_LIST",
-			Value: "icp-serviceid-apikey-secret icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
-			//CS??? use instance.Spec.MongoDB.UsernameSecret/PasswordSecret for icp-mongodb-admin
-			//CS??? use instance.Spec.MongoDB.ClientCertsSecret for icp-mongodb-client-cert
-			//CS??? use instance.Spec.MongoDB.ClusterCertsSecret for cluster-ca-cert
-			//CS??? Value: "icp-serviceid-apikey-secret icp-metering-receiver-secret icp-mongodb-admin icp-mongodb-admin
-			//CS???         cluster-ca-cert icp-mongodb-client-cert",
+			Name: "SECRET_LIST",
+			// CommonZecretCheckNames will be added by the controller
+			Value: "",
 		},
 		{
+			// CommonZecretCheckDirs will be added by the controller
 			Name:  "SECRET_DIR_LIST",
-			Value: "icp-serviceid-apikey-secret muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
-			//CS??? use instance.Spec.MongoDB.ClientCertsSecret for icp-mongodb-client-cert
-			//CS??? use instance.Spec.MongoDB.ClusterCertsSecret for cluster-ca-cert
-			//CS??? Value: "icp-serviceid-apikey-secret icp-metering-receiver-secret muser-icp-mongodb-admin mpass-icp-mongodb-admin
-			//CS???         cluster-ca-cert icp-mongodb-client-cert",
+			Value: "",
 		},
 	},
-	VolumeMounts:    dmSecretCheckVolumeMounts,
+	// CommonSecretCheckVolumeMounts will be added by the controller
+	VolumeMounts:    []corev1.VolumeMount{},
 	Resources:       commonInitResources,
 	SecurityContext: &commonSecurityContext,
 }
 
-var DmInitContainer = corev1.Container{
+var BaseInitContainer = corev1.Container{
 	Image:           "metering-data-manager",
-	Name:            "metering-dm-init",
+	Name:            "metering-init",
 	ImagePullPolicy: corev1.PullAlways,
 	Command: []string{
 		"node",
@@ -226,12 +272,7 @@ var DmInitContainer = corev1.Container{
 		"verifyOnlyMongo",
 	},
 	// CommonEnvVars and mongoDBEnvVars will be added by the controller
-	Env: []corev1.EnvVar{
-		{
-			Name:  "MCM_VERBOSE",
-			Value: "true",
-		},
-	},
+	Env:             []corev1.EnvVar{},
 	VolumeMounts:    commonInitVolumeMounts,
 	Resources:       commonInitResources,
 	SecurityContext: &commonSecurityContext,
@@ -245,11 +286,12 @@ var DmMainContainer = corev1.Container{
 	// CommonMainVolumeMounts will be added by the controller
 	VolumeMounts: []corev1.VolumeMount{
 		{
-			Name:      "icp-metering-receiver-certs",
+			Name:      ReceiverCertVolumeName,
 			MountPath: "/certs/metering-receiver",
 		},
+		LoglevelVolumeMount,
 	},
-	// CommonEnvVars and mongoDBEnvVars will be added by the controller
+	// CommonEnvVars, IAMEnvVars and mongoDBEnvVars will be added by the controller
 	Env: []corev1.EnvVar{
 		{
 			Name:  "METERING_API_ENABLED",
@@ -309,14 +351,6 @@ var DmMainContainer = corev1.Container{
 			Value: "/certs/metering-receiver/tls.key",
 		},
 		{
-			Name:  "DEFAULT_IAM_TOKEN_SERVICE_PORT",
-			Value: "10443",
-		},
-		{
-			Name:  "DEFAULT_IAM_PAP_SERVICE_PORT",
-			Value: "39001",
-		},
-		{
 			Name:  "HC_DM_ALLOW_TEST",
 			Value: "false",
 		},
@@ -370,46 +404,6 @@ var DmMainContainer = corev1.Container{
 	SecurityContext: &commonSecurityContext,
 }
 
-var RdrSecretCheckContainer = corev1.Container{
-	Image:           "metering-data-manager",
-	Name:            "metering-reader-secret-check",
-	ImagePullPolicy: corev1.PullAlways,
-	Command: []string{
-		"sh",
-		"-c",
-		secretCheckCmd,
-	},
-	Env: []corev1.EnvVar{
-		{
-			Name:  "SECRET_LIST",
-			Value: "icp-metering-api-secret icp-serviceid-apikey-secret icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
-		},
-		{
-			Name:  "SECRET_DIR_LIST",
-			Value: "icp-metering-api-secret icp-serviceid-apikey-secret muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
-		},
-	},
-	VolumeMounts:    rdrSecretCheckVolumeMounts,
-	Resources:       commonInitResources,
-	SecurityContext: &commonSecurityContext,
-}
-
-var RdrInitContainer = corev1.Container{
-	Image:           "metering-data-manager",
-	Name:            "metering-reader-init",
-	ImagePullPolicy: corev1.PullAlways,
-	Command: []string{
-		"node",
-		"/datamanager/lib/metering_init.js",
-		"verifyOnlyMongo",
-	},
-	// CommonEnvVars and mongoDBEnvVars will be added by the controller
-	Env:             []corev1.EnvVar{},
-	VolumeMounts:    commonInitVolumeMounts,
-	Resources:       commonInitResources,
-	SecurityContext: &commonSecurityContext,
-}
-
 var RdrMainContainer = corev1.Container{
 	Image: "metering-data-manager",
 	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager:3.3.1",
@@ -418,11 +412,12 @@ var RdrMainContainer = corev1.Container{
 	// CommonMainVolumeMounts will be added by the controller
 	VolumeMounts: []corev1.VolumeMount{
 		{
-			Name:      "icp-metering-api-certs",
+			Name:      APICertVolumeName,
 			MountPath: "/certs/metering-api",
 		},
+		LoglevelVolumeMount,
 	},
-	// CommonEnvVars and mongoDBEnvVars will be added by the controller
+	// CommonEnvVars, IAMEnvVars and mongoDBEnvVars will be added by the controller
 	Env: []corev1.EnvVar{
 		{
 			Name:  "METERING_API_ENABLED",
@@ -508,14 +503,6 @@ var RdrMainContainer = corev1.Container{
 				},
 			},
 		},
-		{
-			Name:  "DEFAULT_IAM_TOKEN_SERVICE_PORT",
-			Value: "10443",
-		},
-		{
-			Name:  "DEFAULT_IAM_PAP_SERVICE_PORT",
-			Value: "39001",
-		},
 	},
 	Ports: []corev1.ContainerPort{
 		{ContainerPort: 3000},
@@ -567,44 +554,63 @@ var RdrMainContainer = corev1.Container{
 	SecurityContext: &commonSecurityContext,
 }
 
-var UISecretCheckContainer = corev1.Container{
-	Image:           "metering-data-manager",
-	Name:            "metering-ui-secret-check",
-	ImagePullPolicy: corev1.PullAlways,
-	Command: []string{
-		"sh",
-		"-c",
-		secretCheckCmd,
+var UIEnvVars = []corev1.EnvVar{
+	{
+		Name:  "IS_PRIVATECLOUD",
+		Value: "true",
 	},
-	Env: []corev1.EnvVar{
-		{
-			Name:  "SECRET_LIST",
-			Value: "platform-oidc-credentials icp-serviceid-apikey-secret icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
-		},
-		{
-			Name:  "SECRET_DIR_LIST",
-			Value: "platform-oidc-credentials icp-serviceid-apikey-secret muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert",
+	{
+		Name: "ICP_API_KEY",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: APIKeyZecretName,
+				},
+				Key:      "ICP_API_KEY",
+				Optional: &TrueVar,
+			},
 		},
 	},
-	VolumeMounts:    uiSecretCheckVolumeMounts,
-	Resources:       commonInitResources,
-	SecurityContext: &commonSecurityContext,
-}
-
-var UIInitContainer = corev1.Container{
-	Image:           "metering-data-manager",
-	Name:            "metering-ui-init",
-	ImagePullPolicy: corev1.PullAlways,
-	Command: []string{
-		"node",
-		"/datamanager/lib/metering_init.js",
-		"verifyOnlyMongo",
+	{
+		Name: "WLP_CLIENT_ID",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: PlatformOidcZecretName,
+				},
+				Key:      "WLP_CLIENT_ID",
+				Optional: &TrueVar,
+			},
+		},
 	},
-	// CommonEnvVars and mongoDBEnvVars will be added by the controller
-	Env:             []corev1.EnvVar{},
-	VolumeMounts:    commonInitVolumeMounts,
-	Resources:       commonInitResources,
-	SecurityContext: &commonSecurityContext,
+	{
+		Name: "WLP_CLIENT_SECRET",
+		ValueFrom: &corev1.EnvVarSource{
+			SecretKeyRef: &corev1.SecretKeySelector{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: PlatformOidcZecretName,
+				},
+				Key:      "WLP_CLIENT_SECRET",
+				Optional: &TrueVar,
+			},
+		},
+	},
+	{
+		Name:  "USE_PRIVATECLOUD_SECURITY",
+		Value: "true",
+	},
+	{
+		Name:  "DEFAULT_PLATFORM_IDENTITY_MANAGEMENT_SERVICE_PORT",
+		Value: "4500",
+	},
+	{
+		Name:  "DEFAULT_PLATFORM_HEADER_SERVICE_PORT",
+		Value: "3000",
+	},
+	{
+		Name:  "HC_DM_ALLOW_TEST",
+		Value: "false",
+	},
 }
 
 var UIMainContainer = corev1.Container{
@@ -613,52 +619,14 @@ var UIMainContainer = corev1.Container{
 	Name:            "metering-ui",
 	ImagePullPolicy: corev1.PullAlways,
 	// CommonMainVolumeMounts will be added by the controller
-	VolumeMounts: []corev1.VolumeMount{},
-	// CommonEnvVars and mongoDBEnvVars will be added by the controller
+	VolumeMounts: []corev1.VolumeMount{
+		LoglevelVolumeMount,
+	},
+	// CommonEnvVars, IAMEnvVars, UIEnvVars and mongoDBEnvVars will be added by the controller. removed HC_HCAPI_URI
 	Env: []corev1.EnvVar{
-		{
-			Name:  "HC_HCAPI_URI",
-			Value: "https://metering-server:9443",
-		},
-		{
-			Name:  "IS_PRIVATECLOUD",
-			Value: "true",
-		},
 		{
 			Name:  "ICP_DEFAULT_DASHBOARD",
 			Value: "cpi.icp.main",
-		},
-		{
-			Name:  "PLATFORM_IDENTITY_PROVIDER_URL",
-			Value: "https://platform-identity-provider:4300",
-		},
-		{
-			Name: "WLP_CLIENT_ID",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "platform-oidc-credentials",
-					},
-					Key:      "WLP_CLIENT_ID",
-					Optional: &TrueVar,
-				},
-			},
-		},
-		{
-			Name: "WLP_CLIENT_SECRET",
-			ValueFrom: &corev1.EnvVarSource{
-				SecretKeyRef: &corev1.SecretKeySelector{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: "platform-oidc-credentials",
-					},
-					Key:      "WLP_CLIENT_SECRET",
-					Optional: &TrueVar,
-				},
-			},
-		},
-		{
-			Name:  "USE_PRIVATECLOUD_SECURITY",
-			Value: "true",
 		},
 		{
 			Name:  "PORT",
@@ -667,26 +635,6 @@ var UIMainContainer = corev1.Container{
 		{
 			Name:  "PROXY_URI",
 			Value: "metering",
-		},
-		{
-			Name:  "DEFAULT_IAM_TOKEN_SERVICE_PORT",
-			Value: "10443",
-		},
-		{
-			Name:  "DEFAULT_IAM_PAP_SERVICE_PORT",
-			Value: "39001",
-		},
-		{
-			Name:  "DEFAULT_PLATFORM_IDENTITY_MANAGEMENT_SERVICE_PORT",
-			Value: "4500",
-		},
-		{
-			Name:  "DEFAULT_PLATFORM_HEADER_SERVICE_PORT",
-			Value: "3000",
-		},
-		{
-			Name:  "HC_DM_ALLOW_TEST",
-			Value: "false",
 		},
 	},
 	Ports: []corev1.ContainerPort{
@@ -730,6 +678,73 @@ var UIMainContainer = corev1.Container{
 		Limits: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    *cpu500,
 			corev1.ResourceMemory: *memory512},
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    *cpu100,
+			corev1.ResourceMemory: *memory128},
+	},
+	SecurityContext: &commonSecurityContext,
+}
+
+var McmUIMainContainer = corev1.Container{
+	Image:           "metering-mcmui",
+	Name:            "metering-mcmui",
+	ImagePullPolicy: corev1.PullAlways,
+	// CommonMainVolumeMounts will be added by the controller
+	VolumeMounts: []corev1.VolumeMount{
+		Log4jsVolumeMount,
+	},
+	// CommonEnvVars, IAMEnvVars, UIEnvVars and mongoDBEnvVars will be added by the controller
+	Env: []corev1.EnvVar{
+		{
+			Name:  "PORT",
+			Value: "3001",
+		},
+		{
+			Name:  "PROXY_URI",
+			Value: "metering-mcm",
+		},
+	},
+	Ports: []corev1.ContainerPort{
+		{ContainerPort: 3001},
+	},
+	LivenessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/unsecure/livenessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3001,
+				},
+				Scheme: "",
+			},
+		},
+		InitialDelaySeconds: 305,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       300,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
+	ReadinessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/unsecure/readinessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3001,
+				},
+				Scheme: "",
+			},
+		},
+		InitialDelaySeconds: 15,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       15,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
+	Resources: corev1.ResourceRequirements{
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    *cpu500,
+			corev1.ResourceMemory: *memory256},
 		Requests: map[corev1.ResourceName]resource.Quantity{
 			corev1.ResourceCPU:    *cpu100,
 			corev1.ResourceMemory: *memory128},
