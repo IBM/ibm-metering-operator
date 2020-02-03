@@ -1,7 +1,7 @@
 apiVersion: operator.ibm.com/v1alpha1
-kind: MeteringUI
+kind: MeteringMultiClusterUI
 metadata:
-  name: example-meteringui
+  name: example-meteringmcmui
 spec:
   operatorVersion: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64

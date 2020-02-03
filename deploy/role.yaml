@@ -71,6 +71,7 @@ rules:
   resources:
   - '*'
   - meteringuis
+  - meteringmulticlusteruis
   verbs:
   - create
   - delete

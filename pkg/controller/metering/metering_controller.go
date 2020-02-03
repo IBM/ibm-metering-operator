@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-//CS??? need to create icp-metering-receiver-secret; see metering-receiver-certificate.yaml
 package metering
 
 import (
@@ -47,45 +46,20 @@ import (
 )
 
 const meteringCrType = "metering_cr"
-const dataManagerDeploymentName = "metering-dm"
-const readerDaemonSetName = "metering-reader"
-const serverServiceName = "metering-server"
-const apiCertificateName = "icp-metering-api-ca-cert"
-const apiCheckIngressName = "metering-api-check"
-const apiCheckIngressPath = "/meteringapi/api/v1"
-const apiRBACIngressName = "metering-api-rbac"
-const apiRBACIngressPath = "/meteringapi/api/"
-const apiSwaggerIngressName = "metering-api-swagger"
-const apiSwaggerIngressPath = "/meteringapi/api/swagger"
-const apiIngressPort int32 = 4000
 
 var commonVolumes = []corev1.Volume{}
 
 var mongoDBEnvVars = []corev1.EnvVar{}
 var clusterEnvVars = []corev1.EnvVar{}
 
-var apiCheckAnnotations = map[string]string{
-	"icp.management.ibm.com/location-modifier": "=",
-	"icp.management.ibm.com/upstream-uri":      "/api/v1",
+var certificateList = []res.CertificateData{
+	res.APICertificateData,
+	res.ReceiverCertificateData,
 }
-var apiRBACAnnotations = map[string]string{
-	"icp.management.ibm.com/authz-type":     "rbac",
-	"icp.management.ibm.com/rewrite-target": "/api",
-}
-var apiSwaggerAnnotations = map[string]string{
-	"icp.management.ibm.com/location-modifier": "=",
-	"icp.management.ibm.com/upstream-uri":      "/api/swagger",
-}
-
-var ingressPaths = map[string]string{
-	apiCheckIngressName:   apiCheckIngressPath,
-	apiRBACIngressName:    apiRBACIngressPath,
-	apiSwaggerIngressName: apiSwaggerIngressPath,
-}
-var ingressAnnotations = map[string]map[string]string{
-	apiCheckIngressName:   apiCheckAnnotations,
-	apiRBACIngressName:    apiRBACAnnotations,
-	apiSwaggerIngressName: apiSwaggerAnnotations,
+var ingressList = []res.IngressData{
+	res.APIcheckIngressData,
+	res.APIrbacIngressData,
+	res.APIswaggerIngressData,
 }
 
 var log = logf.Log.WithName("controller_metering")
@@ -224,21 +198,28 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("got Services, checking DM Deployment")
+	reqLogger.Info("got Services, checking Certificates")
+	// Check if the Certificates already exist, if not create new ones
+	err = r.reconcileCertificate(instance, &needToRequeue)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	reqLogger.Info("got Certificates, checking DM Deployment")
 	// set common MongoDB env vars based on the instance
 	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
 		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
 	// set common cluster env vars based on the instance
-	clusterEnvVars = buildClusterEnvVars(instance)
+	clusterEnvVars = res.BuildCommonClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace, instance.Spec.External.ClusterName)
 
 	// set common Volumes based on the instance
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, dataManagerDeploymentName)
+		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.DmDeploymentName, "loglevel")
 
 	// Check if the DM Deployment already exists, if not create a new one
 	currentDeployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: dataManagerDeploymentName, Namespace: instance.Namespace}, currentDeployment)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.DmDeploymentName, Namespace: instance.Namespace}, currentDeployment)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new deployment
 		newDeployment := r.deploymentForDataMgr(instance)
@@ -256,32 +237,10 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("got DM Deployment, checking API Certificate")
-	// Check if the Certificate already exists, if not create a new one
-	currentAPICertificate := &certmgr.Certificate{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: apiCertificateName, Namespace: instance.Namespace}, currentAPICertificate)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new Certificate
-		newCertificate := r.certificateForAPI(instance)
-		reqLogger.Info("Creating a new API Certificate", "Certificate.Namespace", newCertificate.Namespace, "Certificate.Name", newCertificate.Name)
-		err = r.client.Create(context.TODO(), newCertificate)
-		if err != nil {
-			reqLogger.Error(err, "Failed to create new API Certificate", "Certificate.Namespace", newCertificate.Namespace,
-				"Certificate.Name", newCertificate.Name)
-			return reconcile.Result{}, err
-		}
-		// Certificate created successfully - return and requeue
-		needToRequeue = true
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get API Certificate")
-		// CertManager might not be installed, so don't fail
-		//CS??? return reconcile.Result{}, err
-	}
-
-	reqLogger.Info("got API Certificate, checking Rdr DaemonSet")
+	reqLogger.Info("got DM Deployment, checking Rdr DaemonSet")
 	// Check if the DaemonSet already exists, if not create a new one
 	currentDaemonSet := &appsv1.DaemonSet{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: readerDaemonSetName, Namespace: instance.Namespace}, currentDaemonSet)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReaderDaemonSetName, Namespace: instance.Namespace}, currentDaemonSet)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new DaemonSet
 		newDaemonSet := r.daemonForReader(instance)
@@ -299,8 +258,8 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("got Rdr DaemonSet, checking API Ingress")
-	// Check if the Ingress already exists, if not create a new one
+	reqLogger.Info("got Rdr DaemonSet, checking API Ingresses")
+	// Check if the Ingresses already exist, if not create new ones
 	err = r.reconcileIngress(instance, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -312,7 +271,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	reqLogger.Info("got API Ingress, checking current DM deployment")
+	reqLogger.Info("got API Ingresses, checking current DM deployment")
 	// Ensure the image is the same as the spec
 	var expectedImage string
 	if instance.Spec.ImageRegistry == "" {
@@ -344,10 +303,10 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.Namespace),
-		client.MatchingLabels(res.LabelsForSelector(dataManagerDeploymentName, meteringCrType, instance.Name)),
+		client.MatchingLabels(res.LabelsForSelector(res.DmDeploymentName, meteringCrType, instance.Name)),
 	}
 	if err = r.client.List(context.TODO(), podList, listOpts...); err != nil {
-		reqLogger.Error(err, "Failed to list pods", "Metering.Namespace", instance.Namespace, "Metering.Name", dataManagerDeploymentName)
+		reqLogger.Error(err, "Failed to list pods", "Metering.Namespace", instance.Namespace, "Metering.Name", res.DmDeploymentName)
 		return reconcile.Result{}, err
 	}
 	reqLogger.Info("CS??? get pod names")
@@ -376,7 +335,7 @@ func (r *ReconcileMetering) reconcileService(instance *operatorv1alpha1.Metering
 	reqLogger.Info("checking DM Service")
 	// Check if the DataManager Service already exists, if not create a new one
 	dmService := &corev1.Service{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: dataManagerDeploymentName, Namespace: instance.Namespace}, dmService)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: res.DmDeploymentName, Namespace: instance.Namespace}, dmService)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Service
 		newService := r.serviceForDataMgr(instance)
@@ -396,7 +355,7 @@ func (r *ReconcileMetering) reconcileService(instance *operatorv1alpha1.Metering
 	reqLogger.Info("got DM Service, checking Rdr Service")
 	// Check if the Reader Service already exists, if not create a new one
 	readerService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: serverServiceName, Namespace: instance.Namespace}, readerService)
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ServerServiceName, Namespace: instance.Namespace}, readerService)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new Service
 		newService := r.serviceForReader(instance)
@@ -417,21 +376,55 @@ func (r *ReconcileMetering) reconcileService(instance *operatorv1alpha1.Metering
 	return nil
 }
 
-// Check if the Ingress already exists, if not create a new one.
+// Check if the Certificates already exist, if not create new ones.
+// This function was created to reduce the cyclomatic complexity :)
+func (r *ReconcileMetering) reconcileCertificate(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
+	reqLogger := log.WithValues("func", "reconcileCertificate", "instance.Name", instance.Name)
+
+	for _, certData := range certificateList {
+		reqLogger.Info("checking Certificate, name=" + certData.Name)
+		currentCertificate := &certmgr.Certificate{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: certData.Name, Namespace: instance.Namespace}, currentCertificate)
+		if err != nil && errors.IsNotFound(err) {
+			// Define a new Certificate
+			newCertificate := res.BuildCertificate(instance.Namespace, certData)
+			// Set Metering instance as the owner and controller of the Certificate
+			err = controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
+			if err != nil {
+				reqLogger.Error(err, "Failed to set owner for Certificate", "Certificate.Namespace", newCertificate.Namespace,
+					"Certificate.Name", newCertificate.Name)
+				return err
+			}
+			reqLogger.Info("Creating a new Certificate", "Certificate.Namespace", newCertificate.Namespace, "Certificate.Name", newCertificate.Name)
+			err = r.client.Create(context.TODO(), newCertificate)
+			if err != nil {
+				reqLogger.Error(err, "Failed to create new Certificate", "Certificate.Namespace", newCertificate.Namespace,
+					"Certificate.Name", newCertificate.Name)
+				return err
+			}
+			// Certificate created successfully - return and requeue
+			*needToRequeue = true
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to get Certificate, name="+certData.Name)
+			// CertManager might not be installed, so don't fail
+			//CS??? return err
+		}
+	}
+	return nil
+}
+
+// Check if the Ingresses already exist, if not create new ones.
 // This function was created to reduce the cyclomatic complexity :)
 func (r *ReconcileMetering) reconcileIngress(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
 	reqLogger := log.WithValues("func", "reconcileIngress", "instance.Name", instance.Name)
-	for ingressName, ingressPath := range ingressPaths {
-		reqLogger.Info("checking API Ingress, name=" + ingressName)
+
+	for _, ingressData := range ingressList {
+		reqLogger.Info("checking API Ingress, name=" + ingressData.Name)
 		currentIngress := &netv1.Ingress{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{Name: ingressName, Namespace: instance.Namespace}, currentIngress)
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: ingressData.Name, Namespace: instance.Namespace}, currentIngress)
 		if err != nil && errors.IsNotFound(err) {
 			// Define a new Ingress
-			newAnnotations := ingressAnnotations[ingressName]
-			for key, value := range res.CommonIngressAnnotations {
-				newAnnotations[key] = value
-			}
-			newIngress := res.BuildIngress(ingressName, instance.Namespace, ingressPath, apiIngressPort, newAnnotations, serverServiceName)
+			newIngress := res.BuildIngress(instance.Namespace, ingressData)
 			// Set Metering instance as the owner and controller of the Ingress
 			err = controllerutil.SetControllerReference(instance, newIngress, r.scheme)
 			if err != nil {
@@ -449,7 +442,7 @@ func (r *ReconcileMetering) reconcileIngress(instance *operatorv1alpha1.Metering
 			// Ingress created successfully - return and requeue
 			*needToRequeue = true
 		} else if err != nil {
-			reqLogger.Error(err, "Failed to get API Ingress, name="+ingressName)
+			reqLogger.Error(err, "Failed to get API Ingress, name="+ingressData.Name)
 			return err
 		}
 	}
@@ -459,9 +452,9 @@ func (r *ReconcileMetering) reconcileIngress(instance *operatorv1alpha1.Metering
 // deploymentForDataMgr returns a DataManager Deployment object
 func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Metering) *appsv1.Deployment {
 	reqLogger := log.WithValues("func", "deploymentForDataMgr", "instance.Name", instance.Name)
-	metaLabels := res.LabelsForMetadata(dataManagerDeploymentName)
-	selectorLabels := res.LabelsForSelector(dataManagerDeploymentName, meteringCrType, instance.Name)
-	podLabels := res.LabelsForPodMetadata(dataManagerDeploymentName, meteringCrType, instance.Name)
+	metaLabels := res.LabelsForMetadata(res.DmDeploymentName)
+	selectorLabels := res.LabelsForSelector(res.DmDeploymentName, meteringCrType, instance.Name)
+	podLabels := res.LabelsForPodMetadata(res.DmDeploymentName, meteringCrType, instance.Name)
 
 	var dmImage string
 	if instance.Spec.ImageRegistry == "" {
@@ -472,39 +465,40 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 		reqLogger.Info("CS??? dmImage=" + dmImage)
 	}
 
-	dmSecretCheckContainer := res.DmSecretCheckContainer
+	dmSecretCheckContainer := res.BaseSecretCheckContainer
 	dmSecretCheckContainer.Image = dmImage
-	dmSecretCheckContainer.Name = dataManagerDeploymentName + "-secret-check"
+	dmSecretCheckContainer.Name = res.DmDeploymentName + "-secret-check"
+	// set the SECRET_LIST env var
+	dmSecretCheckContainer.Env[res.SecretListVarNdx].Value = res.ReceiverCertZecretName + " " + res.CommonZecretCheckNames
+	// set the SECRET_DIR_LIST env var
+	dmSecretCheckContainer.Env[res.SecretDirVarNdx].Value = res.ReceiverCertZecretName + " " + res.CommonZecretCheckDirs
+	dmSecretCheckContainer.VolumeMounts = append(res.CommonSecretCheckVolumeMounts, res.ReceiverCertVolumeMount)
 
-	dmInitContainer := res.DmInitContainer
+	dmInitContainer := res.BaseInitContainer
 	dmInitContainer.Image = dmImage
-	dmInitContainer.Name = dataManagerDeploymentName + "-init"
+	dmInitContainer.Name = res.DmDeploymentName + "-init"
+	envVar := corev1.EnvVar{
+		Name:  "MCM_VERBOSE",
+		Value: "true",
+	}
 	dmInitContainer.Env = append(dmInitContainer.Env, res.CommonEnvVars...)
 	dmInitContainer.Env = append(dmInitContainer.Env, mongoDBEnvVars...)
+	dmInitContainer.Env = append(dmInitContainer.Env, envVar)
 
 	dmMainContainer := res.DmMainContainer
 	dmMainContainer.Image = dmImage
-	dmMainContainer.Name = dataManagerDeploymentName
+	dmMainContainer.Name = res.DmDeploymentName
 	dmMainContainer.Env = append(dmMainContainer.Env, res.CommonEnvVars...)
+	dmMainContainer.Env = append(dmMainContainer.Env, res.IAMEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, mongoDBEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, clusterEnvVars...)
 	dmMainContainer.VolumeMounts = append(dmMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
-	receiverCertVolume := corev1.Volume{
-		Name: "icp-metering-receiver-certs",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  "icp-metering-receiver-secret",
-				DefaultMode: &res.DefaultMode,
-				Optional:    &res.TrueVar,
-			},
-		},
-	}
-	dmVolumes := append(commonVolumes, receiverCertVolume)
+	dmVolumes := append(commonVolumes, res.ReceiverCertVolume)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dataManagerDeploymentName,
+			Name:      res.DmDeploymentName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},
@@ -572,13 +566,13 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 // serviceForDataMgr returns a DataManager Service object
 func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Metering) *corev1.Service {
 	reqLogger := log.WithValues("func", "serviceForDataMgr", "instance.Name", instance.Name)
-	metaLabels := res.LabelsForMetadata(dataManagerDeploymentName)
-	selectorLabels := res.LabelsForSelector(dataManagerDeploymentName, meteringCrType, instance.Name)
+	metaLabels := res.LabelsForMetadata(res.DmDeploymentName)
+	selectorLabels := res.LabelsForSelector(res.DmDeploymentName, meteringCrType, instance.Name)
 
 	reqLogger.Info("CS??? Entry")
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      dataManagerDeploymentName,
+			Name:      res.DmDeploymentName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},
@@ -605,13 +599,13 @@ func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Meterin
 // serviceForReader returns a Reader Service object
 func (r *ReconcileMetering) serviceForReader(instance *operatorv1alpha1.Metering) *corev1.Service {
 	reqLogger := log.WithValues("func", "serviceForReader", "instance.Name", instance.Name)
-	metaLabels := res.LabelsForMetadata(readerDaemonSetName)
-	selectorLabels := res.LabelsForSelector(readerDaemonSetName, meteringCrType, instance.Name)
+	metaLabels := res.LabelsForMetadata(res.ServerServiceName)
+	selectorLabels := res.LabelsForSelector(res.ReaderDaemonSetName, meteringCrType, instance.Name)
 
 	reqLogger.Info("CS??? Entry")
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      serverServiceName,
+			Name:      res.ServerServiceName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},
@@ -651,9 +645,9 @@ func (r *ReconcileMetering) serviceForReader(instance *operatorv1alpha1.Metering
 // daemonForReader returns a Reader DaemonSet object
 func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering) *appsv1.DaemonSet {
 	reqLogger := log.WithValues("func", "daemonForReader", "instance.Name", instance.Name)
-	metaLabels := res.LabelsForMetadata(readerDaemonSetName)
-	selectorLabels := res.LabelsForSelector(readerDaemonSetName, meteringCrType, instance.Name)
-	podLabels := res.LabelsForPodMetadata(readerDaemonSetName, meteringCrType, instance.Name)
+	metaLabels := res.LabelsForMetadata(res.ReaderDaemonSetName)
+	selectorLabels := res.LabelsForSelector(res.ReaderDaemonSetName, meteringCrType, instance.Name)
+	podLabels := res.LabelsForPodMetadata(res.ReaderDaemonSetName, meteringCrType, instance.Name)
 
 	var image string
 	if instance.Spec.ImageRegistry == "" {
@@ -664,39 +658,35 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 		reqLogger.Info("CS??? rdrImage=" + image)
 	}
 
-	rdrSecretCheckContainer := res.RdrSecretCheckContainer
+	rdrSecretCheckContainer := res.BaseSecretCheckContainer
 	rdrSecretCheckContainer.Image = image
-	rdrSecretCheckContainer.Name = readerDaemonSetName + "-secret-check"
+	rdrSecretCheckContainer.Name = res.ReaderDaemonSetName + "-secret-check"
+	// set the SECRET_LIST env var
+	rdrSecretCheckContainer.Env[res.SecretListVarNdx].Value = res.APICertZecretName + " " + res.CommonZecretCheckNames
+	// set the SECRET_DIR_LIST env var
+	rdrSecretCheckContainer.Env[res.SecretDirVarNdx].Value = res.APICertZecretName + " " + res.CommonZecretCheckDirs
+	rdrSecretCheckContainer.VolumeMounts = append(res.CommonSecretCheckVolumeMounts, res.APICertVolumeMount)
 
-	rdrInitContainer := res.RdrInitContainer
+	rdrInitContainer := res.BaseInitContainer
 	rdrInitContainer.Image = image
-	rdrInitContainer.Name = readerDaemonSetName + "-init"
+	rdrInitContainer.Name = res.ReaderDaemonSetName + "-init"
 	rdrInitContainer.Env = append(rdrInitContainer.Env, res.CommonEnvVars...)
 	rdrInitContainer.Env = append(rdrInitContainer.Env, mongoDBEnvVars...)
 
 	rdrMainContainer := res.RdrMainContainer
 	rdrMainContainer.Image = image
-	rdrMainContainer.Name = readerDaemonSetName
+	rdrMainContainer.Name = res.ReaderDaemonSetName
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.CommonEnvVars...)
+	rdrMainContainer.Env = append(rdrMainContainer.Env, res.IAMEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, mongoDBEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, clusterEnvVars...)
 	rdrMainContainer.VolumeMounts = append(rdrMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
-	apiCertVolume := corev1.Volume{
-		Name: "icp-metering-api-certs",
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName:  "icp-metering-api-secret",
-				DefaultMode: &res.DefaultMode,
-				Optional:    &res.TrueVar,
-			},
-		},
-	}
-	rdrVolumes := append(commonVolumes, apiCertVolume)
+	rdrVolumes := append(commonVolumes, res.APICertVolume)
 
 	daemon := &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      readerDaemonSetName,
+			Name:      res.ReaderDaemonSetName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},
@@ -767,68 +757,4 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 		return nil
 	}
 	return daemon
-}
-
-// certificateForAPI returns a Certificate object
-func (r *ReconcileMetering) certificateForAPI(instance *operatorv1alpha1.Metering) *certmgr.Certificate {
-	reqLogger := log.WithValues("func", "certificateForAPI", "instance.Name", instance.Name)
-	reqLogger.Info("CS??? Entry")
-	selectorLabels := res.LabelsForSelector(readerDaemonSetName, meteringCrType, instance.Name)
-
-	certificate := &certmgr.Certificate{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      apiCertificateName,
-			Labels:    selectorLabels,
-			Namespace: instance.Namespace,
-		},
-		Spec: certmgr.CertificateSpec{
-			CommonName: serverServiceName,
-			SecretName: "icp-metering-api-secret",
-			IsCA:       false,
-			DNSNames: []string{
-				serverServiceName,
-				serverServiceName + "." + instance.Namespace + ".svc.cluster.local",
-			},
-			Organization: []string{"IBM"},
-			IssuerRef: certmgr.ObjectReference{
-				Name: "icp-ca-issuer",
-				Kind: certmgr.ClusterIssuerKind,
-			},
-		},
-	}
-
-	// Set Metering instance as the owner and controller of the Certificate
-	err := controllerutil.SetControllerReference(instance, certificate, r.scheme)
-	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for Certificate")
-		return nil
-	}
-	return certificate
-}
-
-func buildClusterEnvVars(instance *operatorv1alpha1.Metering) []corev1.EnvVar {
-	reqLogger := log.WithValues("func", "buildClusterEnvVars", "instance.Name", instance.Name)
-	reqLogger.Info("CS??? Entry")
-
-	var iamNamespace string
-	if instance.Spec.IAMnamespace != "" {
-		reqLogger.Info("CS??? IAMnamespace=" + instance.Spec.IAMnamespace)
-		iamNamespace = instance.Spec.IAMnamespace
-	} else {
-		reqLogger.Info("CS??? IAMnamespace is blank, use instance")
-		iamNamespace = instance.Namespace
-	}
-
-	clusterEnvVars := []corev1.EnvVar{
-		{
-			Name:  "CLUSTER_NAME",
-			Value: instance.Spec.External.ClusterName,
-		},
-		{
-			Name:  "IAM_NAMESPACE",
-			Value: iamNamespace,
-		},
-	}
-
-	return clusterEnvVars
 }
