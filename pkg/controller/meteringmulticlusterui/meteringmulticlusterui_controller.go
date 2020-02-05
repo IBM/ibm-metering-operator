@@ -364,6 +364,7 @@ func (r *ReconcileMeteringMultiClusterUI) deploymentForMCMUI(instance *operatorv
 					Labels: podLabels,
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName:            res.GetServiceAccountName(),
 					NodeSelector:                  res.ManagementNodeSelector,
 					TerminationGracePeriodSeconds: &res.Seconds60,
 					Affinity: &corev1.Affinity{

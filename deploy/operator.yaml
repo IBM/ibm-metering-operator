@@ -31,3 +31,7 @@ spec:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
               value: "metering-operator"
+            - name: SA_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.serviceAccountName              

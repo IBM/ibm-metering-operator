@@ -512,6 +512,7 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 					Labels: podLabels,
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName:            res.GetServiceAccountName(),
 					NodeSelector:                  res.ManagementNodeSelector,
 					TerminationGracePeriodSeconds: &res.Seconds60,
 					Affinity: &corev1.Affinity{
@@ -708,6 +709,7 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 					Labels: podLabels,
 				},
 				Spec: corev1.PodSpec{
+					ServiceAccountName:            res.GetServiceAccountName(),
 					TerminationGracePeriodSeconds: &res.Seconds60,
 					Affinity: &corev1.Affinity{
 						NodeAffinity: &corev1.NodeAffinity{
