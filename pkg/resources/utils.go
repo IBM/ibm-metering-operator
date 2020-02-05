@@ -19,6 +19,8 @@ package resources
 import (
 	certmgr "github.com/ibm/metering-operator/pkg/apis/certmanager/v1alpha1"
 
+	"os"
+
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/networking/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -475,4 +477,16 @@ func GetPodNames(pods []corev1.Pod) []string {
 		reqLogger.Info("CS??? pod name=" + pod.Name)
 	}
 	return podNames
+}
+
+// returns the service account name or default if it is not set in the environment
+func GetServiceAccountName() string {
+
+	sa := "default"
+
+	envSa := os.Getenv("SA_NAME")
+	if len(envSa) > 0 {
+		sa = envSa
+	}
+	return sa
 }
