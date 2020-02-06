@@ -72,6 +72,7 @@ rules:
   - '*'
   - meteringuis
   - meteringmulticlusteruis
+  - meteringsenders
   verbs:
   - create
   - delete

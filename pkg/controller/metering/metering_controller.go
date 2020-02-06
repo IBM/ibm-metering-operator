@@ -153,7 +153,6 @@ var _ reconcile.Reconciler = &ReconcileMetering{}
 
 // ReconcileMetering reconciles a Metering object
 type ReconcileMetering struct {
-	// TODO: Clarify the split client
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
@@ -211,7 +210,8 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
 		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
 	// set common cluster env vars based on the instance
-	clusterEnvVars = res.BuildCommonClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace, instance.Spec.External.ClusterName)
+	clusterEnvVars = res.BuildCommonClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace,
+		instance.Spec.External.ClusterName, res.ClusterNameVar)
 
 	// set common Volumes based on the instance
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
@@ -477,21 +477,21 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	dmInitContainer := res.BaseInitContainer
 	dmInitContainer.Image = dmImage
 	dmInitContainer.Name = res.DmDeploymentName + "-init"
-	envVar := corev1.EnvVar{
+	verboseEnvVar := corev1.EnvVar{
 		Name:  "MCM_VERBOSE",
 		Value: "true",
 	}
+	dmInitContainer.Env = append(dmInitContainer.Env, verboseEnvVar)
 	dmInitContainer.Env = append(dmInitContainer.Env, res.CommonEnvVars...)
 	dmInitContainer.Env = append(dmInitContainer.Env, mongoDBEnvVars...)
-	dmInitContainer.Env = append(dmInitContainer.Env, envVar)
 
 	dmMainContainer := res.DmMainContainer
 	dmMainContainer.Image = dmImage
 	dmMainContainer.Name = res.DmDeploymentName
-	dmMainContainer.Env = append(dmMainContainer.Env, res.CommonEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, res.IAMEnvVars...)
-	dmMainContainer.Env = append(dmMainContainer.Env, mongoDBEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, clusterEnvVars...)
+	dmMainContainer.Env = append(dmMainContainer.Env, res.CommonEnvVars...)
+	dmMainContainer.Env = append(dmMainContainer.Env, mongoDBEnvVars...)
 	dmMainContainer.VolumeMounts = append(dmMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
 	dmVolumes := append(commonVolumes, res.ReceiverCertVolume)
@@ -514,6 +514,9 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
 					NodeSelector:                  res.ManagementNodeSelector,
+					HostNetwork:                   false,
+					HostPID:                       false,
+					HostIPC:                       false,
 					TerminationGracePeriodSeconds: &res.Seconds60,
 					Affinity: &corev1.Affinity{
 						NodeAffinity: &corev1.NodeAffinity{
@@ -677,10 +680,10 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 	rdrMainContainer := res.RdrMainContainer
 	rdrMainContainer.Image = image
 	rdrMainContainer.Name = res.ReaderDaemonSetName
-	rdrMainContainer.Env = append(rdrMainContainer.Env, res.CommonEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.IAMEnvVars...)
-	rdrMainContainer.Env = append(rdrMainContainer.Env, mongoDBEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, clusterEnvVars...)
+	rdrMainContainer.Env = append(rdrMainContainer.Env, res.CommonEnvVars...)
+	rdrMainContainer.Env = append(rdrMainContainer.Env, mongoDBEnvVars...)
 	rdrMainContainer.VolumeMounts = append(rdrMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
 	rdrVolumes := append(commonVolumes, res.APICertVolume)
@@ -710,6 +713,9 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
+					HostNetwork:                   false,
+					HostPID:                       false,
+					HostIPC:                       false,
 					TerminationGracePeriodSeconds: &res.Seconds60,
 					Affinity: &corev1.Affinity{
 						NodeAffinity: &corev1.NodeAffinity{
