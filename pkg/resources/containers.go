@@ -33,6 +33,8 @@ const DefaultUIImageName = "metering-ui"
 const DefaultUIImageTag = "3.4.0"
 const DefaultMcmUIImageName = "metering-mcmui"
 const DefaultMcmUIImageTag = "3.4.0"
+const DefaultSenderImageName = "metering-data-manager"
+const DefaultSenderImageTag = "3.4.0"
 
 var TrueVar = true
 var FalseVar = false
@@ -48,6 +50,10 @@ var memory128 = resource.NewQuantity(128*1024*1024, resource.BinarySI)   // 128M
 var memory256 = resource.NewQuantity(256*1024*1024, resource.BinarySI)   // 256Mi
 var memory512 = resource.NewQuantity(512*1024*1024, resource.BinarySI)   // 512Mi
 var memory2560 = resource.NewQuantity(2560*1024*1024, resource.BinarySI) // 2560Mi
+
+const ClusterNameVar = "CLUSTER_NAME"
+const HCClusterNameVar = "HC_CLUSTER_NAME"
+const DefaultClusterName = "mycluster"
 
 var CommonEnvVars = []corev1.EnvVar{
 	{
@@ -79,6 +85,10 @@ var secretCheckCmd = `set -- $SECRET_LIST; ` +
 	`  shift; ` +
 	`done; ` +
 	`echo ` + "`date`" + `: All required secrets exist`
+
+var SenderSecretCheckCmd = secretCheckCmd + ";" +
+	`echo ` + "`date`" + `: Further, checking for kubeConfig secret...;` +
+	`node /datamanager/lib/metering_init.js kubeconfig_secretcheck `
 
 var CommonZecretCheckNames = "icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert"
 
@@ -234,6 +244,7 @@ var Log4jsVolumeMount = corev1.VolumeMount{
 
 const SecretListVarNdx = 0
 const SecretDirVarNdx = 1
+const SecretCheckCmdNdx = 2
 
 var BaseSecretCheckContainer = corev1.Container{
 	Image:           "metering-data-manager",
@@ -508,6 +519,110 @@ var RdrMainContainer = corev1.Container{
 		{ContainerPort: 3000},
 		{ContainerPort: 4000},
 		{ContainerPort: 4002},
+	},
+	LivenessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/livenessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3000,
+				},
+				Scheme: "",
+			},
+		},
+		InitialDelaySeconds: 305,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       300,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
+	ReadinessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/readinessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3000,
+				},
+				Scheme: "",
+			},
+		},
+		InitialDelaySeconds: 15,
+		TimeoutSeconds:      15,
+		PeriodSeconds:       30,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
+	Resources: corev1.ResourceRequirements{
+		Limits: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    *cpu500,
+			corev1.ResourceMemory: *memory512},
+		Requests: map[corev1.ResourceName]resource.Quantity{
+			corev1.ResourceCPU:    *cpu100,
+			corev1.ResourceMemory: *memory128},
+	},
+	SecurityContext: &commonSecurityContext,
+}
+
+var SenderMainContainer = corev1.Container{
+	Image:           "metering-data-manager",
+	Name:            "metering-sender",
+	ImagePullPolicy: corev1.PullAlways,
+	// CommonMainVolumeMounts will be added by the controller
+	VolumeMounts: []corev1.VolumeMount{
+		LoglevelVolumeMount,
+	},
+	// CommonEnvVars, IAMEnvVars and mongoDBEnvVars will be added by the controller
+	Env: []corev1.EnvVar{
+		{
+			Name:  "METERING_API_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_SELFMETER_PURGER_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_REPORTER2_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_PURGER2_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_PREAGGREGATOR_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_METRICS_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_READER_APIENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_MCM_RECEIVER_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_MCMREADER_ENABLED",
+			Value: "false",
+		},
+		{
+			Name:  "HC_DM_MCM_SENDER_ENABLED",
+			Value: "true",
+		},
+		{
+			Name:  "HC_DM_IS_ICP",
+			Value: "true",
+		},
+		{
+			Name:  "HC_DM_ALLOW_TEST",
+			Value: "false",
+		},
 	},
 	LivenessProbe: &corev1.Probe{
 		Handler: corev1.Handler{

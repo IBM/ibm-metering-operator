@@ -51,6 +51,7 @@ const ReaderDaemonSetName = "metering-reader"
 const ServerServiceName = "metering-server"
 const UIDeploymentName = "metering-ui"
 const McmDeploymentName = "metering-mcmui"
+const SenderDeploymentName = "metering-sender"
 const apiIngressPort int32 = 4000
 
 //CS??? move UI and MCM names here
@@ -266,7 +267,7 @@ func BuildMongoDBEnvVars(host string, port string, usernameSecret string, userna
 	return mongoDBEnvVars
 }
 
-func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, clusterName string) []corev1.EnvVar {
+func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceClusterName, clusterNameVar string) []corev1.EnvVar {
 	reqLogger := log.WithValues("func", "BuildCommonClusterEnvVars")
 	reqLogger.Info("CS??? Entry")
 
@@ -278,14 +279,22 @@ func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, clusterN
 		reqLogger.Info("CS??? IAMnamespace is blank, use instance=" + instanceNamespace)
 		iamNamespace = instanceNamespace
 	}
+
+	var clusterName string
+	if instanceClusterName != "" {
+		clusterName = instanceClusterName
+	} else {
+		clusterName = DefaultClusterName
+	}
+
 	clusterEnvVars := []corev1.EnvVar{
-		{
-			Name:  "CLUSTER_NAME",
-			Value: clusterName,
-		},
 		{
 			Name:  "IAM_NAMESPACE",
 			Value: iamNamespace,
+		},
+		{
+			Name:  clusterNameVar,
+			Value: clusterName,
 		},
 	}
 	return clusterEnvVars
@@ -316,7 +325,7 @@ func BuildUIClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceIngr
 		ingressNamespace = instanceNamespace
 	}
 
-	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, clusterName)
+	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace, clusterName, ClusterNameVar)
 
 	// CS??? https://icp-management-ingress:443
 	// CS??? https://icp-management-ingress.NAMESPACE.svc.cluster.local:443
@@ -357,8 +366,37 @@ func BuildUIClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceIngr
 	return clusterEnvVars
 }
 
+func BuildSenderClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceClusterNamespace,
+	clusterName, hubKubeConfigSecret string) []corev1.EnvVar {
+
+	reqLogger := log.WithValues("func", "BuildSenderClusterEnvVars")
+	reqLogger.Info("CS??? Entry")
+
+	var clusterNamespace string
+	if instanceClusterNamespace != "" {
+		reqLogger.Info("CS??? clusterNamespace=" + instanceClusterNamespace)
+		clusterNamespace = instanceClusterNamespace
+	} else {
+		reqLogger.Info("CS??? clusterNamespace is blank, use instance=" + instanceNamespace)
+		clusterNamespace = instanceNamespace
+	}
+
+	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, clusterName, HCClusterNameVar)
+	namespaceEnvVar := corev1.EnvVar{
+		Name:  "HC_CLUSTER_NAMESPACE",
+		Value: clusterNamespace,
+	}
+	hubEnvVar := corev1.EnvVar{
+		Name:  "HC_HUB_CONFIG",
+		Value: hubKubeConfigSecret,
+	}
+	clusterEnvVars = append(clusterEnvVars, namespaceEnvVar, hubEnvVar)
+
+	return clusterEnvVars
+}
+
 // set loglevelType to "log4js" when building volumes for metering-mcmui.
-// set loglevelType to "loglevel" when building volumes for metering-mcmui.
+// set loglevelType to "loglevel" when building volumes for any other component.
 func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
 	passwordSecret, loglevelPrefix, loglevelType string) []corev1.Volume {
 

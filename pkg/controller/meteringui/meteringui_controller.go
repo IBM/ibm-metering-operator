@@ -339,11 +339,11 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	uiMainContainer := res.UIMainContainer
 	uiMainContainer.Image = uiImage
 	uiMainContainer.Name = res.UIDeploymentName
-	uiMainContainer.Env = append(uiMainContainer.Env, res.CommonEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, res.IAMEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, res.UIEnvVars...)
-	uiMainContainer.Env = append(uiMainContainer.Env, mongoDBEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, clusterEnvVars...)
+	uiMainContainer.Env = append(uiMainContainer.Env, res.CommonEnvVars...)
+	uiMainContainer.Env = append(uiMainContainer.Env, mongoDBEnvVars...)
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
 	uiVolumes := append(commonVolumes, res.APIKeyVolume, res.PlatformOidcVolume)
@@ -366,6 +366,9 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
 					NodeSelector:                  res.ManagementNodeSelector,
+					HostNetwork:                   false,
+					HostPID:                       false,
+					HostIPC:                       false,
 					TerminationGracePeriodSeconds: &res.Seconds60,
 					Affinity: &corev1.Affinity{
 						NodeAffinity: &corev1.NodeAffinity{

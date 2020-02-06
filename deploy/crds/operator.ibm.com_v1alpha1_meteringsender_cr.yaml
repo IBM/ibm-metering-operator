@@ -1,0 +1,23 @@
+apiVersion: operator.ibm.com/v1alpha1
+kind: MeteringSender
+metadata:
+  name: example-meteringsender
+spec:
+  # Add fields here
+  operatorVersion: "3.5.0"
+  imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
+  iamNamespace: kube-system
+  sender:
+    #imageTagPostfix: -20200114
+    clusterName: mycluster
+    clusterNamespace: kube-system
+    hubKubeConfigSecret: multicluster-endpoint/endpoint-connmgr-hub-kubeconfig
+  mongodb:
+    host: mongodb
+    port: "27017"
+    usernameSecret: icp-mongodb-admin
+    usernameKey: user
+    passwordSecret: icp-mongodb-admin
+    passwordKey: password
+    clustercertssecret: cluster-ca-cert
+    clientcertssecret: icp-mongodb-client-cert

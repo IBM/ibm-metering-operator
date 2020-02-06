@@ -339,11 +339,11 @@ func (r *ReconcileMeteringMultiClusterUI) deploymentForMCMUI(instance *operatorv
 	mcmMainContainer := res.McmUIMainContainer
 	mcmMainContainer.Image = mcmImage
 	mcmMainContainer.Name = res.McmDeploymentName
-	mcmMainContainer.Env = append(mcmMainContainer.Env, res.CommonEnvVars...)
 	mcmMainContainer.Env = append(mcmMainContainer.Env, res.IAMEnvVars...)
 	mcmMainContainer.Env = append(mcmMainContainer.Env, res.UIEnvVars...)
-	mcmMainContainer.Env = append(mcmMainContainer.Env, mongoDBEnvVars...)
 	mcmMainContainer.Env = append(mcmMainContainer.Env, clusterEnvVars...)
+	mcmMainContainer.Env = append(mcmMainContainer.Env, res.CommonEnvVars...)
+	mcmMainContainer.Env = append(mcmMainContainer.Env, mongoDBEnvVars...)
 	mcmMainContainer.VolumeMounts = append(mcmMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
 	mcmVolumes := append(commonVolumes, res.APIKeyVolume, res.PlatformOidcVolume)
@@ -366,6 +366,9 @@ func (r *ReconcileMeteringMultiClusterUI) deploymentForMCMUI(instance *operatorv
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
 					NodeSelector:                  res.ManagementNodeSelector,
+					HostNetwork:                   false,
+					HostPID:                       false,
+					HostIPC:                       false,
 					TerminationGracePeriodSeconds: &res.Seconds60,
 					Affinity: &corev1.Affinity{
 						NodeAffinity: &corev1.NodeAffinity{
