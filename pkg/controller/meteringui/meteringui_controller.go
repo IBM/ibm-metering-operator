@@ -319,22 +319,18 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 		reqLogger.Info("CS??? uiImage=" + uiImage)
 	}
 
-	uiSecretCheckContainer := res.BaseSecretCheckContainer
-	uiSecretCheckContainer.Image = dmImage
-	uiSecretCheckContainer.Name = res.UIDeploymentName + "-secret-check"
 	// set the SECRET_LIST env var
-	uiSecretCheckContainer.Env[res.SecretListVarNdx].Value = res.APIKeyZecretName + " " +
-		res.PlatformOidcZecretName + " " + res.CommonZecretCheckNames
+	nameList := res.APIKeyZecretName + " " + res.PlatformOidcZecretName + " " + res.CommonZecretCheckNames
 	// set the SECRET_DIR_LIST env var
-	uiSecretCheckContainer.Env[res.SecretDirVarNdx].Value = res.APIKeyZecretName + " " +
-		res.PlatformOidcZecretName + " " + res.CommonZecretCheckDirs
-	uiSecretCheckContainer.VolumeMounts = append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
+	dirList := res.APIKeyZecretName + " " + res.PlatformOidcZecretName + " " + res.CommonZecretCheckDirs
+	volumeMounts := append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
+	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, dmImage,
+		res.SecretCheckCmd, nameList, dirList, volumeMounts)
 
-	uiInitContainer := res.BaseInitContainer
-	uiInitContainer.Image = dmImage
-	uiInitContainer.Name = res.UIDeploymentName + "-init"
-	uiInitContainer.Env = append(uiInitContainer.Env, res.CommonEnvVars...)
-	uiInitContainer.Env = append(uiInitContainer.Env, mongoDBEnvVars...)
+	initEnvVars := []corev1.EnvVar{}
+	initEnvVars = append(initEnvVars, res.CommonEnvVars...)
+	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
+	uiInitContainer := res.BuildInitContainer(res.UIDeploymentName, dmImage, initEnvVars)
 
 	uiMainContainer := res.UIMainContainer
 	uiMainContainer.Image = uiImage

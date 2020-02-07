@@ -73,7 +73,7 @@ var IAMEnvVars = []corev1.EnvVar{
 	},
 }
 
-var secretCheckCmd = `set -- $SECRET_LIST; ` +
+var SecretCheckCmd = `set -- $SECRET_LIST; ` +
 	`for secretDirName in $SECRET_DIR_LIST; do` +
 	`  while true; do` +
 	`    echo ` + "`date`" + `: Checking for secret $1;` +
@@ -86,7 +86,7 @@ var secretCheckCmd = `set -- $SECRET_LIST; ` +
 	`done; ` +
 	`echo ` + "`date`" + `: All required secrets exist`
 
-var SenderSecretCheckCmd = secretCheckCmd + ";" +
+var SenderSecretCheckCmd = SecretCheckCmd + ";" +
 	`echo ` + "`date`" + `: Further, checking for kubeConfig secret...;` +
 	`node /datamanager/lib/metering_init.js kubeconfig_secretcheck `
 
@@ -240,53 +240,6 @@ var LoglevelVolumeMount = corev1.VolumeMount{
 var Log4jsVolumeMount = corev1.VolumeMount{
 	Name:      "log4js",
 	MountPath: "/etc/config",
-}
-
-const SecretListVarNdx = 0
-const SecretDirVarNdx = 1
-const SecretCheckCmdNdx = 2
-
-var BaseSecretCheckContainer = corev1.Container{
-	Image:           "metering-data-manager",
-	Name:            "metering-secret-check",
-	ImagePullPolicy: corev1.PullAlways,
-	Command: []string{
-		"sh",
-		"-c",
-		secretCheckCmd,
-	},
-	Env: []corev1.EnvVar{
-		{
-			Name: "SECRET_LIST",
-			// CommonZecretCheckNames will be added by the controller
-			Value: "",
-		},
-		{
-			// CommonZecretCheckDirs will be added by the controller
-			Name:  "SECRET_DIR_LIST",
-			Value: "",
-		},
-	},
-	// CommonSecretCheckVolumeMounts will be added by the controller
-	VolumeMounts:    []corev1.VolumeMount{},
-	Resources:       commonInitResources,
-	SecurityContext: &commonSecurityContext,
-}
-
-var BaseInitContainer = corev1.Container{
-	Image:           "metering-data-manager",
-	Name:            "metering-init",
-	ImagePullPolicy: corev1.PullAlways,
-	Command: []string{
-		"node",
-		"/datamanager/lib/metering_init.js",
-		"verifyOnlyMongo",
-	},
-	// CommonEnvVars and mongoDBEnvVars will be added by the controller
-	Env:             []corev1.EnvVar{},
-	VolumeMounts:    commonInitVolumeMounts,
-	Resources:       commonInitResources,
-	SecurityContext: &commonSecurityContext,
 }
 
 var DmMainContainer = corev1.Container{

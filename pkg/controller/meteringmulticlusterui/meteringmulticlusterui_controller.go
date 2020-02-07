@@ -319,22 +319,18 @@ func (r *ReconcileMeteringMultiClusterUI) deploymentForMCMUI(instance *operatorv
 		reqLogger.Info("CS??? mcmImage=" + mcmImage)
 	}
 
-	mcmSecretCheckContainer := res.BaseSecretCheckContainer
-	mcmSecretCheckContainer.Image = dmImage
-	mcmSecretCheckContainer.Name = res.McmDeploymentName + "-secret-check"
 	// set the SECRET_LIST env var
-	mcmSecretCheckContainer.Env[res.SecretListVarNdx].Value = res.APIKeyZecretName + " " +
-		res.PlatformOidcZecretName + " " + res.CommonZecretCheckNames
+	nameList := res.APIKeyZecretName + " " + res.PlatformOidcZecretName + " " + res.CommonZecretCheckNames
 	// set the SECRET_DIR_LIST env var
-	mcmSecretCheckContainer.Env[res.SecretDirVarNdx].Value = res.APIKeyZecretName + " " +
-		res.PlatformOidcZecretName + " " + res.CommonZecretCheckDirs
-	mcmSecretCheckContainer.VolumeMounts = append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
+	dirList := res.APIKeyZecretName + " " + res.PlatformOidcZecretName + " " + res.CommonZecretCheckDirs
+	volumeMounts := append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
+	mcmSecretCheckContainer := res.BuildSecretCheckContainer(res.McmDeploymentName, dmImage,
+		res.SecretCheckCmd, nameList, dirList, volumeMounts)
 
-	mcmInitContainer := res.BaseInitContainer
-	mcmInitContainer.Image = dmImage
-	mcmInitContainer.Name = res.McmDeploymentName + "-init"
-	mcmInitContainer.Env = append(mcmInitContainer.Env, res.CommonEnvVars...)
-	mcmInitContainer.Env = append(mcmInitContainer.Env, mongoDBEnvVars...)
+	initEnvVars := []corev1.EnvVar{}
+	initEnvVars = append(initEnvVars, res.CommonEnvVars...)
+	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
+	mcmInitContainer := res.BuildInitContainer(res.McmDeploymentName, dmImage, initEnvVars)
 
 	mcmMainContainer := res.McmUIMainContainer
 	mcmMainContainer.Image = mcmImage
