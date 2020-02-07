@@ -238,31 +238,28 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 		reqLogger.Info("CS??? senderImage=" + senderImage)
 	}
 
-	senderSecretCheckContainer := res.BaseSecretCheckContainer
-	senderSecretCheckContainer.Image = senderImage
-	senderSecretCheckContainer.Name = res.SenderDeploymentName + "-secret-check"
+	// set the SECRET_LIST env var
+	nameList := res.CommonZecretCheckNames
+	// set the SECRET_DIR_LIST env var
+	dirList := res.CommonZecretCheckDirs
+	volumeMounts := res.CommonSecretCheckVolumeMounts
+	senderSecretCheckContainer := res.BuildSecretCheckContainer(res.SenderDeploymentName, senderImage,
+		res.SenderSecretCheckCmd, nameList, dirList, volumeMounts)
 	hubEnvVar := corev1.EnvVar{
 		Name:  "HC_HUB_CONFIG",
 		Value: instance.Spec.Sender.HubKubeConfigSecret,
 	}
-	// set the SECRET_LIST env var
-	senderSecretCheckContainer.Env[res.SecretListVarNdx].Value = res.CommonZecretCheckNames
-	// set the SECRET_DIR_LIST env var
-	senderSecretCheckContainer.Env[res.SecretDirVarNdx].Value = res.CommonZecretCheckDirs
 	senderSecretCheckContainer.Env = append(senderSecretCheckContainer.Env, hubEnvVar)
-	senderSecretCheckContainer.Command[res.SecretCheckCmdNdx] = res.SenderSecretCheckCmd
-	senderSecretCheckContainer.VolumeMounts = res.CommonSecretCheckVolumeMounts
 
-	senderInitContainer := res.BaseInitContainer
-	senderInitContainer.Image = senderImage
-	senderInitContainer.Name = res.SenderDeploymentName + "-init"
-	verboseEnvVar := corev1.EnvVar{
-		Name:  "MCM_VERBOSE",
-		Value: "true",
+	initEnvVars := []corev1.EnvVar{
+		{
+			Name:  "MCM_VERBOSE",
+			Value: "true",
+		},
 	}
-	senderInitContainer.Env = append(senderInitContainer.Env, verboseEnvVar)
-	senderInitContainer.Env = append(senderInitContainer.Env, res.CommonEnvVars...)
-	senderInitContainer.Env = append(senderInitContainer.Env, mongoDBEnvVars...)
+	initEnvVars = append(initEnvVars, res.CommonEnvVars...)
+	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
+	senderInitContainer := res.BuildInitContainer(res.SenderDeploymentName, senderImage, initEnvVars)
 
 	senderMainContainer := res.SenderMainContainer
 	senderMainContainer.Image = senderImage

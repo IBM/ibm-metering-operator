@@ -475,6 +475,59 @@ func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
 	return commonVolumes
 }
 
+func BuildSecretCheckContainer(deploymentName, imageName, checkerCommand,
+	secretNames, secretDirs string, volumeMounts []corev1.VolumeMount) corev1.Container {
+
+	containerName := deploymentName + "-secret-check"
+	var secretCheckContainer = corev1.Container{
+		Image:           imageName,
+		Name:            containerName,
+		ImagePullPolicy: corev1.PullAlways,
+		Command: []string{
+			"sh",
+			"-c",
+			checkerCommand,
+		},
+		Env: []corev1.EnvVar{
+			{
+				Name: "SECRET_LIST",
+				// CommonZecretCheckNames will be added by the controller
+				Value: secretNames,
+			},
+			{
+				// CommonZecretCheckDirs will be added by the controller
+				Name:  "SECRET_DIR_LIST",
+				Value: secretDirs,
+			},
+		},
+		// CommonSecretCheckVolumeMounts will be added by the controller
+		VolumeMounts:    volumeMounts,
+		Resources:       commonInitResources,
+		SecurityContext: &commonSecurityContext,
+	}
+	return secretCheckContainer
+}
+
+func BuildInitContainer(deploymentName, imageName string, envVars []corev1.EnvVar) corev1.Container {
+	containerName := deploymentName + "-init"
+	var initContainer = corev1.Container{
+		Image:           imageName,
+		Name:            containerName,
+		ImagePullPolicy: corev1.PullAlways,
+		Command: []string{
+			"node",
+			"/datamanager/lib/metering_init.js",
+			"verifyOnlyMongo",
+		},
+		// CommonEnvVars and mongoDBEnvVars will be added by the controller
+		Env:             envVars,
+		VolumeMounts:    commonInitVolumeMounts,
+		Resources:       commonInitResources,
+		SecurityContext: &commonSecurityContext,
+	}
+	return initContainer
+}
+
 // returns the labels associated with the resource being created
 func LabelsForMetadata(deploymentName string) map[string]string {
 	return map[string]string{"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": MeteringComponentName,
