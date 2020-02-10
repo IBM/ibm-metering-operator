@@ -191,21 +191,22 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	}
 
 	opVersion := instance.Spec.OperatorVersion
-	reqLogger.Info("got Metering instance, version=" + opVersion + ", checking Services")
+	reqLogger.Info("got Metering instance, version=" + opVersion)
+	reqLogger.Info("checking Services")
 	// Check if the DM and Reader Services already exist. If not, create a new one.
 	err = r.reconcileService(instance, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("got Services, checking Certificates")
+	reqLogger.Info("checking Certificates")
 	// Check if the Certificates already exist, if not create new ones
 	err = r.reconcileCertificate(instance, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("got Certificates, checking DM Deployment")
+	reqLogger.Info("checking DM Deployment")
 	// set common MongoDB env vars based on the instance
 	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
@@ -219,47 +220,83 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.DmDeploymentName, "loglevel")
 
 	// Check if the DM Deployment already exists, if not create a new one
-	newDeployment := r.deploymentForDataMgr(instance)
+	newDeployment, err := r.deploymentForDataMgr(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	currentDeployment := &appsv1.Deployment{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.DmDeploymentName, Namespace: instance.Namespace}, currentDeployment)
 	if err != nil && errors.IsNotFound(err) {
 		// Create a new deployment
 		reqLogger.Info("Creating a new DM Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil {
+		if err != nil && errors.IsAlreadyExists(err) {
+			// Already exists from previous reconcile, requeue
+			reqLogger.Info("DM Deployment already exists")
+			needToRequeue = true
+		} else if err != nil {
 			reqLogger.Error(err, "Failed to create new DM Deployment", "Deployment.Namespace", newDeployment.Namespace,
 				"Deployment.Name", newDeployment.Name)
 			return reconcile.Result{}, err
+		} else {
+			// Deployment created successfully - return and requeue
+			needToRequeue = true
 		}
-		// Deployment created successfully - return and requeue
-		needToRequeue = true
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get DM Deployment")
 		return reconcile.Result{}, err
+	} else {
+		// Found deployment, so send an update to k8s and let it determine if the resource has changed
+		reqLogger.Info("Updating DM Deployment")
+		currentDeployment.Spec = newDeployment.Spec
+		err = r.client.Update(context.TODO(), currentDeployment)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update DM Deployment", "Deployment.Namespace", currentDeployment.Namespace,
+				"Deployment.Name", currentDeployment.Name)
+			return reconcile.Result{}, err
+		}
 	}
 
-	reqLogger.Info("got DM Deployment, checking Rdr DaemonSet")
+	reqLogger.Info("checking Rdr DaemonSet")
 	// Check if the DaemonSet already exists, if not create a new one
-	newDaemonSet := r.daemonForReader(instance)
+	newDaemonSet, err := r.daemonForReader(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	currentDaemonSet := &appsv1.DaemonSet{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReaderDaemonSetName, Namespace: instance.Namespace}, currentDaemonSet)
 	if err != nil && errors.IsNotFound(err) {
 		// Create a new DaemonSet
 		reqLogger.Info("Creating a new Rdr DaemonSet", "DaemonSet.Namespace", newDaemonSet.Namespace, "DaemonSet.Name", newDaemonSet.Name)
 		err = r.client.Create(context.TODO(), newDaemonSet)
-		if err != nil {
+		if err != nil && errors.IsAlreadyExists(err) {
+			// Already exists from previous reconcile, requeue
+			reqLogger.Info("Rdr DaemonSet already exists")
+			needToRequeue = true
+		} else if err != nil {
 			reqLogger.Error(err, "Failed to create new Rdr DaemonSet", "DaemonSet.Namespace", newDaemonSet.Namespace,
 				"DaemonSet.Name", newDaemonSet.Name)
 			return reconcile.Result{}, err
+		} else {
+			// DaemonSet created successfully - return and requeue
+			needToRequeue = true
 		}
-		// DaemonSet created successfully - return and requeue
-		needToRequeue = true
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Rdr DaemonSet")
 		return reconcile.Result{}, err
+	} else {
+		// Found DaemonSet, so send an update to k8s and let it determine if the resource has changed
+		reqLogger.Info("Updating Rdr DaemonSet")
+		currentDaemonSet.Spec = newDaemonSet.Spec
+		err = r.client.Update(context.TODO(), currentDaemonSet)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update Rdr DaemonSet", "DaemonSet.Namespace", currentDaemonSet.Namespace,
+				"DaemonSet.Name", currentDaemonSet.Name)
+			return reconcile.Result{}, err
+		}
 	}
 
-	reqLogger.Info("got Rdr DaemonSet, checking API Ingresses")
+	reqLogger.Info("checking API Ingresses")
 	// Check if the Ingresses already exist, if not create new ones
 	err = r.reconcileIngress(instance, &needToRequeue)
 	if err != nil {
@@ -275,55 +312,9 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	reqLogger.Info("got API Ingresses, updating DM Deployment")
-	currentDeployment.Spec = newDeployment.Spec
-	err = r.client.Update(context.TODO(), currentDeployment)
-	if err != nil {
-		reqLogger.Error(err, "Failed to update DM Deployment", "Deployment.Namespace", currentDeployment.Namespace,
-			"Deployment.Name", currentDeployment.Name)
-		return reconcile.Result{}, err
-	}
-
-	reqLogger.Info("updating Rdr DaemonSet")
-	currentDaemonSet.Spec = newDaemonSet.Spec
-	err = r.client.Update(context.TODO(), currentDaemonSet)
-	if err != nil {
-		reqLogger.Error(err, "Failed to update Rdr DaemonSet", "DaemonSet.Namespace", currentDaemonSet.Namespace,
-			"DaemonSet.Name", currentDaemonSet.Name)
-		return reconcile.Result{}, err
-	}
-
-	/*CS???
-	// Ensure the image is the same as the spec
-	var expectedImage string
-	if instance.Spec.ImageRegistry == "" {
-		expectedImage = res.DefaultImageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag
-		reqLogger.Info("CS??? default expectedImage=" + expectedImage)
-	} else {
-		expectedImage = instance.Spec.ImageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag
-		reqLogger.Info("CS??? expectedImage=" + expectedImage)
-	}
-	if currentDeployment.Spec.Template.Spec.Containers[0].Image != expectedImage {
-		reqLogger.Info("CS??? curr image=" + currentDeployment.Spec.Template.Spec.Containers[0].Image + ", expect=" + expectedImage)
-		currentDeployment.Spec.Template.Spec.Containers[0].Image = expectedImage
-		reqLogger.Info("updating current DM deployment")
-		err = r.client.Update(context.TODO(), currentDeployment)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update DM Deployment", "Deployment.Namespace", currentDeployment.Namespace,
-				"Deployment.Name", currentDeployment.Name)
-			return reconcile.Result{}, err
-		}
-		// Spec updated - return and requeue
-		return reconcile.Result{Requeue: true}, nil
-	}
-	CS??? */
-
-	//CS??? reqLogger.Info("CS??? checking current Rdr DaemonSet")
-
 	reqLogger.Info("Updating Metering status")
 	// Update the Metering status with the pod names.
 	// List the pods for this instance's Deployment and DaemonSet
-	reqLogger.Info("CS??? get all pod names")
 	podNames, err := r.getAllPodNames(instance)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list pods")
@@ -341,7 +332,9 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 	}
 
-	reqLogger.Info("CS??? all done")
+	reqLogger.Info("Reconciliation completed")
+	// since we updated the status in the Metering CR, sleep 5 seconds to allow the CR to be refreshed.
+	time.Sleep(5 * time.Second)
 	return reconcile.Result{}, nil
 }
 
@@ -352,45 +345,83 @@ func (r *ReconcileMetering) reconcileService(instance *operatorv1alpha1.Metering
 
 	reqLogger.Info("checking DM Service")
 	// Check if the DataManager Service already exists, if not create a new one
-	dmService := &corev1.Service{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: res.DmDeploymentName, Namespace: instance.Namespace}, dmService)
+	newDmService, err := r.serviceForDataMgr(instance)
+	if err != nil {
+		return err
+	}
+	currentDmService := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.DmDeploymentName, Namespace: instance.Namespace}, currentDmService)
 	if err != nil && errors.IsNotFound(err) {
-		// Define a new Service
-		newService := r.serviceForDataMgr(instance)
-		reqLogger.Info("Creating a new DM Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-		err = r.client.Create(context.TODO(), newService)
-		if err != nil {
-			reqLogger.Error(err, "Failed to create new DM Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
+		// Create a new Service
+		reqLogger.Info("Creating a new DM Service", "Service.Namespace", newDmService.Namespace, "Service.Name", newDmService.Name)
+		err = r.client.Create(context.TODO(), newDmService)
+		if err != nil && errors.IsAlreadyExists(err) {
+			// Already exists from previous reconcile, requeue
+			reqLogger.Info("DM Service already exists")
+			*needToRequeue = true
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to create new DM Service", "Service.Namespace", newDmService.Namespace, "Service.Name", newDmService.Name)
 			return err
+		} else {
+			// Service created successfully - return and requeue
+			*needToRequeue = true
 		}
-		// Service created successfully - return and requeue
-		*needToRequeue = true
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get DM Service")
 		return err
-	}
-
-	reqLogger.Info("got DM Service, checking Rdr Service")
-	// Check if the Reader Service already exists, if not create a new one
-	readerService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ServerServiceName, Namespace: instance.Namespace}, readerService)
-	if err != nil && errors.IsNotFound(err) {
-		// Define a new Service
-		newService := r.serviceForReader(instance)
-		reqLogger.Info("Creating a new Rdr Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-		err = r.client.Create(context.TODO(), newService)
+	} else {
+		// Found service, so send an update to k8s and let it determine if the resource has changed
+		reqLogger.Info("Updating DM Service")
+		// Can't copy the entire Spec because ClusterIP is immutable
+		currentDmService.Spec.Ports = newDmService.Spec.Ports
+		currentDmService.Spec.Selector = newDmService.Spec.Selector
+		err = r.client.Update(context.TODO(), currentDmService)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Rdr Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
+			reqLogger.Error(err, "Failed to update DM Service", "Deployment.Namespace", currentDmService.Namespace,
+				"Deployment.Name", currentDmService.Name)
 			return err
 		}
-		// Service created successfully - return and requeue
-		*needToRequeue = true
+	}
+
+	reqLogger.Info("checking Rdr Service")
+	// Check if the Reader Service already exists, if not create a new one
+	newRdrService, err := r.serviceForReader(instance)
+	if err != nil {
+		return err
+	}
+	currentRdrService := &corev1.Service{}
+	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ServerServiceName, Namespace: instance.Namespace}, currentRdrService)
+	if err != nil && errors.IsNotFound(err) {
+		// Create a new Service
+		reqLogger.Info("Creating a new Rdr Service", "Service.Namespace", newRdrService.Namespace, "Service.Name", newRdrService.Name)
+		err = r.client.Create(context.TODO(), newRdrService)
+		if err != nil && errors.IsAlreadyExists(err) {
+			// Already exists from previous reconcile, requeue
+			reqLogger.Info("Rdr Service already exists")
+			*needToRequeue = true
+		} else if err != nil {
+			reqLogger.Error(err, "Failed to create new Rdr Service", "Service.Namespace", newRdrService.Namespace, "Service.Name", newRdrService.Name)
+			return err
+		} else {
+			// Service created successfully - return and requeue
+			*needToRequeue = true
+		}
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Rdr Service")
 		return err
+	} else {
+		// Found service, so send an update to k8s and let it determine if the resource has changed
+		reqLogger.Info("Updating Rdr Service")
+		// Can't copy the entire Spec because ClusterIP is immutable
+		currentRdrService.Spec.Ports = newRdrService.Spec.Ports
+		currentRdrService.Spec.Selector = newRdrService.Spec.Selector
+		err = r.client.Update(context.TODO(), currentRdrService)
+		if err != nil {
+			reqLogger.Error(err, "Failed to update Rdr Service", "Deployment.Namespace", currentRdrService.Namespace,
+				"Deployment.Name", currentRdrService.Name)
+			return err
+		}
 	}
-	reqLogger.Info("got Rdr Service")
-
 	return nil
 }
 
@@ -401,31 +432,46 @@ func (r *ReconcileMetering) reconcileCertificate(instance *operatorv1alpha1.Mete
 
 	for _, certData := range certificateList {
 		reqLogger.Info("checking Certificate, name=" + certData.Name)
+		newCertificate := res.BuildCertificate(instance.Namespace, certData)
+		// Set Metering instance as the owner and controller of the Certificate
+		err := controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set owner for Certificate", "Certificate.Namespace", newCertificate.Namespace,
+				"Certificate.Name", newCertificate.Name)
+			return err
+		}
 		currentCertificate := &certmgr.Certificate{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{Name: certData.Name, Namespace: instance.Namespace}, currentCertificate)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: certData.Name, Namespace: instance.Namespace}, currentCertificate)
 		if err != nil && errors.IsNotFound(err) {
-			// Define a new Certificate
-			newCertificate := res.BuildCertificate(instance.Namespace, certData)
-			// Set Metering instance as the owner and controller of the Certificate
-			err = controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
-			if err != nil {
-				reqLogger.Error(err, "Failed to set owner for Certificate", "Certificate.Namespace", newCertificate.Namespace,
-					"Certificate.Name", newCertificate.Name)
-				return err
-			}
+			// Create a new Certificate
 			reqLogger.Info("Creating a new Certificate", "Certificate.Namespace", newCertificate.Namespace, "Certificate.Name", newCertificate.Name)
 			err = r.client.Create(context.TODO(), newCertificate)
-			if err != nil {
+			if err != nil && errors.IsAlreadyExists(err) {
+				// Already exists from previous reconcile, requeue
+				reqLogger.Info("Certificate already exists")
+				*needToRequeue = true
+			} else if err != nil {
 				reqLogger.Error(err, "Failed to create new Certificate", "Certificate.Namespace", newCertificate.Namespace,
 					"Certificate.Name", newCertificate.Name)
 				return err
+			} else {
+				// Certificate created successfully - return and requeue
+				*needToRequeue = true
 			}
-			// Certificate created successfully - return and requeue
-			*needToRequeue = true
 		} else if err != nil {
 			reqLogger.Error(err, "Failed to get Certificate, name="+certData.Name)
 			// CertManager might not be installed, so don't fail
 			//CS??? return err
+		} else {
+			// Found Certificate, so send an update to k8s and let it determine if the resource has changed
+			reqLogger.Info("Updating Certificate", "Certificate.Name", newCertificate.Name)
+			currentCertificate.Spec = newCertificate.Spec
+			err = r.client.Update(context.TODO(), currentCertificate)
+			if err != nil {
+				reqLogger.Error(err, "Failed to update Certificate", "Certificate.Namespace", newCertificate.Namespace,
+					"Certificate.Name", newCertificate.Name)
+				return err
+			}
 		}
 	}
 	return nil
@@ -438,37 +484,52 @@ func (r *ReconcileMetering) reconcileIngress(instance *operatorv1alpha1.Metering
 
 	for _, ingressData := range ingressList {
 		reqLogger.Info("checking API Ingress, name=" + ingressData.Name)
+		newIngress := res.BuildIngress(instance.Namespace, ingressData)
+		// Set Metering instance as the owner and controller of the Ingress
+		err := controllerutil.SetControllerReference(instance, newIngress, r.scheme)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set owner for API Ingress", "Ingress.Namespace", newIngress.Namespace,
+				"Ingress.Name", newIngress.Name)
+			return err
+		}
 		currentIngress := &netv1.Ingress{}
-		err := r.client.Get(context.TODO(), types.NamespacedName{Name: ingressData.Name, Namespace: instance.Namespace}, currentIngress)
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressData.Name, Namespace: instance.Namespace}, currentIngress)
 		if err != nil && errors.IsNotFound(err) {
-			// Define a new Ingress
-			newIngress := res.BuildIngress(instance.Namespace, ingressData)
-			// Set Metering instance as the owner and controller of the Ingress
-			err = controllerutil.SetControllerReference(instance, newIngress, r.scheme)
-			if err != nil {
-				reqLogger.Error(err, "Failed to set owner for API Ingress", "Ingress.Namespace", newIngress.Namespace,
-					"Ingress.Name", newIngress.Name)
-				return err
-			}
+			// Create a new Ingress
 			reqLogger.Info("Creating a new API Ingress", "Ingress.Namespace", newIngress.Namespace, "Ingress.Name", newIngress.Name)
 			err = r.client.Create(context.TODO(), newIngress)
-			if err != nil {
+			if err != nil && errors.IsAlreadyExists(err) {
+				// Already exists from previous reconcile, requeue
+				reqLogger.Info("API Ingress already exists")
+				*needToRequeue = true
+			} else if err != nil {
 				reqLogger.Error(err, "Failed to create new API Ingress", "Ingress.Namespace", newIngress.Namespace,
 					"Ingress.Name", newIngress.Name)
 				return err
+			} else {
+				// Ingress created successfully - return and requeue
+				*needToRequeue = true
 			}
-			// Ingress created successfully - return and requeue
-			*needToRequeue = true
 		} else if err != nil {
 			reqLogger.Error(err, "Failed to get API Ingress, name="+ingressData.Name)
 			return err
+		} else {
+			// Found Ingress, so send an update to k8s and let it determine if the resource has changed
+			reqLogger.Info("Updating API Ingress", "Ingress.Name", newIngress.Name)
+			currentIngress.Spec = newIngress.Spec
+			err = r.client.Update(context.TODO(), currentIngress)
+			if err != nil {
+				reqLogger.Error(err, "Failed to update API Ingress", "Ingress.Namespace", newIngress.Namespace,
+					"Ingress.Name", newIngress.Name)
+				return err
+			}
 		}
 	}
 	return nil
 }
 
 // deploymentForDataMgr returns a DataManager Deployment object
-func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Metering) *appsv1.Deployment {
+func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Metering) (*appsv1.Deployment, error) {
 	reqLogger := log.WithValues("func", "deploymentForDataMgr", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.DmDeploymentName)
 	selectorLabels := res.LabelsForSelector(res.DmDeploymentName, meteringCrType, instance.Name)
@@ -578,13 +639,13 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	err := controllerutil.SetControllerReference(instance, deployment, r.scheme)
 	if err != nil {
 		reqLogger.Error(err, "Failed to set owner for DM Deployment")
-		return nil
+		return nil, err
 	}
-	return deployment
+	return deployment, nil
 }
 
 // serviceForDataMgr returns a DataManager Service object
-func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Metering) *corev1.Service {
+func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Metering) (*corev1.Service, error) {
 	reqLogger := log.WithValues("func", "serviceForDataMgr", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.DmDeploymentName)
 	selectorLabels := res.LabelsForSelector(res.DmDeploymentName, meteringCrType, instance.Name)
@@ -611,13 +672,13 @@ func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Meterin
 	err := controllerutil.SetControllerReference(instance, service, r.scheme)
 	if err != nil {
 		reqLogger.Error(err, "Failed to set owner for DM Service")
-		return nil
+		return nil, err
 	}
-	return service
+	return service, nil
 }
 
 // serviceForReader returns a Reader Service object
-func (r *ReconcileMetering) serviceForReader(instance *operatorv1alpha1.Metering) *corev1.Service {
+func (r *ReconcileMetering) serviceForReader(instance *operatorv1alpha1.Metering) (*corev1.Service, error) {
 	reqLogger := log.WithValues("func", "serviceForReader", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.ServerServiceName)
 	selectorLabels := res.LabelsForSelector(res.ReaderDaemonSetName, meteringCrType, instance.Name)
@@ -657,13 +718,13 @@ func (r *ReconcileMetering) serviceForReader(instance *operatorv1alpha1.Metering
 	err := controllerutil.SetControllerReference(instance, service, r.scheme)
 	if err != nil {
 		reqLogger.Error(err, "Failed to set owner for Rdr Service")
-		return nil
+		return nil, err
 	}
-	return service
+	return service, nil
 }
 
 // daemonForReader returns a Reader DaemonSet object
-func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering) *appsv1.DaemonSet {
+func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering) (*appsv1.DaemonSet, error) {
 	reqLogger := log.WithValues("func", "daemonForReader", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.ReaderDaemonSetName)
 	selectorLabels := res.LabelsForSelector(res.ReaderDaemonSetName, meteringCrType, instance.Name)
@@ -776,9 +837,9 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 	err := controllerutil.SetControllerReference(instance, daemon, r.scheme)
 	if err != nil {
 		reqLogger.Error(err, "Failed to set owner for Rdr DaemonSet")
-		return nil
+		return nil, err
 	}
-	return daemon
+	return daemon, nil
 }
 
 // getAllPodNames returns the pod names of the array of pods passed in
