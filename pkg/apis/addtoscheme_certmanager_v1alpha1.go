@@ -17,7 +17,7 @@
 package apis
 
 import (
-	"github.com/ibm/metering-operator/pkg/apis/certmanager/v1alpha1"
+	"github.com/ibm/ibm-metering-operator/pkg/apis/certmanager/v1alpha1"
 )
 
 func init() {

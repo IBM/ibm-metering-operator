@@ -17,7 +17,7 @@
 package controller
 
 import (
-	"github.com/ibm/metering-operator/pkg/controller/meteringmulticlusterui"
+	"github.com/ibm/ibm-metering-operator/pkg/controller/meteringmulticlusterui"
 )
 
 func init() {

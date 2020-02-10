@@ -1,4 +1,4 @@
-module github.com/ibm/metering-operator
+module github.com/ibm/ibm-metering-operator
 
 go 1.13
 

@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: metering-operator
+  name: ibm-metering-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: metering-operator
+      name: ibm-metering-operator
   template:
     metadata:
       labels:
-        name: metering-operator
+        name: ibm-metering-operator
     spec:
-      serviceAccountName: metering-operator
+      serviceAccountName: ibm-metering-operator
       containers:
-        - name: metering-operator
+        - name: ibm-metering-operator
           # Replace this with the built image name
           image: REPLACE_IMAGE
           command:
-          - metering-operator
+          - ibm-metering-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE
@@ -30,7 +30,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: OPERATOR_NAME
-              value: "metering-operator"
+              value: "ibm-metering-operator"
             - name: SA_NAME
               valueFrom:
                 fieldRef:
