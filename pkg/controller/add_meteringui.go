@@ -17,7 +17,7 @@
 package controller
 
 import (
-	"github.com/ibm/metering-operator/pkg/controller/meteringui"
+	"github.com/ibm/ibm-metering-operator/pkg/controller/meteringui"
 )
 
 func init() {
