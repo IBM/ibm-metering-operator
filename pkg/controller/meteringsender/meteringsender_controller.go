@@ -20,6 +20,7 @@ import (
 	"context"
 	"reflect"
 	gorun "runtime"
+	"time"
 
 	res "github.com/ibm/metering-operator/pkg/resources"
 
@@ -115,6 +116,9 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
 	reqLogger.Info("Reconciling MeteringSender")
 
+	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
+	needToRequeue := false
+
 	// Fetch the MeteringSender CR instance
 	instance := &operatorv1alpha1.MeteringSender{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
@@ -132,7 +136,8 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	opVersion := instance.Spec.OperatorVersion
-	reqLogger.Info("got MeteringSender instance, version=" + opVersion + ", checking Deployment")
+	reqLogger.Info("got MeteringSender instance, version=" + opVersion)
+	reqLogger.Info("checking Deployment")
 
 	// set common MongoDB env vars based on the instance
 	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
@@ -147,54 +152,55 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.SenderDeploymentName, "loglevel")
 
 	// Check if the Sender Deployment already exists, if not create a new one
+	newDeployment, err := r.deploymentForSender(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
 	currentDeployment := &appsv1.Deployment{}
 	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.SenderDeploymentName, Namespace: instance.Namespace}, currentDeployment)
 	if err != nil && errors.IsNotFound(err) {
-		// Define a new deployment
-		newDeployment := r.deploymentForSender(instance)
+		// Create a new deployment
 		reqLogger.Info("Creating a new Sender Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
 		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil {
+		if err != nil && errors.IsAlreadyExists(err) {
+			// Already exists from previous reconcile, requeue
+			reqLogger.Info("Sender Deployment already exists")
+			needToRequeue = true
+		} else if err != nil {
 			reqLogger.Error(err, "Failed to create new Sender Deployment", "Deployment.Namespace", newDeployment.Namespace,
 				"Deployment.Name", newDeployment.Name)
 			return reconcile.Result{}, err
+		} else {
+			// Deployment created successfully - return and requeue
+			needToRequeue = true
 		}
-		// Deployment created successfully - return and requeue
-		reqLogger.Info("Requeue the request and create a resource")
-		return reconcile.Result{Requeue: true}, nil
 	} else if err != nil {
 		reqLogger.Error(err, "Failed to get Sender Deployment")
 		return reconcile.Result{}, err
-	}
-
-	reqLogger.Info("got Deployment, checking current Sender deployment")
-	// Ensure the image is the same as the spec
-	var expectedImage string
-	if instance.Spec.ImageRegistry == "" {
-		expectedImage = res.DefaultImageRegistry + "/" + res.DefaultSenderImageName + ":" + res.DefaultSenderImageTag
-		reqLogger.Info("CS??? default expectedImage=" + expectedImage)
 	} else {
-		expectedImage = instance.Spec.ImageRegistry + "/" + res.DefaultSenderImageName + ":" + res.DefaultSenderImageTag
-		reqLogger.Info("CS??? expectedImage=" + expectedImage)
-	}
-	if currentDeployment.Spec.Template.Spec.Containers[0].Image != expectedImage {
-		reqLogger.Info("CS??? curr image=" + currentDeployment.Spec.Template.Spec.Containers[0].Image + ", expect=" + expectedImage)
-		currentDeployment.Spec.Template.Spec.Containers[0].Image = expectedImage
-		reqLogger.Info("updating current Sender deployment")
+		// Found deployment, so send an update to k8s and let it determine if the resource has changed
+		reqLogger.Info("Updating Sender Deployment")
+		currentDeployment.Spec = newDeployment.Spec
 		err = r.client.Update(context.TODO(), currentDeployment)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update Sender Deployment", "Deployment.Namespace", currentDeployment.Namespace,
 				"Deployment.Name", currentDeployment.Name)
 			return reconcile.Result{}, err
 		}
-		// Spec updated - return and requeue
-		reqLogger.Info("Requeue the request and update a resource")
+	}
+
+	if needToRequeue {
+		// one or more resources was created, so requeue the request after 5 seconds
+		reqLogger.Info("Requeue the request")
+		// tried RequeueAfter but it is ignored because we're watching secondary resources.
+		// so sleep instead to allow resources to be created by k8s.
+		time.Sleep(5 * time.Second)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	reqLogger.Info("Updating MeteringSender status")
-	// Update the MeteringSender status with the pod names
-	// List the pods for this instance's deployment
+	// Update the MeteringSender status with the pod names.
+	// List the pods for this instance's deployment.
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.Namespace),
@@ -218,12 +224,14 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 		}
 	}
 
-	reqLogger.Info("CS??? all done")
+	reqLogger.Info("Reconciliation completed")
+	// since we updated the status in the CR, sleep 5 seconds to allow the CR to be refreshed.
+	time.Sleep(5 * time.Second)
 	return reconcile.Result{}, nil
 }
 
 // deploymentForSender returns a Sender Deployment object
-func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1.MeteringSender) *appsv1.Deployment {
+func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1.MeteringSender) (*appsv1.Deployment, error) {
 	reqLogger := log.WithValues("func", "deploymentForSender", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.SenderDeploymentName)
 	selectorLabels := res.LabelsForSelector(res.SenderDeploymentName, meteringSenderCrType, instance.Name)
@@ -336,8 +344,8 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 	// Set MeteringSender instance as the owner and controller of the Deployment
 	err := controllerutil.SetControllerReference(instance, deployment, r.scheme)
 	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for DM Deployment")
-		return nil
+		reqLogger.Error(err, "Failed to set owner for Sender Deployment")
+		return nil, err
 	}
-	return deployment
+	return deployment, nil
 }
