@@ -137,8 +137,8 @@ spec:
       kind: MeteringUI
       name: meteringuis.operator.ibm.com
       version: v1alpha1
-  description: Placeholder description
-  displayName: Ibm Metering Operator
+  description: The metering operator manages the service used to meter workloads in a kubernetes cluster
+  displayName: IBM Metering Operator
   install:
     spec:
       deployments:
