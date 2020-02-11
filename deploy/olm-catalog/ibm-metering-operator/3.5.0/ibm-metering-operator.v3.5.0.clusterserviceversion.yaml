@@ -1,0 +1,299 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "operator.ibm.com/v1alpha1",
+          "kind": "Metering",
+          "metadata": {
+            "name": "example-metering"
+          },
+          "spec": {
+            "external": {
+              "clusterName": "mycluster"
+            },
+            "iamNamespace": "kube-system",
+            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "mongodb": {
+              "clientcertssecret": "icp-mongodb-client-cert",
+              "clustercertssecret": "cluster-ca-cert",
+              "host": "mongodb",
+              "passwordKey": "password",
+              "passwordSecret": "icp-mongodb-admin",
+              "port": "27017",
+              "usernameKey": "user",
+              "usernameSecret": "icp-mongodb-admin"
+            },
+            "operatorVersion": "3.5.0"
+          }
+        },
+        {
+          "apiVersion": "operator.ibm.com/v1alpha1",
+          "kind": "MeteringMultiClusterUI",
+          "metadata": {
+            "name": "example-meteringmcmui"
+          },
+          "spec": {
+            "external": {
+              "clusterIP": "icp-console.apps.exile.os.fyre.ibm.com",
+              "clusterName": "mycluster",
+              "clusterPort": "443"
+            },
+            "iamNamespace": "kube-system",
+            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "ingressNamespace": "kube-system",
+            "mongodb": {
+              "clientcertssecret": "icp-mongodb-client-cert",
+              "clustercertssecret": "cluster-ca-cert",
+              "host": "mongodb",
+              "passwordKey": "password",
+              "passwordSecret": "icp-mongodb-admin",
+              "port": "27017",
+              "usernameKey": "user",
+              "usernameSecret": "icp-mongodb-admin"
+            },
+            "operatorVersion": "3.5.0"
+          }
+        },
+        {
+          "apiVersion": "operator.ibm.com/v1alpha1",
+          "kind": "MeteringSender",
+          "metadata": {
+            "name": "example-meteringsender"
+          },
+          "spec": {
+            "iamNamespace": "kube-system",
+            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "mongodb": {
+              "clientcertssecret": "icp-mongodb-client-cert",
+              "clustercertssecret": "cluster-ca-cert",
+              "host": "mongodb",
+              "passwordKey": "password",
+              "passwordSecret": "icp-mongodb-admin",
+              "port": "27017",
+              "usernameKey": "user",
+              "usernameSecret": "icp-mongodb-admin"
+            },
+            "operatorVersion": "3.5.0",
+            "sender": {
+              "clusterName": "mycluster",
+              "clusterNamespace": "kube-system",
+              "hubKubeConfigSecret": "multicluster-endpoint/endpoint-connmgr-hub-kubeconfig"
+            }
+          }
+        },
+        {
+          "apiVersion": "operator.ibm.com/v1alpha1",
+          "kind": "MeteringUI",
+          "metadata": {
+            "name": "example-meteringui"
+          },
+          "spec": {
+            "external": {
+              "clusterIP": "icp-console.apps.exile.os.fyre.ibm.com",
+              "clusterName": "mycluster",
+              "clusterPort": "443"
+            },
+            "iamNamespace": "kube-system",
+            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "ingressNamespace": "kube-system",
+            "mongodb": {
+              "clientcertssecret": "icp-mongodb-client-cert",
+              "clustercertssecret": "cluster-ca-cert",
+              "host": "mongodb",
+              "passwordKey": "password",
+              "passwordSecret": "icp-mongodb-admin",
+              "port": "27017",
+              "usernameKey": "user",
+              "usernameSecret": "icp-mongodb-admin"
+            },
+            "operatorVersion": "3.5.0"
+          }
+        }
+      ]
+    capabilities: Basic Install
+  name: ibm-metering-operator.v3.5.0
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: MeteringMultiClusterUI is the Schema for the meteringmulticlusteruis
+        API
+      kind: MeteringMultiClusterUI
+      name: meteringmulticlusteruis.operator.ibm.com
+      version: v1alpha1
+    - description: Metering is the Schema for the meterings API
+      kind: Metering
+      name: meterings.operator.ibm.com
+      version: v1alpha1
+    - description: MeteringSender is the Schema for the meteringsenders API
+      kind: MeteringSender
+      name: meteringsenders.operator.ibm.com
+      version: v1alpha1
+    - description: MeteringUI is the Schema for the meteringuis API
+      kind: MeteringUI
+      name: meteringuis.operator.ibm.com
+      version: v1alpha1
+  description: Placeholder description
+  displayName: Ibm Metering Operator
+  install:
+    spec:
+      deployments:
+      - name: ibm-metering-operator
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              name: ibm-metering-operator
+          strategy: {}
+          template:
+            metadata:
+              labels:
+                name: ibm-metering-operator
+            spec:
+              containers:
+              - command:
+                - ibm-metering-operator
+                env:
+                - name: WATCH_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.annotations['olm.targetNamespaces']
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: OPERATOR_NAME
+                  value: ibm-metering-operator
+                - name: SA_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: spec.serviceAccountName
+                image: REPLACE_IMAGE
+                imagePullPolicy: Always
+                name: ibm-metering-operator
+                resources: {}
+              serviceAccountName: ibm-metering-operator
+      permissions:
+      - rules:
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          - services
+          - services/finalizers
+          - endpoints
+          - persistentvolumeclaims
+          - events
+          - configmaps
+          - secrets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - apps
+          resources:
+          - deployments
+          - daemonsets
+          - replicasets
+          - statefulsets
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - monitoring.coreos.com
+          resources:
+          - servicemonitors
+          verbs:
+          - get
+          - create
+        - apiGroups:
+          - apps
+          resourceNames:
+          - ibm-metering-operator
+          resources:
+          - deployments/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - ""
+          resources:
+          - pods
+          verbs:
+          - get
+        - apiGroups:
+          - apps
+          resources:
+          - replicasets
+          - deployments
+          verbs:
+          - get
+        - apiGroups:
+          - operator.ibm.com
+          resources:
+          - '*'
+          - meteringuis
+          - meteringmulticlusteruis
+          - meteringsenders
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - certmanager.k8s.io
+          resources:
+          - '*'
+          - certificates
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - networking.k8s.io
+          resources:
+          - '*'
+          - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        serviceAccountName: ibm-metering-operator
+    strategy: deployment
+  installModes:
+  - supported: true
+    type: OwnNamespace
+  - supported: true
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  maturity: alpha
+  provider: {}
+  replaces: ibm-metering-operator.v0.0.0
+  version: 3.5.0
