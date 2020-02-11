@@ -14,6 +14,12 @@
 # limitations under the License.
 #
 
+FROM alpine as builder
+
+RUN wget -O /qemu-s390x-static https://github.com/multiarch/qemu-user-static/releases/latest/download/qemu-s390x-static
+
+RUN chmod +x /qemu-s390x-static
+
 FROM registry.access.redhat.com/ubi8/ubi-minimal:8.1-398
 
 ARG IMAGE_NAME
@@ -53,8 +59,10 @@ ENV OPERATOR=/usr/local/bin/ibm-metering-operator \
   USER_UID=1001 \
   USER_NAME=ibm-metering-operator
 
+COPY --from=builder /qemu-s390x-static /usr/bin/
+
 # install operator binary
-COPY build/_output/bin/ibm-metering-operator ${OPERATOR}
+COPY build/_output/bin/ibm-metering-operator-s390x ${OPERATOR}
 COPY deploy/crds ${DEPLOY_DIR}
 
 COPY build/bin /usr/local/bin
