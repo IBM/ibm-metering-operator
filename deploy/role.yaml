@@ -71,7 +71,7 @@ rules:
   resources:
   - '*'
   - meteringuis
-  - meteringmulticlusteruis
+  - meteringmulticlouduis
   - meteringsenders
   verbs:
   - create

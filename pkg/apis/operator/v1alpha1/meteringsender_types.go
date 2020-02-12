@@ -28,8 +28,9 @@ type MeteringSenderSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	OperatorVersion string                    `json:"operatorVersion,omitempty"`
+	Version         string                    `json:"version,omitempty"`
 	ImageRegistry   string                    `json:"imageRegistry,omitempty"`
+	ImageTagPostfix string                    `json:"imageTagPostfix,omitempty"`
 	IAMnamespace    string                    `json:"iamNamespace,omitempty"`
 	Sender          MeteringSenderSpecSender  `json:"sender,omitempty"`
 	MongoDB         MeteringSenderSpecMongoDB `json:"mongodb,omitempty"`
@@ -37,7 +38,6 @@ type MeteringSenderSpec struct {
 
 // MeteringSenderSpecSender defines the metering-sender configuration in the the MeteringSender spec
 type MeteringSenderSpecSender struct {
-	ImageTagPostfix     string `json:"imageTagPostfix,omitempty"`
 	ClusterName         string `json:"clusterName,omitempty"`
 	ClusterNamespace    string `json:"clusterNamespace,omitempty"`
 	HubKubeConfigSecret string `json:"hubKubeConfigSecret,omitempty"`

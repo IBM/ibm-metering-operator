@@ -31,13 +31,6 @@ spec:
         spec:
           description: MeteringUISpec defines the desired state of MeteringUI
           properties:
-            dm:
-              description: MeteringUISpecDataManager defines the metering-datamanager
-                configuration in the the MeteringUI spec
-              properties:
-                imageTagPostfix:
-                  type: string
-              type: object
             external:
               description: MeteringUISpecExternal defines the external cluster configuration
                 in the the MeteringUI spec
@@ -52,6 +45,8 @@ spec:
             iamNamespace:
               type: string
             imageRegistry:
+              type: string
+            imageTagPostfix:
               type: string
             ingressNamespace:
               type: string
@@ -76,19 +71,12 @@ spec:
                 usernameSecret:
                   type: string
               type: object
-            operatorVersion:
+            version:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
                 modifying this file Add custom validation using kubebuilder tags:
                 https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
-            ui:
-              description: MeteringUISpecUI defines the metering-ui configuration
-                in the the MeteringUI spec
-              properties:
-                imageTagPostfix:
-                  type: string
-              type: object
           type: object
         status:
           description: MeteringUIStatus defines the observed state of MeteringUI

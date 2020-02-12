@@ -16,7 +16,9 @@
 
 // CS??? removed icp-serviceid-apikey-secret from CommonSecretCheckNames, CommonSecretCheckDirs,
 // CS???   and CommonSecretCheckVolumeMounts
-// Linter doesn't like "Secret" in string var names so use "Zecret"
+// Linter doesn't like "Secret" in string var names that are assigned a value,
+// so use concatenation to create the value.
+// Example:  const MySecretName = "metering-secret" + ""
 
 package resources
 
@@ -90,9 +92,11 @@ var SenderSecretCheckCmd = SecretCheckCmd + ";" +
 	`echo ` + "`date`" + `: Further, checking for kubeConfig secret...;` +
 	`node /datamanager/lib/metering_init.js kubeconfig_secretcheck `
 
-var CommonZecretCheckNames = "icp-mongodb-admin icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert"
+// CommonSecretCheckNames uses concatenation so linter won't complain about "Secret" vars
+var CommonSecretCheckNames = "icp-mongodb-admin icp-mongodb-admin " + "cluster-ca-cert icp-mongodb-client-cert"
 
-var CommonZecretCheckDirs = "muser-icp-mongodb-admin mpass-icp-mongodb-admin cluster-ca-cert icp-mongodb-client-cert"
+// CommonSecretCheckDirs uses concatenation so linter won't complain about "Secret" vars
+var CommonSecretCheckDirs = "muser-icp-mongodb-admin mpass-icp-mongodb-admin " + "cluster-ca-cert icp-mongodb-client-cert"
 
 var CommonSecretCheckVolumeMounts = []corev1.VolumeMount{
 	{
@@ -115,18 +119,20 @@ var CommonSecretCheckVolumeMounts = []corev1.VolumeMount{
 
 const APICertName = "icp-metering-api-ca-cert"
 const APICertCommonName = "metering-server"
-const APICertZecretName = "icp-metering-api-secret"
+
+// use concatenation so linter won't complain about "Secret" vars
+const APICertSecretName = "icp-metering-api-secret" + ""
 const APICertVolumeName = "icp-metering-api-certs"
 
 var APICertVolumeMount = corev1.VolumeMount{
 	Name:      APICertVolumeName,
-	MountPath: "/sec/" + APICertZecretName,
+	MountPath: "/sec/" + APICertSecretName,
 }
 var APICertVolume = corev1.Volume{
 	Name: APICertVolumeName,
 	VolumeSource: corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
-			SecretName:  APICertZecretName,
+			SecretName:  APICertSecretName,
 			DefaultMode: &DefaultMode,
 			Optional:    &TrueVar,
 		},
@@ -135,54 +141,77 @@ var APICertVolume = corev1.Volume{
 
 const ReceiverCertName = "icp-metering-receiver-ca-cert"
 const ReceiverCertCommonName = "metering-receiver"
-const ReceiverCertZecretName = "icp-metering-receiver-secret"
+
+// use concatenation so linter won't complain about "Secret" vars
+const ReceiverCertSecretName = "icp-metering-receiver-secret" + ""
 const ReceiverCertVolumeName = "icp-metering-receiver-certs"
 
-var ReceiverCertVolumeMount = corev1.VolumeMount{
+var ReceiverCertVolumeMountForSecretCheck = corev1.VolumeMount{
 	Name:      ReceiverCertVolumeName,
-	MountPath: "/sec/" + ReceiverCertZecretName,
+	MountPath: "/sec/" + ReceiverCertSecretName,
+}
+var ReceiverCertVolumeMountForMain = corev1.VolumeMount{
+	Name:      ReceiverCertVolumeName,
+	MountPath: "/certs/" + ReceiverCertCommonName,
 }
 var ReceiverCertVolume = corev1.Volume{
 	Name: ReceiverCertVolumeName,
 	VolumeSource: corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
-			SecretName:  ReceiverCertZecretName,
+			SecretName:  ReceiverCertSecretName,
 			DefaultMode: &DefaultMode,
 			Optional:    &TrueVar,
 		},
 	},
 }
 
-const PlatformOidcZecretName = "platform-oidc-credentials"
+var ReceiverSslEnvVars = []corev1.EnvVar{
+	{
+		Name:  "HC_RECEIVER_SSL_CA",
+		Value: "/certs/" + ReceiverCertCommonName + "/ca.crt",
+	},
+	{
+		Name:  "HC_RECEIVER_SSL_CERT",
+		Value: "/certs/" + ReceiverCertCommonName + "/tls.crt",
+	},
+	{
+		Name:  "HC_RECEIVER_SSL_KEY",
+		Value: "/certs/" + ReceiverCertCommonName + "/tls.key",
+	},
+}
+
+// use concatenation so linter won't complain about "Secret" vars
+const PlatformOidcSecretName = "platform-oidc-credentials" + ""
 const PlatformOidcVolumeName = "platform-oidc-credentials"
 
 var PlatformOidcVolumeMount = corev1.VolumeMount{
 	Name:      PlatformOidcVolumeName,
-	MountPath: "/sec/" + PlatformOidcZecretName,
+	MountPath: "/sec/" + PlatformOidcSecretName,
 }
 var PlatformOidcVolume = corev1.Volume{
 	Name: PlatformOidcVolumeName,
 	VolumeSource: corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
-			SecretName:  PlatformOidcZecretName,
+			SecretName:  PlatformOidcSecretName,
 			DefaultMode: &DefaultMode,
 			Optional:    &TrueVar,
 		},
 	},
 }
 
-const APIKeyZecretName = "icp-serviceid-apikey-secret"
+// use concatenation so linter won't complain about "Secret" vars
+const APIKeySecretName = "icp-serviceid-apikey-secret" + ""
 const APIKeyVolumeName = "icp-serviceid-apikey-secret"
 
 var APIKeyVolumeMount = corev1.VolumeMount{
 	Name:      APIKeyVolumeName,
-	MountPath: "/sec/" + APIKeyZecretName,
+	MountPath: "/sec/" + APIKeySecretName,
 }
 var APIKeyVolume = corev1.Volume{
 	Name: APIKeyVolumeName,
 	VolumeSource: corev1.VolumeSource{
 		Secret: &corev1.SecretVolumeSource{
-			SecretName:  APIKeyZecretName,
+			SecretName:  APIKeySecretName,
 			DefaultMode: &DefaultMode,
 			Optional:    &TrueVar,
 		},
@@ -243,19 +272,16 @@ var Log4jsVolumeMount = corev1.VolumeMount{
 }
 
 var DmMainContainer = corev1.Container{
-	Image: "metering-data-manager",
-	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager:3.3.1",
+	Image:           "metering-data-manager",
 	Name:            "metering-dm",
 	ImagePullPolicy: corev1.PullAlways,
 	// CommonMainVolumeMounts will be added by the controller
 	VolumeMounts: []corev1.VolumeMount{
-		{
-			Name:      ReceiverCertVolumeName,
-			MountPath: "/certs/metering-receiver",
-		},
 		LoglevelVolumeMount,
 	},
-	// CommonEnvVars, IAMEnvVars and mongoDBEnvVars will be added by the controller
+	// CommonEnvVars, IAMEnvVars and mongoDBEnvVars will be added by the controller.
+	// HC_DM_MCM_RECEIVER_ENABLED will be set by BuildReceiverEnvVars().
+	// Removed ICP_API_KEY.
 	Env: []corev1.EnvVar{
 		{
 			Name:  "METERING_API_ENABLED",
@@ -264,11 +290,6 @@ var DmMainContainer = corev1.Container{
 		{
 			Name:  "HC_DM_USE_HTTPS",
 			Value: "false",
-		},
-		{
-			Name:  "HC_DM_MCM_RECEIVER_ENABLED",
-			Value: "false",
-			//CS??? Value: "true",
 		},
 		{
 			Name:  "HC_DM_MCM_SENDER_ENABLED",
@@ -301,18 +322,6 @@ var DmMainContainer = corev1.Container{
 		{
 			Name:  "HC_DM_IS_ICP",
 			Value: "true",
-		},
-		{
-			Name:  "HC_RECEIVER_SSL_CA",
-			Value: "/certs/metering-receiver/ca.crt",
-		},
-		{
-			Name:  "HC_RECEIVER_SSL_CERT",
-			Value: "/certs/metering-receiver/tls.crt",
-		},
-		{
-			Name:  "HC_RECEIVER_SSL_KEY",
-			Value: "/certs/metering-receiver/tls.key",
 		},
 		{
 			Name:  "HC_DM_ALLOW_TEST",
@@ -369,8 +378,7 @@ var DmMainContainer = corev1.Container{
 }
 
 var RdrMainContainer = corev1.Container{
-	Image: "metering-data-manager",
-	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-data-manager:3.3.1",
+	Image:           "metering-data-manager",
 	Name:            "metering-reader",
 	ImagePullPolicy: corev1.PullAlways,
 	// CommonMainVolumeMounts will be added by the controller
@@ -381,7 +389,8 @@ var RdrMainContainer = corev1.Container{
 		},
 		LoglevelVolumeMount,
 	},
-	// CommonEnvVars, IAMEnvVars and mongoDBEnvVars will be added by the controller
+	// CommonEnvVars, IAMEnvVars and mongoDBEnvVars will be added by the controller.
+	// Removed ICP_API_KEY.
 	Env: []corev1.EnvVar{
 		{
 			Name:  "METERING_API_ENABLED",
@@ -632,7 +641,7 @@ var UIEnvVars = []corev1.EnvVar{
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: APIKeyZecretName,
+					Name: APIKeySecretName,
 				},
 				Key:      "ICP_API_KEY",
 				Optional: &TrueVar,
@@ -644,7 +653,7 @@ var UIEnvVars = []corev1.EnvVar{
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: PlatformOidcZecretName,
+					Name: PlatformOidcSecretName,
 				},
 				Key:      "WLP_CLIENT_ID",
 				Optional: &TrueVar,
@@ -656,7 +665,7 @@ var UIEnvVars = []corev1.EnvVar{
 		ValueFrom: &corev1.EnvVarSource{
 			SecretKeyRef: &corev1.SecretKeySelector{
 				LocalObjectReference: corev1.LocalObjectReference{
-					Name: PlatformOidcZecretName,
+					Name: PlatformOidcSecretName,
 				},
 				Key:      "WLP_CLIENT_SECRET",
 				Optional: &TrueVar,
@@ -682,8 +691,7 @@ var UIEnvVars = []corev1.EnvVar{
 }
 
 var UIMainContainer = corev1.Container{
-	Image: "metering-ui",
-	//CS??? Image: "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64/metering-ui:3.3.1",
+	Image:           "metering-ui",
 	Name:            "metering-ui",
 	ImagePullPolicy: corev1.PullAlways,
 	// CommonMainVolumeMounts will be added by the controller

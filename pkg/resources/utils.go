@@ -17,6 +17,8 @@
 package resources
 
 import (
+	"strconv"
+
 	certmgr "github.com/ibm/ibm-metering-operator/pkg/apis/certmanager/v1alpha1"
 
 	"os"
@@ -47,27 +49,29 @@ type IngressData struct {
 const MeteringComponentName = "meteringsvc"
 const MeteringReleaseName = "metering"
 const DmDeploymentName = "metering-dm"
+const DmServiceName = "metering-dm"
 const ReaderDaemonSetName = "metering-reader"
-const ServerServiceName = "metering-server"
+const ReaderServiceName = "metering-server"
 const UIDeploymentName = "metering-ui"
+const UIServiceName = "metering-ui"
 const McmDeploymentName = "metering-mcmui"
+const McmServiceName = "metering-mcmui"
 const SenderDeploymentName = "metering-sender"
+const ReceiverServiceName = "metering-receiver"
 const apiIngressPort int32 = 4000
-
-//CS??? move UI and MCM names here
 
 var DefaultMode int32 = 420
 
 var APICertificateData = CertificateData{
 	Name:      APICertName,
-	Secret:    APICertZecretName,
+	Secret:    APICertSecretName,
 	Common:    APICertCommonName,
 	App:       ReaderDaemonSetName,
 	Component: ReaderDaemonSetName,
 }
 var ReceiverCertificateData = CertificateData{
 	Name:      ReceiverCertName,
-	Secret:    ReceiverCertZecretName,
+	Secret:    ReceiverCertSecretName,
 	Common:    ReceiverCertCommonName,
 	App:       DmDeploymentName,
 	Component: ReceiverCertCommonName,
@@ -100,21 +104,21 @@ var mcmIngressAnnotations = map[string]string{
 var APIcheckIngressData = IngressData{
 	Name:        "metering-api-check",
 	Path:        "/meteringapi/api/v1",
-	Service:     ServerServiceName,
+	Service:     ReaderServiceName,
 	Port:        apiIngressPort,
 	Annotations: apiCheckIngressAnnotations,
 }
 var APIrbacIngressData = IngressData{
 	Name:        "metering-api-rbac",
 	Path:        "/meteringapi/api/",
-	Service:     ServerServiceName,
+	Service:     ReaderServiceName,
 	Port:        apiIngressPort,
 	Annotations: apiRBACIngressAnnotations,
 }
 var APIswaggerIngressData = IngressData{
 	Name:        "metering-api-swagger",
 	Path:        "/meteringapi/api/swagger",
-	Service:     ServerServiceName,
+	Service:     ReaderServiceName,
 	Port:        apiIngressPort,
 	Annotations: apiSwaggerIngressAnnotations,
 }
@@ -139,8 +143,6 @@ var log = logf.Log.WithName("resource_utils")
 // Call controllerutil.SetControllerReference to set the owner and controller
 // for the Certificate object created by this function.
 func BuildCertificate(namespace string, certData CertificateData) *certmgr.Certificate {
-	reqLogger := log.WithValues("func", "BuildCertificate", "Certificate.Name", certData.Name)
-	reqLogger.Info("CS??? Entry")
 	metaLabels := labelsForCertificateMeta(certData.App, certData.Component)
 
 	certificate := &certmgr.Certificate{
@@ -171,8 +173,6 @@ func BuildCertificate(namespace string, certData CertificateData) *certmgr.Certi
 // Call controllerutil.SetControllerReference to set the owner and controller
 // for the Ingress object created by this function.
 func BuildIngress(namespace string, ingressData IngressData) *netv1.Ingress {
-	reqLogger := log.WithValues("func", "buildIngress", "Ingress.Name", ingressData.Name)
-	reqLogger.Info("CS??? Entry")
 	metaLabels := labelsForIngressMeta(ingressData.Name)
 	newAnnotations := ingressData.Annotations
 	for key, value := range CommonIngressAnnotations {
@@ -269,14 +269,13 @@ func BuildMongoDBEnvVars(host string, port string, usernameSecret string, userna
 
 func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceClusterName, clusterNameVar string) []corev1.EnvVar {
 	reqLogger := log.WithValues("func", "BuildCommonClusterEnvVars")
-	reqLogger.Info("CS??? Entry")
 
 	var iamNamespace string
 	if instanceIAMnamespace != "" {
-		reqLogger.Info("CS??? IAMnamespace=" + instanceIAMnamespace)
+		reqLogger.Info("IAMnamespace=" + instanceIAMnamespace)
 		iamNamespace = instanceIAMnamespace
 	} else {
-		reqLogger.Info("CS??? IAMnamespace is blank, use instance=" + instanceNamespace)
+		reqLogger.Info("IAMnamespace is blank, use instance=" + instanceNamespace)
 		iamNamespace = instanceNamespace
 	}
 
@@ -306,29 +305,26 @@ func BuildUIClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceIngr
 	clusterName, clusterIP, clusterPort string, isMcmUI bool) []corev1.EnvVar {
 
 	reqLogger := log.WithValues("func", "BuildUIClusterEnvVars")
-	reqLogger.Info("CS??? Entry")
 
 	var iamNamespace string
 	if instanceIAMnamespace != "" {
-		reqLogger.Info("CS??? IAMnamespace=" + instanceIAMnamespace)
+		reqLogger.Info("IAMnamespace=" + instanceIAMnamespace)
 		iamNamespace = instanceIAMnamespace
 	} else {
-		reqLogger.Info("CS??? IAMnamespace is blank, use instance=" + instanceNamespace)
+		reqLogger.Info("IAMnamespace is blank, use instance=" + instanceNamespace)
 		iamNamespace = instanceNamespace
 	}
 	var ingressNamespace string
 	if instanceIngressNamespace != "" {
-		reqLogger.Info("CS??? IngressNamespace=" + instanceIngressNamespace)
+		reqLogger.Info("IngressNamespace=" + instanceIngressNamespace)
 		ingressNamespace = instanceIngressNamespace
 	} else {
-		reqLogger.Info("CS??? IAMnamespace is blank, use instance=" + instanceNamespace)
+		reqLogger.Info("IngressNamespace is blank, use instance=" + instanceNamespace)
 		ingressNamespace = instanceNamespace
 	}
 
 	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace, clusterName, ClusterNameVar)
 
-	// CS??? https://icp-management-ingress:443
-	// CS??? https://icp-management-ingress.NAMESPACE.svc.cluster.local:443
 	cfcRouterURL := "https://icp-management-ingress." + ingressNamespace + ".svc.cluster.local:443"
 	envVar := corev1.EnvVar{
 		Name:  "cfcRouterUrl",
@@ -370,14 +366,13 @@ func BuildSenderClusterEnvVars(instanceNamespace, instanceIAMnamespace, instance
 	clusterName, hubKubeConfigSecret string) []corev1.EnvVar {
 
 	reqLogger := log.WithValues("func", "BuildSenderClusterEnvVars")
-	reqLogger.Info("CS??? Entry")
 
 	var clusterNamespace string
 	if instanceClusterNamespace != "" {
-		reqLogger.Info("CS??? clusterNamespace=" + instanceClusterNamespace)
+		reqLogger.Info("clusterNamespace=" + instanceClusterNamespace)
 		clusterNamespace = instanceClusterNamespace
 	} else {
-		reqLogger.Info("CS??? clusterNamespace is blank, use instance=" + instanceNamespace)
+		reqLogger.Info("clusterNamespace is blank, use instance=" + instanceNamespace)
 		clusterNamespace = instanceNamespace
 	}
 
@@ -393,6 +388,19 @@ func BuildSenderClusterEnvVars(instanceNamespace, instanceIAMnamespace, instance
 	clusterEnvVars = append(clusterEnvVars, namespaceEnvVar, hubEnvVar)
 
 	return clusterEnvVars
+}
+
+func BuildReceiverEnvVars(multiCloudReceiverEnabled bool) []corev1.EnvVar {
+	receiverEnvVars := []corev1.EnvVar{
+		{
+			Name:  "HC_DM_MCM_RECEIVER_ENABLED",
+			Value: strconv.FormatBool(multiCloudReceiverEnabled),
+		},
+	}
+	if multiCloudReceiverEnabled {
+		receiverEnvVars = append(receiverEnvVars, ReceiverSslEnvVars...)
+	}
+	return receiverEnvVars
 }
 
 // set loglevelType to "log4js" when building volumes for metering-mcmui.
@@ -491,11 +499,11 @@ func BuildSecretCheckContainer(deploymentName, imageName, checkerCommand,
 		Env: []corev1.EnvVar{
 			{
 				Name: "SECRET_LIST",
-				// CommonZecretCheckNames will be added by the controller
+				// CommonSecretCheckNames will be added by the controller
 				Value: secretNames,
 			},
 			{
-				// CommonZecretCheckDirs will be added by the controller
+				// CommonSecretCheckDirs will be added by the controller
 				Name:  "SECRET_DIR_LIST",
 				Value: secretDirs,
 			},
@@ -565,7 +573,7 @@ func GetPodNames(pods []corev1.Pod) []string {
 	var podNames []string
 	for _, pod := range pods {
 		podNames = append(podNames, pod.Name)
-		reqLogger.Info("CS??? pod name=" + pod.Name)
+		reqLogger.Info("pod name=" + pod.Name)
 	}
 	return podNames
 }

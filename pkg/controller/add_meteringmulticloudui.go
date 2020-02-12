@@ -17,10 +17,10 @@
 package controller
 
 import (
-	"github.com/ibm/ibm-metering-operator/pkg/controller/meteringmulticlusterui"
+	"github.com/ibm/ibm-metering-operator/pkg/controller/meteringmulticloudui"
 )
 
 func init() {
 	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, meteringmulticlusterui.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, meteringmulticloudui.Add)
 }

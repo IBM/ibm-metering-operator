@@ -31,13 +31,6 @@ spec:
         spec:
           description: MeteringSpec defines the desired state of Metering
           properties:
-            dm:
-              description: MeteringSpecDataManager defines the metering-datamanager
-                configuration in the the metering spec
-              properties:
-                imageTagPostfix:
-                  type: string
-              type: object
             external:
               description: MeteringSpecExternal defines the external cluster configuration
                 in the the metering spec
@@ -52,6 +45,8 @@ spec:
             iamNamespace:
               type: string
             imageRegistry:
+              type: string
+            imageTagPostfix:
               type: string
             mongodb:
               description: MeteringSpecMongoDB defines the MongoDB configuration in
@@ -74,19 +69,16 @@ spec:
                 usernameSecret:
                   type: string
               type: object
-            operatorVersion:
+            multiCloudReceiverEnabled:
+              type: boolean
+            version:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
                 modifying this file Add custom validation using kubebuilder tags:
                 https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
-            reader:
-              description: MeteringSpecReader defines the metering-reader configuration
-                in the the metering spec
-              properties:
-                imageTagPostfix:
-                  type: string
-              type: object
+          required:
+          - multiCloudReceiverEnabled
           type: object
         status:
           description: MeteringStatus defines the observed state of Metering
