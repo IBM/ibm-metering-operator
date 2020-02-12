@@ -28,11 +28,11 @@ type MeteringMultiCloudUISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Version          string                             `json:"version,omitempty"`
-	ImageRegistry    string                             `json:"imageRegistry,omitempty"`
-	ImageTagPostfix  string                             `json:"imageTagPostfix,omitempty"`
-	IAMnamespace     string                             `json:"iamNamespace,omitempty"`
-	IngressNamespace string                             `json:"ingressNamespace,omitempty"`
+	Version          string                           `json:"version,omitempty"`
+	ImageRegistry    string                           `json:"imageRegistry,omitempty"`
+	ImageTagPostfix  string                           `json:"imageTagPostfix,omitempty"`
+	IAMnamespace     string                           `json:"iamNamespace,omitempty"`
+	IngressNamespace string                           `json:"ingressNamespace,omitempty"`
 	MongoDB          MeteringMultiCloudUISpecMongoDB  `json:"mongodb,omitempty"`
 	External         MeteringMultiCloudUISpecExternal `json:"external,omitempty"`
 }
