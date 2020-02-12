@@ -134,9 +134,9 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	opVersion := instance.Spec.OperatorVersion
-	reqLogger.Info("got MeteringSender instance, version=" + opVersion)
-	reqLogger.Info("checking Deployment")
+	version := instance.Spec.Version
+	reqLogger.Info("got MeteringSender instance, version=" + version)
+	reqLogger.Info("Checking Sender Deployment")
 
 	// set common MongoDB env vars based on the instance
 	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
@@ -209,13 +209,11 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 		reqLogger.Error(err, "Failed to list pods", "MeteringSender.Namespace", instance.Namespace, "MeteringSender.Name", res.SenderDeploymentName)
 		return reconcile.Result{}, err
 	}
-	reqLogger.Info("CS??? get pod names")
 	podNames := res.GetPodNames(podList.Items)
 
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, instance.Status.Nodes) {
 		instance.Status.Nodes = podNames
-		reqLogger.Info("CS??? put pod names in status")
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update MeteringSender status")
@@ -236,19 +234,21 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 	selectorLabels := res.LabelsForSelector(res.SenderDeploymentName, meteringSenderCrType, instance.Name)
 	podLabels := res.LabelsForPodMetadata(res.SenderDeploymentName, meteringSenderCrType, instance.Name)
 
-	var senderImage string
+	var senderImage, imageRegistry string
 	if instance.Spec.ImageRegistry == "" {
-		senderImage = res.DefaultImageRegistry + "/" + res.DefaultSenderImageName + ":" + res.DefaultSenderImageTag
-		reqLogger.Info("CS??? default senderImage=" + senderImage)
+		imageRegistry = res.DefaultImageRegistry
+		reqLogger.Info("use default imageRegistry=" + imageRegistry)
 	} else {
-		senderImage = instance.Spec.ImageRegistry + "/" + res.DefaultSenderImageName + ":" + res.DefaultSenderImageTag
-		reqLogger.Info("CS??? senderImage=" + senderImage)
+		imageRegistry = instance.Spec.ImageRegistry
+		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
 	}
+	senderImage = imageRegistry + "/" + res.DefaultSenderImageName + ":" + res.DefaultSenderImageTag + instance.Spec.ImageTagPostfix
+	reqLogger.Info("senderImage=" + senderImage)
 
 	// set the SECRET_LIST env var
-	nameList := res.CommonZecretCheckNames
+	nameList := res.CommonSecretCheckNames
 	// set the SECRET_DIR_LIST env var
-	dirList := res.CommonZecretCheckDirs
+	dirList := res.CommonSecretCheckDirs
 	volumeMounts := res.CommonSecretCheckVolumeMounts
 	senderSecretCheckContainer := res.BuildSecretCheckContainer(res.SenderDeploymentName, senderImage,
 		res.SenderSecretCheckCmd, nameList, dirList, volumeMounts)
@@ -336,7 +336,7 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 					Containers: []corev1.Container{
 						senderMainContainer,
 					},
-				}, //CS??? add imagePullSecrets, serviceAccountName
+				},
 			},
 		},
 	}

@@ -28,23 +28,13 @@ type MeteringSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	OperatorVersion string                  `json:"operatorVersion,omitempty"`
-	ImageRegistry   string                  `json:"imageRegistry,omitempty"`
-	IAMnamespace    string                  `json:"iamNamespace,omitempty"`
-	DataManager     MeteringSpecDataManager `json:"dm,omitempty"`
-	Reader          MeteringSpecReader      `json:"reader,omitempty"`
-	MongoDB         MeteringSpecMongoDB     `json:"mongodb,omitempty"`
-	External        MeteringSpecExternal    `json:"external,omitempty"`
-}
-
-// MeteringSpecDataManager defines the metering-datamanager configuration in the the metering spec
-type MeteringSpecDataManager struct {
-	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
-}
-
-// MeteringSpecReader defines the metering-reader configuration in the the metering spec
-type MeteringSpecReader struct {
-	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
+	Version                   string               `json:"version,omitempty"`
+	ImageRegistry             string               `json:"imageRegistry,omitempty"`
+	ImageTagPostfix           string               `json:"imageTagPostfix,omitempty"`
+	IAMnamespace              string               `json:"iamNamespace,omitempty"`
+	MultiCloudReceiverEnabled bool                 `json:"multiCloudReceiverEnabled"`
+	MongoDB                   MeteringSpecMongoDB  `json:"mongodb,omitempty"`
+	External                  MeteringSpecExternal `json:"external,omitempty"`
 }
 
 // MeteringSpecMongoDB defines the MongoDB configuration in the the metering spec

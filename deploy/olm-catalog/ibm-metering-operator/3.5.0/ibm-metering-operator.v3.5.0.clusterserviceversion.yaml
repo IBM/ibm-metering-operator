@@ -26,12 +26,13 @@ metadata:
               "usernameKey": "user",
               "usernameSecret": "icp-mongodb-admin"
             },
-            "operatorVersion": "3.5.0"
+            "multiCloudReceiverEnabled": false,
+            "version": "3.5.0"
           }
         },
         {
           "apiVersion": "operator.ibm.com/v1alpha1",
-          "kind": "MeteringMultiClusterUI",
+          "kind": "MeteringMultiCloudUI",
           "metadata": {
             "name": "example-meteringmcmui"
           },
@@ -54,7 +55,7 @@ metadata:
               "usernameKey": "user",
               "usernameSecret": "icp-mongodb-admin"
             },
-            "operatorVersion": "3.5.0"
+            "version": "3.5.0"
           }
         },
         {
@@ -76,12 +77,12 @@ metadata:
               "usernameKey": "user",
               "usernameSecret": "icp-mongodb-admin"
             },
-            "operatorVersion": "3.5.0",
             "sender": {
               "clusterName": "mycluster",
               "clusterNamespace": "kube-system",
               "hubKubeConfigSecret": "multicluster-endpoint/endpoint-connmgr-hub-kubeconfig"
-            }
+            },
+            "version": "3.5.0"
           }
         },
         {
@@ -109,7 +110,7 @@ metadata:
               "usernameKey": "user",
               "usernameSecret": "icp-mongodb-admin"
             },
-            "operatorVersion": "3.5.0"
+            "version": "3.5.0"
           }
         }
       ]
@@ -120,10 +121,10 @@ spec:
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
-    - description: MeteringMultiClusterUI is the Schema for the meteringmulticlusteruis
+    - description: MeteringMultiCloudUI is the Schema for the meteringmulticlouduis
         API
-      kind: MeteringMultiClusterUI
-      name: meteringmulticlusteruis.operator.ibm.com
+      kind: MeteringMultiCloudUI
+      name: meteringmulticlouduis.operator.ibm.com
       version: v1alpha1
     - description: Metering is the Schema for the meterings API
       kind: Metering
@@ -172,7 +173,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: REPLACE_IMAGE
+                image: quay.io/opencloudio/ibm-metering-operator
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources: {}
@@ -246,7 +247,7 @@ spec:
           resources:
           - '*'
           - meteringuis
-          - meteringmulticlusteruis
+          - meteringmulticlouduis
           - meteringsenders
           verbs:
           - create

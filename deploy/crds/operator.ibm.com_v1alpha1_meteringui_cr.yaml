@@ -3,14 +3,11 @@ kind: MeteringUI
 metadata:
   name: example-meteringui
 spec:
-  operatorVersion: "3.5.0"
+  version: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
+  #imageTagPostfix: "-20200114"
   iamNamespace: kube-system
   ingressNamespace: kube-system
-  #ui:
-    #imageTagPostfix: -20200114
-  #dm:
-    #imageTagPostfix: -20200114
   mongodb:
     host: mongodb
     port: "27017"

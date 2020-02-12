@@ -76,9 +76,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
-	reqLogger := log.WithValues("func", "add")
-	reqLogger.Info("CS??? OS=" + gorun.GOOS + ", arch=" + gorun.GOARCH)
-
 	// Watch for changes to primary resource MeteringUI
 	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.MeteringUI{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
@@ -157,9 +154,9 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	opVersion := instance.Spec.OperatorVersion
-	reqLogger.Info("got MeteringUI instance, version=" + opVersion)
-	reqLogger.Info("checking UI Service")
+	version := instance.Spec.Version
+	reqLogger.Info("got MeteringUI instance, version=" + version)
+	reqLogger.Info("Checking UI Service")
 	// Check if the UI Service already exists, if not create a new one
 	newService, err := r.serviceForUI(instance)
 	if err != nil {
@@ -211,7 +208,7 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.UIDeploymentName, "loglevel")
 
-	reqLogger.Info("checking UI Deployment")
+	reqLogger.Info("Checking UI Deployment")
 	// Check if the UI Deployment already exists, if not create a new one
 	newDeployment, err := r.deploymentForUI(instance)
 	if err != nil {
@@ -250,7 +247,7 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 	}
 
-	reqLogger.Info("checking UI Ingress")
+	reqLogger.Info("Checking UI Ingress")
 	// Check if the Ingress already exists, if not create a new one
 	err = r.reconcileIngress(instance, &needToRequeue)
 	if err != nil {
@@ -278,13 +275,11 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		reqLogger.Error(err, "Failed to list pods", "MeteringUI.Namespace", instance.Namespace, "MeteringUI.Name", res.UIDeploymentName)
 		return reconcile.Result{}, err
 	}
-	reqLogger.Info("CS??? get pod names")
 	podNames := res.GetPodNames(podList.Items)
 
 	// Update status.Nodes if needed
 	if !reflect.DeepEqual(podNames, instance.Status.Nodes) {
 		instance.Status.Nodes = podNames
-		reqLogger.Info("CS??? put pod names in status")
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update MeteringUI status")
@@ -305,24 +300,23 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	selectorLabels := res.LabelsForSelector(res.UIDeploymentName, meteringUICrType, instance.Name)
 	podLabels := res.LabelsForPodMetadata(res.UIDeploymentName, meteringUICrType, instance.Name)
 
-	var dmImage string
-	var uiImage string
+	var dmImage, uiImage, imageRegistry string
 	if instance.Spec.ImageRegistry == "" {
-		dmImage = res.DefaultImageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag
-		reqLogger.Info("CS??? default dmImage=" + dmImage)
-		uiImage = res.DefaultImageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag
-		reqLogger.Info("CS??? default uiImage=" + uiImage)
+		imageRegistry = res.DefaultImageRegistry
+		reqLogger.Info("use default imageRegistry=" + imageRegistry)
 	} else {
-		dmImage = instance.Spec.ImageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag
-		reqLogger.Info("CS??? dmImage=" + dmImage)
-		uiImage = instance.Spec.ImageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag
-		reqLogger.Info("CS??? uiImage=" + uiImage)
+		imageRegistry = instance.Spec.ImageRegistry
+		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
 	}
+	dmImage = imageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag + instance.Spec.ImageTagPostfix
+	reqLogger.Info("dmImage=" + dmImage)
+	uiImage = imageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag + instance.Spec.ImageTagPostfix
+	reqLogger.Info("uiImage=" + uiImage)
 
 	// set the SECRET_LIST env var
-	nameList := res.APIKeyZecretName + " " + res.PlatformOidcZecretName + " " + res.CommonZecretCheckNames
+	nameList := res.APIKeySecretName + " " + res.PlatformOidcSecretName + " " + res.CommonSecretCheckNames
 	// set the SECRET_DIR_LIST env var
-	dirList := res.APIKeyZecretName + " " + res.PlatformOidcZecretName + " " + res.CommonZecretCheckDirs
+	dirList := res.APIKeySecretName + " " + res.PlatformOidcSecretName + " " + res.CommonSecretCheckDirs
 	volumeMounts := append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
 	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, dmImage,
 		res.SecretCheckCmd, nameList, dirList, volumeMounts)
@@ -421,10 +415,9 @@ func (r *ReconcileMeteringUI) serviceForUI(instance *operatorv1alpha1.MeteringUI
 	metaLabels := res.LabelsForMetadata(res.UIDeploymentName)
 	selectorLabels := res.LabelsForSelector(res.UIDeploymentName, meteringUICrType, instance.Name)
 
-	reqLogger.Info("CS??? Entry")
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      res.UIDeploymentName,
+			Name:      res.UIServiceName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},

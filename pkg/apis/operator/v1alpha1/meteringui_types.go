@@ -28,24 +28,13 @@ type MeteringUISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	OperatorVersion  string                    `json:"operatorVersion,omitempty"`
-	ImageRegistry    string                    `json:"imageRegistry,omitempty"`
-	IAMnamespace     string                    `json:"iamNamespace,omitempty"`
-	IngressNamespace string                    `json:"ingressNamespace,omitempty"`
-	UI               MeteringUISpecUI          `json:"ui,omitempty"`
-	DataManager      MeteringUISpecDataManager `json:"dm,omitempty"`
-	MongoDB          MeteringUISpecMongoDB     `json:"mongodb,omitempty"`
-	External         MeteringUISpecExternal    `json:"external,omitempty"`
-}
-
-// MeteringUISpecUI defines the metering-ui configuration in the the MeteringUI spec
-type MeteringUISpecUI struct {
-	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
-}
-
-// MeteringUISpecDataManager defines the metering-datamanager configuration in the the MeteringUI spec
-type MeteringUISpecDataManager struct {
-	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
+	Version          string                 `json:"version,omitempty"`
+	ImageRegistry    string                 `json:"imageRegistry,omitempty"`
+	ImageTagPostfix  string                 `json:"imageTagPostfix,omitempty"`
+	IAMnamespace     string                 `json:"iamNamespace,omitempty"`
+	IngressNamespace string                 `json:"ingressNamespace,omitempty"`
+	MongoDB          MeteringUISpecMongoDB  `json:"mongodb,omitempty"`
+	External         MeteringUISpecExternal `json:"external,omitempty"`
 }
 
 // MeteringUISpecMongoDB defines the MongoDB configuration in the the MeteringUI spec

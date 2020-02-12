@@ -2,4 +2,4 @@ channels:
 - currentCSV: ibm-metering-operator.v3.5.0
   name: alpha
 defaultChannel: alpha
-packageName: ibm-metering-operator
+packageName: ibm-metering-operator-app

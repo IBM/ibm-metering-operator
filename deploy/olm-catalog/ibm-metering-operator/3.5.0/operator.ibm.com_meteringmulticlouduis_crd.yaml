@@ -1,20 +1,20 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: meteringmulticlusteruis.operator.ibm.com
+  name: meteringmulticlouduis.operator.ibm.com
 spec:
   group: operator.ibm.com
   names:
-    kind: MeteringMultiClusterUI
-    listKind: MeteringMultiClusterUIList
-    plural: meteringmulticlusteruis
-    singular: meteringmulticlusterui
+    kind: MeteringMultiCloudUI
+    listKind: MeteringMultiCloudUIList
+    plural: meteringmulticlouduis
+    singular: meteringmulticloudui
   scope: Namespaced
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: MeteringMultiClusterUI is the Schema for the meteringmulticlusteruis
+      description: MeteringMultiCloudUI is the Schema for the meteringmulticlouduis
         API
       properties:
         apiVersion:
@@ -30,18 +30,11 @@ spec:
         metadata:
           type: object
         spec:
-          description: MeteringMultiClusterUISpec defines the desired state of MeteringMultiClusterUI
+          description: MeteringMultiCloudUISpec defines the desired state of MeteringMultiCloudUI
           properties:
-            dm:
-              description: MeteringMultiClusterUISpecDataManager defines the metering-datamanager
-                configuration in the the MeteringMultiClusterUI spec
-              properties:
-                imageTagPostfix:
-                  type: string
-              type: object
             external:
-              description: MeteringMultiClusterUISpecExternal defines the external
-                cluster configuration in the the MeteringMultiClusterUI spec
+              description: MeteringMultiCloudUISpecExternal defines the external cluster
+                configuration in the the MeteringMultiCloudUI spec
               properties:
                 clusterIP:
                   type: string
@@ -54,11 +47,13 @@ spec:
               type: string
             imageRegistry:
               type: string
+            imageTagPostfix:
+              type: string
             ingressNamespace:
               type: string
             mongodb:
-              description: MeteringMultiClusterUISpecMongoDB defines the MongoDB configuration
-                in the the MeteringMultiClusterUI spec
+              description: MeteringMultiCloudUISpecMongoDB defines the MongoDB configuration
+                in the the MeteringMultiCloudUI spec
               properties:
                 clientcertssecret:
                   type: string
@@ -77,23 +72,15 @@ spec:
                 usernameSecret:
                   type: string
               type: object
-            operatorVersion:
+            version:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
                 modifying this file Add custom validation using kubebuilder tags:
                 https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
-            ui:
-              description: MeteringMultiClusterUISpecUI defines the metering-mcmui
-                configuration in the the MeteringMultiClusterUI spec
-              properties:
-                imageTagPostfix:
-                  type: string
-              type: object
           type: object
         status:
-          description: MeteringMultiClusterUIStatus defines the observed state of
-            MeteringMultiClusterUI
+          description: MeteringMultiCloudUIStatus defines the observed state of MeteringMultiCloudUI
           properties:
             nodes:
               description: 'INSERT ADDITIONAL STATUS FIELD - define observed state

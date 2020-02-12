@@ -35,6 +35,8 @@ spec:
               type: string
             imageRegistry:
               type: string
+            imageTagPostfix:
+              type: string
             mongodb:
               description: MeteringSenderSpecMongoDB defines the MongoDB configuration
                 in the the MeteringSender spec
@@ -56,12 +58,6 @@ spec:
                 usernameSecret:
                   type: string
               type: object
-            operatorVersion:
-              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                Important: Run "operator-sdk generate k8s" to regenerate code after
-                modifying this file Add custom validation using kubebuilder tags:
-                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
-              type: string
             sender:
               description: MeteringSenderSpecSender defines the metering-sender configuration
                 in the the MeteringSender spec
@@ -72,9 +68,13 @@ spec:
                   type: string
                 hubKubeConfigSecret:
                   type: string
-                imageTagPostfix:
-                  type: string
               type: object
+            version:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: string
           type: object
         status:
           description: MeteringSenderStatus defines the observed state of MeteringSender
