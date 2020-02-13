@@ -135,7 +135,7 @@ spec:
     - description: MeteringSender is the Schema for the meteringsenders API
       kind: MeteringSender
       name: meteringsenders.operator.ibm.com
-      displayName: Metering multi cloud sender
+      displayName: Metering multicloud sender
       version: v1alpha1
     - description: MeteringUI is the Schema for the meteringuis API
       kind: MeteringUI
