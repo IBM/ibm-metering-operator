@@ -8,7 +8,7 @@ metadata:
           "apiVersion": "operator.ibm.com/v1alpha1",
           "kind": "Metering",
           "metadata": {
-            "name": "example-metering"
+            "name": "metering"
           },
           "spec": {
             "external": {
@@ -34,7 +34,7 @@ metadata:
           "apiVersion": "operator.ibm.com/v1alpha1",
           "kind": "MeteringMultiCloudUI",
           "metadata": {
-            "name": "example-meteringmcmui"
+            "name": "meteringmcmui"
           },
           "spec": {
             "external": {
@@ -62,7 +62,7 @@ metadata:
           "apiVersion": "operator.ibm.com/v1alpha1",
           "kind": "MeteringSender",
           "metadata": {
-            "name": "example-meteringsender"
+            "name": "meteringsender"
           },
           "spec": {
             "iamNamespace": "kube-system",
@@ -89,7 +89,7 @@ metadata:
           "apiVersion": "operator.ibm.com/v1alpha1",
           "kind": "MeteringUI",
           "metadata": {
-            "name": "example-meteringui"
+            "name": "meteringui"
           },
           "spec": {
             "external": {
@@ -126,19 +126,24 @@ spec:
       kind: MeteringMultiCloudUI
       name: meteringmulticlouduis.operator.ibm.com
       version: v1alpha1
+      displayName: Metering multicloud user interface
     - description: Metering is the Schema for the meterings API
       kind: Metering
       name: meterings.operator.ibm.com
       version: v1alpha1
+      displayName: Metering service
     - description: MeteringSender is the Schema for the meteringsenders API
       kind: MeteringSender
       name: meteringsenders.operator.ibm.com
+      displayName: Metering multicloud sender
       version: v1alpha1
     - description: MeteringUI is the Schema for the meteringuis API
       kind: MeteringUI
       name: meteringuis.operator.ibm.com
+      displayName: Metering user interface
       version: v1alpha1
-  description: The metering operator manages the service used to meter workloads in a kubernetes cluster
+  description: The metering operator manages the service used to meter workloads in
+    a kubernetes cluster
   displayName: IBM Metering Operator
   install:
     spec:

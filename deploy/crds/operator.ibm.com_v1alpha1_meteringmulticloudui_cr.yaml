@@ -1,11 +1,10 @@
 apiVersion: operator.ibm.com/v1alpha1
 kind: MeteringMultiCloudUI
 metadata:
-  name: example-meteringmcmui
+  name: meteringmcmui
 spec:
   version: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
-  #imageTagPostfix: "-20200114"
   iamNamespace: kube-system
   ingressNamespace: kube-system
   mongodb:
