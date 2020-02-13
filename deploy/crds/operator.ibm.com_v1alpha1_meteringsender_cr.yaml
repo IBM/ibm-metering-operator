@@ -1,12 +1,10 @@
 apiVersion: operator.ibm.com/v1alpha1
 kind: MeteringSender
 metadata:
-  name: example-meteringsender
+  name: meteringsender
 spec:
-  # Add fields here
   version: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
-  #imageTagPostfix: "-20200114"
   iamNamespace: kube-system
   sender:
     clusterName: mycluster
