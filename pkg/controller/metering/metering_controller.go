@@ -24,9 +24,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	certmgr "github.com/ibm/ibm-metering-operator/pkg/apis/certmanager/v1alpha1"
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	res "github.com/ibm/ibm-metering-operator/pkg/resources"
+	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
