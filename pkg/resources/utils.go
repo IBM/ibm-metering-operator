@@ -19,7 +19,7 @@ package resources
 import (
 	"strconv"
 
-	certmgr "github.com/ibm/ibm-metering-operator/pkg/apis/certmanager/v1alpha1"
+	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
 	"os"
 
