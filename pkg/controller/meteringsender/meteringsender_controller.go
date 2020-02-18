@@ -143,8 +143,8 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
 		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
 	// set common cluster env vars based on the instance
-	clusterEnvVars = res.BuildSenderClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace,
-		instance.Spec.Sender.ClusterNamespace, instance.Spec.Sender.ClusterName, instance.Spec.Sender.HubKubeConfigSecret)
+	clusterEnvVars = res.BuildSenderClusterEnvVars(instance.Namespace, instance.Spec.Sender.ClusterNamespace,
+		instance.Spec.Sender.ClusterName, instance.Spec.Sender.HubKubeConfigSecret)
 
 	// set common Volumes based on the instance
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,

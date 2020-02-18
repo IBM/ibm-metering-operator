@@ -8,13 +8,11 @@ spec:
   iamNamespace: kube-system
   multiCloudReceiverEnabled: false
   mongodb:
-    host: mongodb
-    port: "27017"
+    host: mongodb.kube-system.svc.cluster.local
+    port: 27017
     usernameSecret: icp-mongodb-admin
     usernameKey: user
     passwordSecret: icp-mongodb-admin
     passwordKey: password
     clustercertssecret: cluster-ca-cert
     clientcertssecret: icp-mongodb-client-cert
-  external:
-    clusterName: mycluster

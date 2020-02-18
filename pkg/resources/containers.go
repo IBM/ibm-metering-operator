@@ -53,8 +53,6 @@ var memory256 = resource.NewQuantity(256*1024*1024, resource.BinarySI)   // 256M
 var memory512 = resource.NewQuantity(512*1024*1024, resource.BinarySI)   // 512Mi
 var memory2560 = resource.NewQuantity(2560*1024*1024, resource.BinarySI) // 2560Mi
 
-const ClusterNameVar = "CLUSTER_NAME"
-const HCClusterNameVar = "HC_CLUSTER_NAME"
 const DefaultClusterName = "mycluster"
 
 var CommonEnvVars = []corev1.EnvVar{

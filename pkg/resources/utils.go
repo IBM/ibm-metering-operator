@@ -212,7 +212,7 @@ func BuildIngress(namespace string, ingressData IngressData) *netv1.Ingress {
 	return ingress
 }
 
-func BuildMongoDBEnvVars(host string, port string, usernameSecret string, usernameKey string,
+func BuildMongoDBEnvVars(host string, port int, usernameSecret string, usernameKey string,
 	passwordSecret string, passwordKey string) []corev1.EnvVar {
 	mongoDBEnvVars := []corev1.EnvVar{
 		{
@@ -221,7 +221,7 @@ func BuildMongoDBEnvVars(host string, port string, usernameSecret string, userna
 		},
 		{
 			Name:  "HC_MONGO_PORT",
-			Value: port,
+			Value: strconv.Itoa(port),
 		},
 		{
 			Name: "HC_MONGO_USER",
@@ -267,7 +267,7 @@ func BuildMongoDBEnvVars(host string, port string, usernameSecret string, userna
 	return mongoDBEnvVars
 }
 
-func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceClusterName, clusterNameVar string) []corev1.EnvVar {
+func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace string) []corev1.EnvVar {
 	reqLogger := log.WithValues("func", "BuildCommonClusterEnvVars")
 
 	var iamNamespace string
@@ -279,21 +279,10 @@ func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, instance
 		iamNamespace = instanceNamespace
 	}
 
-	var clusterName string
-	if instanceClusterName != "" {
-		clusterName = instanceClusterName
-	} else {
-		clusterName = DefaultClusterName
-	}
-
 	clusterEnvVars := []corev1.EnvVar{
 		{
 			Name:  "IAM_NAMESPACE",
 			Value: iamNamespace,
-		},
-		{
-			Name:  clusterNameVar,
-			Value: clusterName,
 		},
 	}
 	return clusterEnvVars
@@ -302,7 +291,7 @@ func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, instance
 // set isMcmUI to true when building env vars for metering-mcmui.
 // set isMcmUI to false when building env vars for any other component.
 func BuildUIClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceIngressNamespace,
-	clusterName, clusterIP, clusterPort string, isMcmUI bool) []corev1.EnvVar {
+	instanceHeaderNamespace, instanceClusterName string, isMcmUI bool) []corev1.EnvVar {
 
 	reqLogger := log.WithValues("func", "BuildUIClusterEnvVars")
 
@@ -322,50 +311,66 @@ func BuildUIClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceIngr
 		reqLogger.Info("IngressNamespace is blank, use instance=" + instanceNamespace)
 		ingressNamespace = instanceNamespace
 	}
+	var headerNamespace string
+	if instanceHeaderNamespace != "" {
+		reqLogger.Info("HeaderNamespace=" + instanceHeaderNamespace)
+		headerNamespace = instanceHeaderNamespace
+	} else {
+		reqLogger.Info("HeaderNamespace is blank, use instance=" + instanceNamespace)
+		headerNamespace = instanceNamespace
+	}
 
-	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace, clusterName, ClusterNameVar)
+	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace)
+
+	headerEnvVar := corev1.EnvVar{
+		Name:  "COMMON_HEADER_NAMESPACE",
+		Value: headerNamespace,
+	}
 
 	cfcRouterURL := "https://icp-management-ingress." + ingressNamespace + ".svc.cluster.local:443"
-	envVar := corev1.EnvVar{
+	cfcEnvVar := corev1.EnvVar{
 		Name:  "cfcRouterUrl",
 		Value: cfcRouterURL,
 	}
-	clusterEnvVars = append(clusterEnvVars, envVar)
+	clusterEnvVars = append(clusterEnvVars, headerEnvVar, cfcEnvVar)
 
-	if clusterIP != "" {
-		envVar := corev1.EnvVar{
-			Name:  "ICP_EXTERNAL_IP",
-			Value: clusterIP,
-		}
-		clusterEnvVars = append(clusterEnvVars, envVar)
-	}
-	if clusterPort != "" {
-		envVar := corev1.EnvVar{
-			Name:  "ICP_EXTERNAL_PORT",
-			Value: clusterPort,
-		}
-		clusterEnvVars = append(clusterEnvVars, envVar)
-	}
+	var providerURL string
 	if isMcmUI {
-		envVar := corev1.EnvVar{
-			Name:  "PLATFORM_IDENTITY_PROVIDER_URL",
-			Value: cfcRouterURL + "/idprovider",
-		}
-		clusterEnvVars = append(clusterEnvVars, envVar)
+		providerURL = cfcRouterURL + "/idprovider"
 	} else {
-		envVar := corev1.EnvVar{
-			Name:  "PLATFORM_IDENTITY_PROVIDER_URL",
-			Value: "https://platform-identity-provider." + iamNamespace + ".svc.cluster.local:4300",
+		providerURL = "https://platform-identity-provider." + iamNamespace + ".svc.cluster.local:4300"
+
+		var clusterName string
+		if instanceClusterName != "" {
+			clusterName = instanceClusterName
+		} else {
+			clusterName = DefaultClusterName
 		}
-		clusterEnvVars = append(clusterEnvVars, envVar)
+		nameEnvVar := corev1.EnvVar{
+			Name:  "CLUSTER_NAME",
+			Value: clusterName,
+		}
+		clusterEnvVars = append(clusterEnvVars, nameEnvVar)
 	}
+	providerEnvVar := corev1.EnvVar{
+		Name:  "PLATFORM_IDENTITY_PROVIDER_URL",
+		Value: providerURL,
+	}
+	clusterEnvVars = append(clusterEnvVars, providerEnvVar)
 	return clusterEnvVars
 }
 
-func BuildSenderClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceClusterNamespace,
-	clusterName, hubKubeConfigSecret string) []corev1.EnvVar {
+func BuildSenderClusterEnvVars(instanceNamespace, instanceClusterNamespace,
+	instanceClusterName, hubKubeConfigSecret string) []corev1.EnvVar {
 
 	reqLogger := log.WithValues("func", "BuildSenderClusterEnvVars")
+
+	var clusterName string
+	if instanceClusterName != "" {
+		clusterName = instanceClusterName
+	} else {
+		clusterName = DefaultClusterName
+	}
 
 	var clusterNamespace string
 	if instanceClusterNamespace != "" {
@@ -376,16 +381,20 @@ func BuildSenderClusterEnvVars(instanceNamespace, instanceIAMnamespace, instance
 		clusterNamespace = instanceNamespace
 	}
 
-	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace, clusterName, HCClusterNameVar)
-	namespaceEnvVar := corev1.EnvVar{
-		Name:  "HC_CLUSTER_NAMESPACE",
-		Value: clusterNamespace,
+	clusterEnvVars := []corev1.EnvVar{
+		{
+			Name:  "HC_CLUSTER_NAME",
+			Value: clusterName,
+		},
+		{
+			Name:  "HC_CLUSTER_NAMESPACE",
+			Value: clusterNamespace,
+		},
+		{
+			Name:  "HC_HUB_CONFIG",
+			Value: hubKubeConfigSecret,
+		},
 	}
-	hubEnvVar := corev1.EnvVar{
-		Name:  "HC_HUB_CONFIG",
-		Value: hubKubeConfigSecret,
-	}
-	clusterEnvVars = append(clusterEnvVars, namespaceEnvVar, hubEnvVar)
 
 	return clusterEnvVars
 }

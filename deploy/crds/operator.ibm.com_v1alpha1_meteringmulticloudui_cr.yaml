@@ -7,16 +7,13 @@ spec:
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
   iamNamespace: kube-system
   ingressNamespace: kube-system
+  commonHeaderNamespace: kube-system
   mongodb:
-    host: mongodb
-    port: "27017"
+    host: mongodb.kube-system.svc.cluster.local
+    port: 27017
     usernameSecret: icp-mongodb-admin
     usernameKey: user
     passwordSecret: icp-mongodb-admin
     passwordKey: password
     clustercertssecret: cluster-ca-cert
     clientcertssecret: icp-mongodb-client-cert
-  external:
-    clusterName: mycluster
-    clusterIP: icp-console.apps.exile.os.fyre.ibm.com
-    clusterPort: "443"
