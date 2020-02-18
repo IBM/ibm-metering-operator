@@ -31,17 +31,10 @@ spec:
         spec:
           description: MeteringUISpec defines the desired state of MeteringUI
           properties:
-            external:
-              description: MeteringUISpecExternal defines the external cluster configuration
-                in the the MeteringUI spec
-              properties:
-                clusterIP:
-                  type: string
-                clusterName:
-                  type: string
-                clusterPort:
-                  type: string
-              type: object
+            clusterName:
+              type: string
+            commonHeaderNamespace:
+              type: string
             iamNamespace:
               type: string
             imageRegistry:
@@ -51,8 +44,8 @@ spec:
             ingressNamespace:
               type: string
             mongodb:
-              description: MeteringUISpecMongoDB defines the MongoDB configuration
-                in the the MeteringUI spec
+              description: MeteringSpecMongoDB defines the MongoDB configuration in
+                all the Metering specs
               properties:
                 clientcertssecret:
                   type: string
@@ -65,11 +58,20 @@ spec:
                 passwordSecret:
                   type: string
                 port:
-                  type: string
+                  type: integer
                 usernameKey:
                   type: string
                 usernameSecret:
                   type: string
+              required:
+              - clientcertssecret
+              - clustercertssecret
+              - host
+              - passwordKey
+              - passwordSecret
+              - port
+              - usernameKey
+              - usernameSecret
               type: object
             version:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -77,6 +79,9 @@ spec:
                 modifying this file Add custom validation using kubebuilder tags:
                 https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
+          required:
+          - mongodb
+          - version
           type: object
         status:
           description: MeteringUIStatus defines the observed state of MeteringUI

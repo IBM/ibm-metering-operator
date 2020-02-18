@@ -31,15 +31,13 @@ spec:
         spec:
           description: MeteringSenderSpec defines the desired state of MeteringSender
           properties:
-            iamNamespace:
-              type: string
             imageRegistry:
               type: string
             imageTagPostfix:
               type: string
             mongodb:
-              description: MeteringSenderSpecMongoDB defines the MongoDB configuration
-                in the the MeteringSender spec
+              description: MeteringSpecMongoDB defines the MongoDB configuration in
+                all the Metering specs
               properties:
                 clientcertssecret:
                   type: string
@@ -52,15 +50,24 @@ spec:
                 passwordSecret:
                   type: string
                 port:
-                  type: string
+                  type: integer
                 usernameKey:
                   type: string
                 usernameSecret:
                   type: string
+              required:
+              - clientcertssecret
+              - clustercertssecret
+              - host
+              - passwordKey
+              - passwordSecret
+              - port
+              - usernameKey
+              - usernameSecret
               type: object
             sender:
               description: MeteringSenderSpecSender defines the metering-sender configuration
-                in the the MeteringSender spec
+                in the MeteringSender spec
               properties:
                 clusterName:
                   type: string
@@ -68,6 +75,9 @@ spec:
                   type: string
                 hubKubeConfigSecret:
                   type: string
+              required:
+              - clusterNamespace
+              - hubKubeConfigSecret
               type: object
             version:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -75,6 +85,9 @@ spec:
                 modifying this file Add custom validation using kubebuilder tags:
                 https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
+          required:
+          - mongodb
+          - version
           type: object
         status:
           description: MeteringSenderStatus defines the observed state of MeteringSender

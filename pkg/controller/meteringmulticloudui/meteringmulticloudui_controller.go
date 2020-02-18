@@ -202,7 +202,7 @@ func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (re
 		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
 	// set common cluster env vars based on the instance
 	clusterEnvVars = res.BuildUIClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace, instance.Spec.IngressNamespace,
-		instance.Spec.External.ClusterName, instance.Spec.External.ClusterIP, instance.Spec.External.ClusterPort, true)
+		instance.Spec.CommonHeaderNamespace, "", true)
 
 	// set common Volumes based on the instance
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,

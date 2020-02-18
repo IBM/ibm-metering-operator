@@ -31,17 +31,6 @@ spec:
         spec:
           description: MeteringSpec defines the desired state of Metering
           properties:
-            external:
-              description: MeteringSpecExternal defines the external cluster configuration
-                in the the metering spec
-              properties:
-                clusterIP:
-                  type: string
-                clusterName:
-                  type: string
-                clusterPort:
-                  type: string
-              type: object
             iamNamespace:
               type: string
             imageRegistry:
@@ -50,7 +39,7 @@ spec:
               type: string
             mongodb:
               description: MeteringSpecMongoDB defines the MongoDB configuration in
-                the the metering spec
+                all the Metering specs
               properties:
                 clientcertssecret:
                   type: string
@@ -63,11 +52,20 @@ spec:
                 passwordSecret:
                   type: string
                 port:
-                  type: string
+                  type: integer
                 usernameKey:
                   type: string
                 usernameSecret:
                   type: string
+              required:
+              - clientcertssecret
+              - clustercertssecret
+              - host
+              - passwordKey
+              - passwordSecret
+              - port
+              - usernameKey
+              - usernameSecret
               type: object
             multiCloudReceiverEnabled:
               type: boolean
@@ -78,7 +76,8 @@ spec:
                 https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
               type: string
           required:
-          - multiCloudReceiverEnabled
+          - mongodb
+          - version
           type: object
         status:
           description: MeteringStatus defines the observed state of Metering

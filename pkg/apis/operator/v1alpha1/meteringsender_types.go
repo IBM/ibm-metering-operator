@@ -28,31 +28,18 @@ type MeteringSenderSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Version         string                    `json:"version,omitempty"`
-	ImageRegistry   string                    `json:"imageRegistry,omitempty"`
-	ImageTagPostfix string                    `json:"imageTagPostfix,omitempty"`
-	IAMnamespace    string                    `json:"iamNamespace,omitempty"`
-	Sender          MeteringSenderSpecSender  `json:"sender,omitempty"`
-	MongoDB         MeteringSenderSpecMongoDB `json:"mongodb,omitempty"`
+	Version         string                   `json:"version"`
+	ImageRegistry   string                   `json:"imageRegistry,omitempty"`
+	ImageTagPostfix string                   `json:"imageTagPostfix,omitempty"`
+	Sender          MeteringSenderSpecSender `json:"sender,omitempty"`
+	MongoDB         MeteringSpecMongoDB      `json:"mongodb"`
 }
 
-// MeteringSenderSpecSender defines the metering-sender configuration in the the MeteringSender spec
+// MeteringSenderSpecSender defines the metering-sender configuration in the MeteringSender spec
 type MeteringSenderSpecSender struct {
 	ClusterName         string `json:"clusterName,omitempty"`
-	ClusterNamespace    string `json:"clusterNamespace,omitempty"`
-	HubKubeConfigSecret string `json:"hubKubeConfigSecret,omitempty"`
-}
-
-// MeteringSenderSpecMongoDB defines the MongoDB configuration in the the MeteringSender spec
-type MeteringSenderSpecMongoDB struct {
-	Host               string `json:"host,omitempty"`
-	Port               string `json:"port,omitempty"`
-	UsernameSecret     string `json:"usernameSecret,omitempty"`
-	UsernameKey        string `json:"usernameKey,omitempty"`
-	PasswordSecret     string `json:"passwordSecret,omitempty"`
-	PasswordKey        string `json:"passwordKey,omitempty"`
-	ClusterCertsSecret string `json:"clustercertssecret,omitempty"`
-	ClientCertsSecret  string `json:"clientcertssecret,omitempty"`
+	ClusterNamespace    string `json:"clusterNamespace"`
+	HubKubeConfigSecret string `json:"hubKubeConfigSecret"`
 }
 
 // MeteringSenderStatus defines the observed state of MeteringSender

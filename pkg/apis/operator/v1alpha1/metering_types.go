@@ -28,32 +28,12 @@ type MeteringSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Version                   string               `json:"version,omitempty"`
-	ImageRegistry             string               `json:"imageRegistry,omitempty"`
-	ImageTagPostfix           string               `json:"imageTagPostfix,omitempty"`
-	IAMnamespace              string               `json:"iamNamespace,omitempty"`
-	MultiCloudReceiverEnabled bool                 `json:"multiCloudReceiverEnabled"`
-	MongoDB                   MeteringSpecMongoDB  `json:"mongodb,omitempty"`
-	External                  MeteringSpecExternal `json:"external,omitempty"`
-}
-
-// MeteringSpecMongoDB defines the MongoDB configuration in the the metering spec
-type MeteringSpecMongoDB struct {
-	Host               string `json:"host,omitempty"`
-	Port               string `json:"port,omitempty"`
-	UsernameSecret     string `json:"usernameSecret,omitempty"`
-	UsernameKey        string `json:"usernameKey,omitempty"`
-	PasswordSecret     string `json:"passwordSecret,omitempty"`
-	PasswordKey        string `json:"passwordKey,omitempty"`
-	ClusterCertsSecret string `json:"clustercertssecret,omitempty"`
-	ClientCertsSecret  string `json:"clientcertssecret,omitempty"`
-}
-
-// MeteringSpecExternal defines the external cluster configuration in the the metering spec
-type MeteringSpecExternal struct {
-	ClusterIP   string `json:"clusterIP,omitempty"`
-	ClusterPort string `json:"clusterPort,omitempty"`
-	ClusterName string `json:"clusterName,omitempty"`
+	Version                   string              `json:"version"`
+	ImageRegistry             string              `json:"imageRegistry,omitempty"`
+	ImageTagPostfix           string              `json:"imageTagPostfix,omitempty"`
+	IAMnamespace              string              `json:"iamNamespace,omitempty"`
+	MultiCloudReceiverEnabled bool                `json:"multiCloudReceiverEnabled,omitempty"`
+	MongoDB                   MeteringSpecMongoDB `json:"mongodb"`
 }
 
 // MeteringStatus defines the observed state of Metering

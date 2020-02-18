@@ -52,9 +52,6 @@ var commonVolumes = []corev1.Volume{}
 var mongoDBEnvVars = []corev1.EnvVar{}
 var clusterEnvVars = []corev1.EnvVar{}
 
-var certificateList = []res.CertificateData{
-	res.APICertificateData,
-}
 var ingressList = []res.IngressData{
 	res.APIcheckIngressData,
 	res.APIrbacIngressData,
@@ -210,8 +207,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
 		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
 	// set common cluster env vars based on the instance
-	clusterEnvVars = res.BuildCommonClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace,
-		instance.Spec.External.ClusterName, res.ClusterNameVar)
+	clusterEnvVars = res.BuildCommonClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace)
 
 	// set common Volumes based on the instance
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
@@ -427,6 +423,9 @@ func (r *ReconcileMetering) reconcileOneService(instanceNamespace, serviceName, 
 func (r *ReconcileMetering) reconcileCertificate(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
 	reqLogger := log.WithValues("func", "reconcileCertificate", "instance.Name", instance.Name)
 
+	certificateList := []res.CertificateData{
+		res.APICertificateData,
+	}
 	if instance.Spec.MultiCloudReceiverEnabled {
 		// need to create the receiver certificate
 		certificateList = append(certificateList, res.ReceiverCertificateData)
