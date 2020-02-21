@@ -136,6 +136,22 @@ spec:
   displayName: IBM Metering Operator
   install:
     spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - certmanager.k8s.io
+          resources:
+          - clusterissuers
+          verbs:
+          - use
+        - apiGroups:
+          - '*'
+          resources:
+          - '*'
+          verbs:
+          - get
+          - list
+        serviceAccountName: ibm-metering-operator-cluster
       deployments:
       - name: ibm-metering-operator
         spec:
