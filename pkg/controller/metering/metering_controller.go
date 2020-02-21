@@ -26,7 +26,6 @@ import (
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	res "github.com/ibm/ibm-metering-operator/pkg/resources"
-	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -34,7 +33,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -83,9 +81,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	if err != nil {
 		return err
 	}
-
-	reqLogger := log.WithValues("func", "add")
-	reqLogger.Info("CS??? OS=" + gorun.GOOS + ", arch=" + gorun.GOARCH)
 
 	// Watch for changes to primary resource Metering
 	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.Metering{}}, &handler.EnqueueRequestForObject{})
@@ -163,8 +158,8 @@ type ReconcileMetering struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling Metering")
+	reqLogger := log.WithValues("Request.Name", request.Name)
+	reqLogger.Info("Reconciling Metering", "Request.Namespace", request.Namespace)
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
@@ -189,19 +184,19 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger.Info("got Metering instance, version=" + version)
 	reqLogger.Info("Checking Services")
 	// Check if the DM, Reader and Receiver Services already exist. If not, create new ones.
-	err = r.reconcileService(instance, &needToRequeue)
+	err = r.reconcileAllServices(instance, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	reqLogger.Info("Checking Certificates")
 	// Check if the Certificates already exist, if not create new ones
-	err = r.reconcileCertificate(instance, &needToRequeue)
+	err = r.reconcileAllCertificates(instance, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Checking DM Deployment")
+	reqLogger.Info("Checking DM Deployment", "Deployment.Name", res.DmDeploymentName)
 	// set common MongoDB env vars based on the instance
 	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
@@ -218,81 +213,25 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	currentDeployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.DmDeploymentName, Namespace: instance.Namespace}, currentDeployment)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new deployment
-		reqLogger.Info("Creating a new DM Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
-		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("DM Deployment already exists")
-			needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new DM Deployment", "Deployment.Namespace", newDeployment.Namespace,
-				"Deployment.Name", newDeployment.Name)
-			return reconcile.Result{}, err
-		} else {
-			// Deployment created successfully - return and requeue
-			needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get DM Deployment")
+	err = res.ReconcileDeployment(r.client, instance.Namespace, res.DmDeploymentName, "DM", newDeployment, &needToRequeue)
+	if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		// Found deployment, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating DM Deployment")
-		currentDeployment.Spec = newDeployment.Spec
-		err = r.client.Update(context.TODO(), currentDeployment)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update DM Deployment", "Deployment.Namespace", currentDeployment.Namespace,
-				"Deployment.Name", currentDeployment.Name)
-			return reconcile.Result{}, err
-		}
 	}
 
-	reqLogger.Info("Checking Reader DaemonSet")
+	reqLogger.Info("Checking Reader DaemonSet", "DaemonSet.Name", res.ReaderDaemonSetName)
 	// Check if the DaemonSet already exists, if not create a new one
 	newDaemonSet, err := r.daemonForReader(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	currentDaemonSet := &appsv1.DaemonSet{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReaderDaemonSetName, Namespace: instance.Namespace}, currentDaemonSet)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new DaemonSet
-		reqLogger.Info("Creating a new Reader DaemonSet", "DaemonSet.Namespace", newDaemonSet.Namespace, "DaemonSet.Name", newDaemonSet.Name)
-		err = r.client.Create(context.TODO(), newDaemonSet)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("Reader DaemonSet already exists")
-			needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new Reader DaemonSet", "DaemonSet.Namespace", newDaemonSet.Namespace,
-				"DaemonSet.Name", newDaemonSet.Name)
-			return reconcile.Result{}, err
-		} else {
-			// DaemonSet created successfully - return and requeue
-			needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get Reader DaemonSet")
+	err = res.ReconcileDaemonSet(r.client, instance.Namespace, res.ReaderDaemonSetName, "Reader", newDaemonSet, &needToRequeue)
+	if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		// Found DaemonSet, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating Reader DaemonSet")
-		currentDaemonSet.Spec = newDaemonSet.Spec
-		err = r.client.Update(context.TODO(), currentDaemonSet)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update Reader DaemonSet", "DaemonSet.Namespace", currentDaemonSet.Namespace,
-				"DaemonSet.Name", currentDaemonSet.Name)
-			return reconcile.Result{}, err
-		}
 	}
 
 	reqLogger.Info("Checking API Ingresses")
 	// Check if the Ingresses already exist, if not create new ones
-	err = r.reconcileIngress(instance, &needToRequeue)
+	err = r.reconcileAllIngress(instance, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -333,84 +272,40 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 // Check if the DM and Reader Services already exist. If not, create new ones.
 // This function was created to reduce the cyclomatic complexity :)
-func (r *ReconcileMetering) reconcileService(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
-	reqLogger := log.WithValues("func", "reconcileService", "instance.Name", instance.Name)
+func (r *ReconcileMetering) reconcileAllServices(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
+	reqLogger := log.WithValues("func", "reconcileAllServices")
 
-	reqLogger.Info("Checking DM Service")
+	reqLogger.Info("Checking DM Service", "Service.Name", res.DmServiceName)
 	// Check if the DataManager Service already exists, if not create a new one
 	newDmService, err := r.serviceForDataMgr(instance)
 	if err != nil {
 		return err
 	}
-	err = r.reconcileOneService(instance.Namespace, res.DmServiceName, "DM", newDmService, needToRequeue)
+	err = res.ReconcileService(r.client, instance.Namespace, res.DmServiceName, "DM", newDmService, needToRequeue)
 	if err != nil {
 		return err
 	}
 
-	reqLogger.Info("Checking Reader Service")
+	reqLogger.Info("Checking Reader Service", "Service.Name", res.ReaderServiceName)
 	// Check if the Reader Service already exists, if not create a new one
 	newRdrService, err := r.serviceForReader(instance)
 	if err != nil {
 		return err
 	}
-	err = r.reconcileOneService(instance.Namespace, res.ReaderServiceName, "Reader", newRdrService, needToRequeue)
+	err = res.ReconcileService(r.client, instance.Namespace, res.ReaderServiceName, "Reader", newRdrService, needToRequeue)
 	if err != nil {
 		return err
 	}
 
 	if instance.Spec.MultiCloudReceiverEnabled {
-		reqLogger.Info("Checking Receiver Service")
+		reqLogger.Info("Checking Receiver Service", "Service.Name", res.ReceiverServiceName)
 		// Check if the Receiver Service already exists, if not create a new one
 		newReceiverService, err := r.serviceForReceiver(instance)
 		if err != nil {
 			return err
 		}
-		err = r.reconcileOneService(instance.Namespace, res.ReceiverServiceName, "Receiver", newReceiverService, needToRequeue)
+		err = res.ReconcileService(r.client, instance.Namespace, res.ReceiverServiceName, "Receiver", newReceiverService, needToRequeue)
 		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-// Check if a Service already exists. If not, create a new one.
-// This function was created to reduce the cyclomatic complexity :)
-func (r *ReconcileMetering) reconcileOneService(instanceNamespace, serviceName, serviceType string,
-	newService *corev1.Service, needToRequeue *bool) error {
-
-	reqLogger := log.WithValues("func", "reconcileOneService", "serviceName", serviceName)
-
-	currentService := &corev1.Service{}
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: serviceName, Namespace: instanceNamespace}, currentService)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new Service
-		reqLogger.Info("Creating a new "+serviceType+" Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-		err = r.client.Create(context.TODO(), newService)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info(serviceType + " Service already exists")
-			*needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new "+serviceType+" Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-			return err
-		} else {
-			// Service created successfully - return and requeue
-			*needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get "+serviceType+" Service")
-		return err
-	} else {
-		// Found service, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating " + serviceType + " Service")
-		// Can't copy the entire Spec because ClusterIP is immutable
-		currentService.Spec.Ports = newService.Spec.Ports
-		currentService.Spec.Selector = newService.Spec.Selector
-		err = r.client.Update(context.TODO(), currentService)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update "+serviceType+" Service", "Deployment.Namespace", currentService.Namespace,
-				"Deployment.Name", currentService.Name)
 			return err
 		}
 	}
@@ -420,8 +315,8 @@ func (r *ReconcileMetering) reconcileOneService(instanceNamespace, serviceName, 
 
 // Check if the Certificates already exist, if not create new ones.
 // This function was created to reduce the cyclomatic complexity :)
-func (r *ReconcileMetering) reconcileCertificate(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
-	reqLogger := log.WithValues("func", "reconcileCertificate", "instance.Name", instance.Name)
+func (r *ReconcileMetering) reconcileAllCertificates(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
+	reqLogger := log.WithValues("func", "reconcileAllCertificates")
 
 	certificateList := []res.CertificateData{
 		res.APICertificateData,
@@ -431,7 +326,7 @@ func (r *ReconcileMetering) reconcileCertificate(instance *operatorv1alpha1.Mete
 		certificateList = append(certificateList, res.ReceiverCertificateData)
 	}
 	for _, certData := range certificateList {
-		reqLogger.Info("Checking Certificate, name=" + certData.Name)
+		reqLogger.Info("Checking Certificate", "Certificate.Name", certData.Name)
 		newCertificate := res.BuildCertificate(instance.Namespace, certData)
 		// Set Metering instance as the owner and controller of the Certificate
 		err := controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
@@ -440,38 +335,9 @@ func (r *ReconcileMetering) reconcileCertificate(instance *operatorv1alpha1.Mete
 				"Certificate.Name", newCertificate.Name)
 			return err
 		}
-		currentCertificate := &certmgr.Certificate{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: certData.Name, Namespace: instance.Namespace}, currentCertificate)
-		if err != nil && errors.IsNotFound(err) {
-			// Create a new Certificate
-			reqLogger.Info("Creating a new Certificate", "Certificate.Namespace", newCertificate.Namespace, "Certificate.Name", newCertificate.Name)
-			err = r.client.Create(context.TODO(), newCertificate)
-			if err != nil && errors.IsAlreadyExists(err) {
-				// Already exists from previous reconcile, requeue
-				reqLogger.Info("Certificate already exists")
-				*needToRequeue = true
-			} else if err != nil {
-				reqLogger.Error(err, "Failed to create new Certificate", "Certificate.Namespace", newCertificate.Namespace,
-					"Certificate.Name", newCertificate.Name)
-				return err
-			} else {
-				// Certificate created successfully - return and requeue
-				*needToRequeue = true
-			}
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to get Certificate, name="+certData.Name)
-			// CertManager might not be installed, so don't fail
-			//CS??? return err
-		} else {
-			// Found Certificate, so send an update to k8s and let it determine if the resource has changed
-			reqLogger.Info("Updating Certificate", "Certificate.Name", newCertificate.Name)
-			currentCertificate.Spec = newCertificate.Spec
-			err = r.client.Update(context.TODO(), currentCertificate)
-			if err != nil {
-				reqLogger.Error(err, "Failed to update Certificate", "Certificate.Namespace", newCertificate.Namespace,
-					"Certificate.Name", newCertificate.Name)
-				return err
-			}
+		err = res.ReconcileCertificate(r.client, instance.Namespace, certData.Name, newCertificate, needToRequeue)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -479,11 +345,11 @@ func (r *ReconcileMetering) reconcileCertificate(instance *operatorv1alpha1.Mete
 
 // Check if the Ingresses already exist, if not create new ones.
 // This function was created to reduce the cyclomatic complexity :)
-func (r *ReconcileMetering) reconcileIngress(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
-	reqLogger := log.WithValues("func", "reconcileIngress", "instance.Name", instance.Name)
+func (r *ReconcileMetering) reconcileAllIngress(instance *operatorv1alpha1.Metering, needToRequeue *bool) error {
+	reqLogger := log.WithValues("func", "reconcileAllIngress")
 
 	for _, ingressData := range ingressList {
-		reqLogger.Info("Checking API Ingress, name=" + ingressData.Name)
+		reqLogger.Info("Checking API Ingress", "Ingress.Name", ingressData.Name)
 		newIngress := res.BuildIngress(instance.Namespace, ingressData)
 		// Set Metering instance as the owner and controller of the Ingress
 		err := controllerutil.SetControllerReference(instance, newIngress, r.scheme)
@@ -492,38 +358,11 @@ func (r *ReconcileMetering) reconcileIngress(instance *operatorv1alpha1.Metering
 				"Ingress.Name", newIngress.Name)
 			return err
 		}
-		currentIngress := &netv1.Ingress{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: ingressData.Name, Namespace: instance.Namespace}, currentIngress)
-		if err != nil && errors.IsNotFound(err) {
-			// Create a new Ingress
-			reqLogger.Info("Creating a new API Ingress", "Ingress.Namespace", newIngress.Namespace, "Ingress.Name", newIngress.Name)
-			err = r.client.Create(context.TODO(), newIngress)
-			if err != nil && errors.IsAlreadyExists(err) {
-				// Already exists from previous reconcile, requeue
-				reqLogger.Info("API Ingress already exists")
-				*needToRequeue = true
-			} else if err != nil {
-				reqLogger.Error(err, "Failed to create new API Ingress", "Ingress.Namespace", newIngress.Namespace,
-					"Ingress.Name", newIngress.Name)
-				return err
-			} else {
-				// Ingress created successfully - return and requeue
-				*needToRequeue = true
-			}
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to get API Ingress, name="+ingressData.Name)
+		err = res.ReconcileIngress(r.client, instance.Namespace, ingressData.Name, "API", newIngress, needToRequeue)
+		if err != nil {
 			return err
-		} else {
-			// Found Ingress, so send an update to k8s and let it determine if the resource has changed
-			reqLogger.Info("Updating API Ingress", "Ingress.Name", newIngress.Name)
-			currentIngress.Spec = newIngress.Spec
-			err = r.client.Update(context.TODO(), currentIngress)
-			if err != nil {
-				reqLogger.Error(err, "Failed to update API Ingress", "Ingress.Namespace", newIngress.Namespace,
-					"Ingress.Name", newIngress.Name)
-				return err
-			}
 		}
+
 	}
 	return nil
 }
@@ -608,7 +447,6 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
-					NodeSelector:                  res.ManagementNodeSelector,
 					HostNetwork:                   false,
 					HostPID:                       false,
 					HostIPC:                       false,
@@ -677,8 +515,13 @@ func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Meterin
 		Spec: corev1.ServiceSpec{
 			Ports: []corev1.ServicePort{
 				{
-					Name: "datamanager",
-					Port: 3000,
+					Name:     "datamanager",
+					Protocol: corev1.ProtocolTCP,
+					Port:     3000,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 3000,
+					},
 				},
 			},
 			Selector: selectorLabels,
@@ -710,16 +553,18 @@ func (r *ReconcileMetering) serviceForReader(instance *operatorv1alpha1.Metering
 			Type: corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
 				{
-					Name: "apiserver",
-					Port: 4000,
+					Name:     "apiserver",
+					Protocol: corev1.ProtocolTCP,
+					Port:     4000,
 					TargetPort: intstr.IntOrString{
 						Type:   intstr.Int,
 						IntVal: 4000,
 					},
 				},
 				{
-					Name: "internal-api",
-					Port: 4002,
+					Name:     "internal-api",
+					Protocol: corev1.ProtocolTCP,
+					Port:     4002,
 					TargetPort: intstr.IntOrString{
 						Type:   intstr.Int,
 						IntVal: 4002,
@@ -755,8 +600,13 @@ func (r *ReconcileMetering) serviceForReceiver(instance *operatorv1alpha1.Meteri
 			Type: corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
 				{
-					Name: "metering-receiver",
-					Port: 5000,
+					Name:     "metering-receiver",
+					Protocol: corev1.ProtocolTCP,
+					Port:     5000,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 5000,
+					},
 				},
 			},
 			Selector: selectorLabels,

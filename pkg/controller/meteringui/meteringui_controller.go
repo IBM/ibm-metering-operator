@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -132,8 +131,8 @@ type ReconcileMeteringUI struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling MeteringUI")
+	reqLogger := log.WithValues("Request.Name", request.Name)
+	reqLogger.Info("Reconciling MeteringUI", "Request.Namespace", request.Namespace)
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
@@ -156,44 +155,15 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 
 	version := instance.Spec.Version
 	reqLogger.Info("got MeteringUI instance, version=" + version)
-	reqLogger.Info("Checking UI Service")
+	reqLogger.Info("Checking UI Service", "Service.Name", res.UIDeploymentName)
 	// Check if the UI Service already exists, if not create a new one
 	newService, err := r.serviceForUI(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	currentService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.UIDeploymentName, Namespace: instance.Namespace}, currentService)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new Service
-		reqLogger.Info("Creating a new UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-		err = r.client.Create(context.TODO(), newService)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("UI Service already exists")
-			needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-			return reconcile.Result{}, err
-		} else {
-			// Service created successfully - return and requeue
-			needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get UI Service")
+	err = res.ReconcileService(r.client, instance.Namespace, res.UIDeploymentName, "UI", newService, &needToRequeue)
+	if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		// Found service, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating UI Service")
-		// Can't copy the entire Spec because ClusterIP is immutable
-		currentService.Spec.Ports = newService.Spec.Ports
-		currentService.Spec.Selector = newService.Spec.Selector
-		err = r.client.Update(context.TODO(), currentService)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update UI Service", "Deployment.Namespace", currentService.Namespace,
-				"Deployment.Name", currentService.Name)
-			return reconcile.Result{}, err
-		}
 	}
 
 	// set common MongoDB env vars based on the instance
@@ -208,48 +178,28 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.UIDeploymentName, "loglevel")
 
-	reqLogger.Info("Checking UI Deployment")
+	reqLogger.Info("Checking UI Deployment", "Deployment.Name", res.UIDeploymentName)
 	// Check if the UI Deployment already exists, if not create a new one
 	newDeployment, err := r.deploymentForUI(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	currentDeployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.UIDeploymentName, Namespace: instance.Namespace}, currentDeployment)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new deployment
-		reqLogger.Info("Creating a new UI Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
-		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("UI Deployment already exists")
-			needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new UI Deployment", "Deployment.Namespace", newDeployment.Namespace,
-				"Deployment.Name", newDeployment.Name)
-			return reconcile.Result{}, err
-		} else {
-			// Deployment created successfully - return and requeue
-			needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get UI Deployment")
+	err = res.ReconcileDeployment(r.client, instance.Namespace, res.UIDeploymentName, "UI", newDeployment, &needToRequeue)
+	if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		// Found deployment, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating UI Deployment")
-		currentDeployment.Spec = newDeployment.Spec
-		err = r.client.Update(context.TODO(), currentDeployment)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update UI Deployment", "Deployment.Namespace", currentDeployment.Namespace,
-				"Deployment.Name", currentDeployment.Name)
-			return reconcile.Result{}, err
-		}
 	}
 
-	reqLogger.Info("Checking UI Ingress")
+	reqLogger.Info("Checking UI Ingress", "Ingress.Name", res.UIIngressData.Name)
 	// Check if the Ingress already exists, if not create a new one
-	err = r.reconcileIngress(instance, &needToRequeue)
+	newIngress := res.BuildIngress(instance.Namespace, res.UIIngressData)
+	// Set MeteringUI instance as the owner and controller of the Ingress
+	err = controllerutil.SetControllerReference(instance, newIngress, r.scheme)
+	if err != nil {
+		reqLogger.Error(err, "Failed to set owner for UI Ingress", "Ingress.Namespace", newIngress.Namespace,
+			"Ingress.Name", newIngress.Name)
+		return reconcile.Result{}, err
+	}
+	err = res.ReconcileIngress(r.client, instance.Namespace, res.UIIngressData.Name, "UI", newIngress, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -345,7 +295,7 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 			Labels:    metaLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &res.Replica1,
+			Replicas: &instance.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
@@ -355,7 +305,6 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
-					NodeSelector:                  res.ManagementNodeSelector,
 					HostNetwork:                   false,
 					HostPID:                       false,
 					HostIPC:                       false,
@@ -425,8 +374,9 @@ func (r *ReconcileMeteringUI) serviceForUI(instance *operatorv1alpha1.MeteringUI
 			Type: corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
 				{
-					Name: "dashboard",
-					Port: 3130,
+					Name:     "dashboard",
+					Protocol: corev1.ProtocolTCP,
+					Port:     3130,
 					TargetPort: intstr.IntOrString{
 						Type:   intstr.Int,
 						IntVal: 3130,
@@ -444,52 +394,4 @@ func (r *ReconcileMeteringUI) serviceForUI(instance *operatorv1alpha1.MeteringUI
 		return nil, err
 	}
 	return service, nil
-}
-
-// Check if the Ingress already exists, if not create a new one.
-// This function was created to reduce the cyclomatic complexity :)
-func (r *ReconcileMeteringUI) reconcileIngress(instance *operatorv1alpha1.MeteringUI, needToRequeue *bool) error {
-	reqLogger := log.WithValues("func", "reconcileIngress", "instance.Name", instance.Name)
-
-	newIngress := res.BuildIngress(instance.Namespace, res.UIIngressData)
-	// Set MeteringUI instance as the owner and controller of the Ingress
-	err := controllerutil.SetControllerReference(instance, newIngress, r.scheme)
-	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for UI Ingress", "Ingress.Namespace", newIngress.Namespace,
-			"Ingress.Name", newIngress.Name)
-		return err
-	}
-	currentIngress := &netv1.Ingress{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.UIIngressData.Name, Namespace: instance.Namespace}, currentIngress)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new Ingress
-		reqLogger.Info("Creating a new UI Ingress", "Ingress.Namespace", newIngress.Namespace, "Ingress.Name", newIngress.Name)
-		err = r.client.Create(context.TODO(), newIngress)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("UI Ingress already exists")
-			*needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new UI Ingress", "Ingress.Namespace", newIngress.Namespace,
-				"Ingress.Name", newIngress.Name)
-			return err
-		} else {
-			// Ingress created successfully - return and requeue
-			*needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get UI Ingress")
-		return err
-	} else {
-		// Found Ingress, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating UI Ingress", "Ingress.Name", newIngress.Name)
-		currentIngress.Spec = newIngress.Spec
-		err = r.client.Update(context.TODO(), currentIngress)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update UI Ingress", "Ingress.Namespace", newIngress.Namespace,
-				"Ingress.Name", newIngress.Name)
-			return err
-		}
-	}
-	return nil
 }

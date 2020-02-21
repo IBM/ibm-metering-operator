@@ -5,6 +5,7 @@ metadata:
 spec:
   version: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
+  replicas: 1
   iamNamespace: kube-system
   ingressNamespace: kube-system
   commonHeaderNamespace: kube-system

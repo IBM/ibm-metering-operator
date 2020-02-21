@@ -31,6 +31,7 @@ type MeteringUISpec struct {
 	Version               string              `json:"version"`
 	ImageRegistry         string              `json:"imageRegistry,omitempty"`
 	ImageTagPostfix       string              `json:"imageTagPostfix,omitempty"`
+	Replicas              int32               `json:"replicas"`
 	IAMnamespace          string              `json:"iamNamespace,omitempty"`
 	IngressNamespace      string              `json:"ingressNamespace,omitempty"`
 	CommonHeaderNamespace string              `json:"commonHeaderNamespace,omitempty"`

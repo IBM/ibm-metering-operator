@@ -73,6 +73,9 @@ spec:
               - usernameKey
               - usernameSecret
               type: object
+            replicas:
+              format: int32
+              type: integer
             version:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after
@@ -81,6 +84,7 @@ spec:
               type: string
           required:
           - mongodb
+          - replicas
           - version
           type: object
         status:
