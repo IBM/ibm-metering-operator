@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -112,8 +111,8 @@ type ReconcileMeteringSender struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling MeteringSender")
+	reqLogger := log.WithValues("Request.Name", request.Name)
+	reqLogger.Info("Reconciling MeteringSender", "Request.Namespace", request.Namespace)
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
@@ -136,7 +135,7 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 
 	version := instance.Spec.Version
 	reqLogger.Info("got MeteringSender instance, version=" + version)
-	reqLogger.Info("Checking Sender Deployment")
+	reqLogger.Info("Checking Sender Deployment", "Deployment.Name", res.SenderDeploymentName)
 
 	// set common MongoDB env vars based on the instance
 	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
@@ -155,37 +154,9 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	currentDeployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.SenderDeploymentName, Namespace: instance.Namespace}, currentDeployment)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new deployment
-		reqLogger.Info("Creating a new Sender Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
-		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("Sender Deployment already exists")
-			needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new Sender Deployment", "Deployment.Namespace", newDeployment.Namespace,
-				"Deployment.Name", newDeployment.Name)
-			return reconcile.Result{}, err
-		} else {
-			// Deployment created successfully - return and requeue
-			needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get Sender Deployment")
+	err = res.ReconcileDeployment(r.client, instance.Namespace, res.SenderDeploymentName, "Sender", newDeployment, &needToRequeue)
+	if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		// Found deployment, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating Sender Deployment")
-		currentDeployment.Spec = newDeployment.Spec
-		err = r.client.Update(context.TODO(), currentDeployment)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update Sender Deployment", "Deployment.Namespace", currentDeployment.Namespace,
-				"Deployment.Name", currentDeployment.Name)
-			return reconcile.Result{}, err
-		}
 	}
 
 	if needToRequeue {
@@ -295,7 +266,6 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
-					NodeSelector:                  res.ManagementNodeSelector,
 					HostNetwork:                   false,
 					HostPID:                       false,
 					HostIPC:                       false,

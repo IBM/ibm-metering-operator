@@ -42,7 +42,6 @@ var TrueVar = true
 var FalseVar = false
 var Replica1 int32 = 1
 var Seconds60 int64 = 60
-var ManagementNodeSelector = map[string]string{"management": "true"}
 
 var cpu100 = resource.NewMilliQuantity(100, resource.DecimalSI)          // 100m
 var cpu500 = resource.NewMilliQuantity(500, resource.DecimalSI)          // 500m
@@ -338,7 +337,7 @@ var DmMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3000,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 305,
@@ -355,7 +354,7 @@ var DmMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3000,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 15,
@@ -470,7 +469,8 @@ var RdrMainContainer = corev1.Container{
 			Name: "MY_NODE_NAME",
 			ValueFrom: &corev1.EnvVarSource{
 				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath: "spec.nodeName",
+					FieldPath:  "spec.nodeName",
+					APIVersion: "v1",
 				},
 			},
 		},
@@ -488,7 +488,7 @@ var RdrMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3000,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 305,
@@ -505,7 +505,7 @@ var RdrMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3000,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 15,
@@ -592,7 +592,7 @@ var SenderMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3000,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 305,
@@ -609,7 +609,7 @@ var SenderMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3000,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 15,
@@ -722,7 +722,7 @@ var UIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3130,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 305,
@@ -739,7 +739,7 @@ var UIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3130,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 15,
@@ -789,7 +789,7 @@ var McmUIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3001,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 305,
@@ -806,7 +806,7 @@ var McmUIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3001,
 				},
-				Scheme: "",
+				Scheme: corev1.URISchemeHTTP,
 			},
 		},
 		InitialDelaySeconds: 15,

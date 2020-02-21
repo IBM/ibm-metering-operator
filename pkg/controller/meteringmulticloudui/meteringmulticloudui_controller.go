@@ -31,7 +31,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -132,8 +131,8 @@ type ReconcileMeteringMultiCloudUI struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling MeteringMultiCloudUI")
+	reqLogger := log.WithValues("Request.Name", request.Name)
+	reqLogger.Info("Reconciling MeteringMultiCloudUI", "Request.Namespace", request.Namespace)
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
@@ -156,44 +155,15 @@ func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (re
 
 	version := instance.Spec.Version
 	reqLogger.Info("got MeteringMultiCloudUI instance, version=" + version)
-	reqLogger.Info("Checking MCM UI Service")
+	reqLogger.Info("Checking MCM UI Service", "Service.Name", res.McmDeploymentName)
 	// Check if the MCM UI Service already exists, if not create a new one
 	newService, err := r.serviceForMCMUI(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	currentService := &corev1.Service{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.McmDeploymentName, Namespace: instance.Namespace}, currentService)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new Service
-		reqLogger.Info("Creating a new MCM UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-		err = r.client.Create(context.TODO(), newService)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("MCM UI Service already exists")
-			needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new MCM UI Service", "Service.Namespace", newService.Namespace, "Service.Name", newService.Name)
-			return reconcile.Result{}, err
-		} else {
-			// Service created successfully - return and requeue
-			needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get MCM UI Service")
+	err = res.ReconcileService(r.client, instance.Namespace, res.McmDeploymentName, "MCM UI", newService, &needToRequeue)
+	if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		// Found service, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating MCM UI Service")
-		// Can't copy the entire Spec because ClusterIP is immutable
-		currentService.Spec.Ports = newService.Spec.Ports
-		currentService.Spec.Selector = newService.Spec.Selector
-		err = r.client.Update(context.TODO(), currentService)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update MCM UI Service", "Deployment.Namespace", currentService.Namespace,
-				"Deployment.Name", currentService.Name)
-			return reconcile.Result{}, err
-		}
 	}
 
 	// set common MongoDB env vars based on the instance
@@ -208,48 +178,28 @@ func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (re
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
 		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.McmDeploymentName, "log4js")
 
-	reqLogger.Info("Checking MCM UI Deployment")
+	reqLogger.Info("Checking MCM UI Deployment", "Deployment.Name", res.McmDeploymentName)
 	// Check if the MCM UI Deployment already exists, if not create a new one
 	newDeployment, err := r.deploymentForMCMUI(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	currentDeployment := &appsv1.Deployment{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.McmDeploymentName, Namespace: instance.Namespace}, currentDeployment)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new deployment
-		reqLogger.Info("Creating a new MCM UI Deployment", "Deployment.Namespace", newDeployment.Namespace, "Deployment.Name", newDeployment.Name)
-		err = r.client.Create(context.TODO(), newDeployment)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("MCM UI Deployment already exists")
-			needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new MCM UI Deployment", "Deployment.Namespace", newDeployment.Namespace,
-				"Deployment.Name", newDeployment.Name)
-			return reconcile.Result{}, err
-		} else {
-			// Deployment created successfully - return and requeue
-			needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get MCM UI Deployment")
+	err = res.ReconcileDeployment(r.client, instance.Namespace, res.McmDeploymentName, "MCM UI", newDeployment, &needToRequeue)
+	if err != nil {
 		return reconcile.Result{}, err
-	} else {
-		// Found deployment, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating MCM UI Deployment")
-		currentDeployment.Spec = newDeployment.Spec
-		err = r.client.Update(context.TODO(), currentDeployment)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update MCM UI Deployment", "Deployment.Namespace", currentDeployment.Namespace,
-				"Deployment.Name", currentDeployment.Name)
-			return reconcile.Result{}, err
-		}
 	}
 
-	reqLogger.Info("Checking MCM UI Ingress")
+	reqLogger.Info("Checking MCM UI Ingress", "Ingress.Name", res.McmIngressData.Name)
 	// Check if the Ingress already exists, if not create a new one
-	err = r.reconcileIngress(instance, &needToRequeue)
+	newIngress := res.BuildIngress(instance.Namespace, res.McmIngressData)
+	// Set MeteringMultiCloudUI instance as the owner and controller of the Ingress
+	err = controllerutil.SetControllerReference(instance, newIngress, r.scheme)
+	if err != nil {
+		reqLogger.Error(err, "Failed to set owner for MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace,
+			"Ingress.Name", newIngress.Name)
+		return reconcile.Result{}, err
+	}
+	err = res.ReconcileIngress(r.client, instance.Namespace, res.McmIngressData.Name, "MCM UI", newIngress, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -345,7 +295,7 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 			Labels:    metaLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &res.Replica1,
+			Replicas: &instance.Spec.Replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
@@ -355,7 +305,6 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
-					NodeSelector:                  res.ManagementNodeSelector,
 					HostNetwork:                   false,
 					HostPID:                       false,
 					HostIPC:                       false,
@@ -425,8 +374,9 @@ func (r *ReconcileMeteringMultiCloudUI) serviceForMCMUI(instance *operatorv1alph
 			Type: corev1.ServiceTypeClusterIP,
 			Ports: []corev1.ServicePort{
 				{
-					Name: "metering-mcm-dashboard",
-					Port: 3001,
+					Name:     "metering-mcm-dashboard",
+					Protocol: corev1.ProtocolTCP,
+					Port:     3001,
 					TargetPort: intstr.IntOrString{
 						Type:   intstr.Int,
 						IntVal: 3001,
@@ -444,52 +394,4 @@ func (r *ReconcileMeteringMultiCloudUI) serviceForMCMUI(instance *operatorv1alph
 		return nil, err
 	}
 	return service, nil
-}
-
-// Check if the Ingress already exists, if not create a new one.
-// This function was created to reduce the cyclomatic complexity :)
-func (r *ReconcileMeteringMultiCloudUI) reconcileIngress(instance *operatorv1alpha1.MeteringMultiCloudUI, needToRequeue *bool) error {
-	reqLogger := log.WithValues("func", "reconcileIngress", "instance.Name", instance.Name)
-
-	newIngress := res.BuildIngress(instance.Namespace, res.McmIngressData)
-	// Set MeteringMultiCloudUI instance as the owner and controller of the Ingress
-	err := controllerutil.SetControllerReference(instance, newIngress, r.scheme)
-	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace,
-			"Ingress.Name", newIngress.Name)
-		return err
-	}
-	currentIngress := &netv1.Ingress{}
-	err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.McmIngressData.Name, Namespace: instance.Namespace}, currentIngress)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new Ingress
-		reqLogger.Info("Creating a new MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace, "Ingress.Name", newIngress.Name)
-		err = r.client.Create(context.TODO(), newIngress)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			reqLogger.Info("MCM UI Ingress already exists")
-			*needToRequeue = true
-		} else if err != nil {
-			reqLogger.Error(err, "Failed to create new MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace,
-				"Ingress.Name", newIngress.Name)
-			return err
-		} else {
-			// Ingress created successfully - return and requeue
-			*needToRequeue = true
-		}
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get MCM UI Ingress")
-		return err
-	} else {
-		// Found Ingress, so send an update to k8s and let it determine if the resource has changed
-		reqLogger.Info("Updating MCM UI Ingress", "Ingress.Name", newIngress.Name)
-		currentIngress.Spec = newIngress.Spec
-		err = r.client.Update(context.TODO(), currentIngress)
-		if err != nil {
-			reqLogger.Error(err, "Failed to update MCM UI Ingress", "Ingress.Namespace", newIngress.Namespace,
-				"Ingress.Name", newIngress.Name)
-			return err
-		}
-	}
-	return nil
 }
