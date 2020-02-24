@@ -230,7 +230,8 @@ func ReconcileCertificate(client client.Client, instanceNamespace, certificateNa
 		} else if err != nil {
 			logger.Error(err, "Failed to create new Certificate", "Certificate.Namespace", newCertificate.Namespace,
 				"Certificate.Name", newCertificate.Name)
-			return err
+			// CertManager might not be installed, so don't fail
+			//CS??? return err
 		} else {
 			// Certificate created successfully - return and requeue
 			*needToRequeue = true

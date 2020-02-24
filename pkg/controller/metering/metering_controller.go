@@ -189,13 +189,6 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Checking Certificates")
-	// Check if the Certificates already exist, if not create new ones
-	err = r.reconcileAllCertificates(instance, &needToRequeue)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
-
 	reqLogger.Info("Checking DM Deployment", "Deployment.Name", res.DmDeploymentName)
 	// set common MongoDB env vars based on the instance
 	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
@@ -232,6 +225,13 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	reqLogger.Info("Checking API Ingresses")
 	// Check if the Ingresses already exist, if not create new ones
 	err = r.reconcileAllIngress(instance, &needToRequeue)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	reqLogger.Info("Checking Certificates")
+	// Check if the Certificates already exist, if not create new ones
+	err = r.reconcileAllCertificates(instance, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
