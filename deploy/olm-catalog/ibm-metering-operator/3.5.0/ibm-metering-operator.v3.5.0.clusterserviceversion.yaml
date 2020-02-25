@@ -11,12 +11,12 @@ metadata:
             "name": "metering"
           },
           "spec": {
-            "iamNamespace": "kube-system",
+            "iamNamespace": "ibm-common-services",
             "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
-              "clustercertssecret": "cluster-ca-cert",
-              "host": "mongodb.kube-system.svc.cluster.local",
+              "clustercertssecret": "mongodb-root-ca-cert",
+              "host": "mongodb",
               "passwordKey": "password",
               "passwordSecret": "icp-mongodb-admin",
               "port": 27017,
@@ -34,14 +34,14 @@ metadata:
             "name": "meteringmcmui"
           },
           "spec": {
-            "commonHeaderNamespace": "kube-system",
-            "iamNamespace": "kube-system",
+            "commonHeaderNamespace": "ibm-common-services",
+            "iamNamespace": "ibm-common-services",
             "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
-            "ingressNamespace": "kube-system",
+            "ingressNamespace": "ibm-common-services",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
-              "clustercertssecret": "cluster-ca-cert",
-              "host": "mongodb.kube-system.svc.cluster.local",
+              "clustercertssecret": "mongodb-root-ca-cert",
+              "host": "mongodb",
               "passwordKey": "password",
               "passwordSecret": "icp-mongodb-admin",
               "port": 27017,
@@ -62,8 +62,8 @@ metadata:
             "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
-              "clustercertssecret": "cluster-ca-cert",
-              "host": "mongodb.kube-system.svc.cluster.local",
+              "clustercertssecret": "mongodb-root-ca-cert",
+              "host": "mongodb",
               "passwordKey": "password",
               "passwordSecret": "icp-mongodb-admin",
               "port": 27017,
@@ -72,7 +72,7 @@ metadata:
             },
             "sender": {
               "clusterName": "mycluster",
-              "clusterNamespace": "kube-system",
+              "clusterNamespace": "ibm-common-services",
               "hubKubeConfigSecret": "multicluster-endpoint/endpoint-connmgr-hub-kubeconfig"
             },
             "version": "3.5.0"
@@ -86,14 +86,14 @@ metadata:
           },
           "spec": {
             "clusterName": "mycluster",
-            "commonHeaderNamespace": "kube-system",
-            "iamNamespace": "kube-system",
+            "commonHeaderNamespace": "ibm-common-services",
+            "iamNamespace": "ibm-common-services",
             "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
-            "ingressNamespace": "kube-system",
+            "ingressNamespace": "ibm-common-services",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
-              "clustercertssecret": "cluster-ca-cert",
-              "host": "mongodb.kube-system.svc.cluster.local",
+              "clustercertssecret": "mongodb-root-ca-cert",
+              "host": "mongodb",
               "passwordKey": "password",
               "passwordSecret": "icp-mongodb-admin",
               "port": 27017,
