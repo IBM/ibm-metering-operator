@@ -5,14 +5,14 @@ metadata:
 spec:
   version: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
-  iamNamespace: kube-system
+  iamNamespace: ibm-common-services
   multiCloudReceiverEnabled: false
   mongodb:
-    host: mongodb.kube-system.svc.cluster.local
+    host: mongodb
     port: 27017
     usernameSecret: icp-mongodb-admin
     usernameKey: user
     passwordSecret: icp-mongodb-admin
     passwordKey: password
-    clustercertssecret: cluster-ca-cert
+    clustercertssecret: mongodb-root-ca-cert
     clientcertssecret: icp-mongodb-client-cert
