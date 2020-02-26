@@ -153,7 +153,7 @@ spec:
           verbs:
           - get
           - list
-        serviceAccountName: ibm-metering-operator-cluster
+        serviceAccountName: ibm-metering-operator
       deployments:
       - name: ibm-metering-operator
         spec:
