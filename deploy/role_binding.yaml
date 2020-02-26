@@ -20,5 +20,5 @@ subjects:
   namespace: ibm-metering-operator
 roleRef:
   kind: ClusterRole
-  name: ibm-metering-operator-cluster
+  name: ibm-metering-operator
   apiGroup: rbac.authorization.k8s.io
