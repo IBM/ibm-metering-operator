@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-// CS??? removed icp-serviceid-apikey-secret from CommonSecretCheckNames, CommonSecretCheckDirs,
-// CS???   and CommonSecretCheckVolumeMounts
 // Linter doesn't like "Secret" in string var names that are assigned a value,
 // so use concatenation to create the value.
 // Example:  const MySecretName = "metering-secret" + ""
@@ -28,6 +26,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// SecretCheckData contains info about additional secrets for the secret-check container.
+// Names will be added to the SECRET_LIST env var.
+// Dirs will be added to the SECRET_DIR_LIST env var.
+// VolumeMounts contains the volume mounts associated with the secrets.
+type SecretCheckData struct {
+	Names        string
+	Dirs         string
+	VolumeMounts []corev1.VolumeMount
+}
+
 const DefaultImageRegistry = "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64"
 const DefaultDmImageName = "metering-data-manager"
 const DefaultDmImageTag = "3.4.0"
@@ -37,6 +45,11 @@ const DefaultMcmUIImageName = "metering-mcmui"
 const DefaultMcmUIImageTag = "3.4.0"
 const DefaultSenderImageName = "metering-data-manager"
 const DefaultSenderImageTag = "3.4.0"
+const DefaultClusterIssuer = "cs-ca-issuer"
+
+// use concatenation so linter won't complain about "Secret" vars
+const DefaultAPIKeySecretName = "icp-serviceid-apikey-secret" + ""
+const DefaultPlatformOidcSecretName = "platform-oidc-credentials" + ""
 
 var TrueVar = true
 var FalseVar = false
@@ -88,31 +101,6 @@ var SecretCheckCmd = `set -- $SECRET_LIST; ` +
 var SenderSecretCheckCmd = SecretCheckCmd + ";" +
 	`echo ` + "`date`" + `: Further, checking for kubeConfig secret...;` +
 	`node /datamanager/lib/metering_init.js kubeconfig_secretcheck `
-
-// CommonSecretCheckNames uses concatenation so linter won't complain about "Secret" vars
-var CommonSecretCheckNames = "icp-mongodb-admin icp-mongodb-admin " + "cluster-ca-cert icp-mongodb-client-cert"
-
-// CommonSecretCheckDirs uses concatenation so linter won't complain about "Secret" vars
-var CommonSecretCheckDirs = "muser-icp-mongodb-admin mpass-icp-mongodb-admin " + "cluster-ca-cert icp-mongodb-client-cert"
-
-var CommonSecretCheckVolumeMounts = []corev1.VolumeMount{
-	{
-		Name:      "mongodb-ca-cert",
-		MountPath: "/sec/cluster-ca-cert",
-	},
-	{
-		Name:      "mongodb-client-cert",
-		MountPath: "/sec/icp-mongodb-client-cert",
-	},
-	{
-		Name:      "muser-icp-mongodb-admin",
-		MountPath: "/sec/muser-icp-mongodb-admin",
-	},
-	{
-		Name:      "mpass-icp-mongodb-admin",
-		MountPath: "/sec/mpass-icp-mongodb-admin",
-	},
-}
 
 const APICertName = "icp-metering-api-ca-cert"
 const APICertCommonName = "metering-server"
@@ -174,44 +162,6 @@ var ReceiverSslEnvVars = []corev1.EnvVar{
 	{
 		Name:  "HC_RECEIVER_SSL_KEY",
 		Value: "/certs/" + ReceiverCertCommonName + "/tls.key",
-	},
-}
-
-// use concatenation so linter won't complain about "Secret" vars
-const PlatformOidcSecretName = "platform-oidc-credentials" + ""
-const PlatformOidcVolumeName = "platform-oidc-credentials"
-
-var PlatformOidcVolumeMount = corev1.VolumeMount{
-	Name:      PlatformOidcVolumeName,
-	MountPath: "/sec/" + PlatformOidcSecretName,
-}
-var PlatformOidcVolume = corev1.Volume{
-	Name: PlatformOidcVolumeName,
-	VolumeSource: corev1.VolumeSource{
-		Secret: &corev1.SecretVolumeSource{
-			SecretName:  PlatformOidcSecretName,
-			DefaultMode: &DefaultMode,
-			Optional:    &TrueVar,
-		},
-	},
-}
-
-// use concatenation so linter won't complain about "Secret" vars
-const APIKeySecretName = "icp-serviceid-apikey-secret" + ""
-const APIKeyVolumeName = "icp-serviceid-apikey-secret"
-
-var APIKeyVolumeMount = corev1.VolumeMount{
-	Name:      APIKeyVolumeName,
-	MountPath: "/sec/" + APIKeySecretName,
-}
-var APIKeyVolume = corev1.Volume{
-	Name: APIKeyVolumeName,
-	VolumeSource: corev1.VolumeSource{
-		Secret: &corev1.SecretVolumeSource{
-			SecretName:  APIKeySecretName,
-			DefaultMode: &DefaultMode,
-			Optional:    &TrueVar,
-		},
 	},
 }
 
@@ -633,42 +583,6 @@ var UIEnvVars = []corev1.EnvVar{
 	{
 		Name:  "IS_PRIVATECLOUD",
 		Value: "true",
-	},
-	{
-		Name: "ICP_API_KEY",
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: APIKeySecretName,
-				},
-				Key:      "ICP_API_KEY",
-				Optional: &TrueVar,
-			},
-		},
-	},
-	{
-		Name: "WLP_CLIENT_ID",
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: PlatformOidcSecretName,
-				},
-				Key:      "WLP_CLIENT_ID",
-				Optional: &TrueVar,
-			},
-		},
-	},
-	{
-		Name: "WLP_CLIENT_SECRET",
-		ValueFrom: &corev1.EnvVarSource{
-			SecretKeyRef: &corev1.SecretKeySelector{
-				LocalObjectReference: corev1.LocalObjectReference{
-					Name: PlatformOidcSecretName,
-				},
-				Key:      "WLP_CLIENT_SECRET",
-				Optional: &TrueVar,
-			},
-		},
 	},
 	{
 		Name:  "USE_PRIVATECLOUD_SECURITY",

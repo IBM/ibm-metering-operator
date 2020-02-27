@@ -6,10 +6,11 @@ spec:
   version: "3.5.0"
   imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
   replicas: 1
-  iamNamespace: ibm-common-services
-  ingressNamespace: ibm-common-services
-  commonHeaderNamespace: ibm-common-services
   clusterName: mycluster
+  ui:
+    iamNamespace: ibm-common-services
+    ingressNamespace: ibm-common-services
+    commonHeaderNamespace: ibm-common-services
   mongodb:
     host: mongodb
     port: 27017

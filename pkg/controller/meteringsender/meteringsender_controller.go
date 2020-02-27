@@ -138,16 +138,13 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 	reqLogger.Info("Checking Sender Deployment", "Deployment.Name", res.SenderDeploymentName)
 
 	// set common MongoDB env vars based on the instance
-	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
-		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
+	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB)
 	// set common cluster env vars based on the instance
 	clusterEnvVars = res.BuildSenderClusterEnvVars(instance.Namespace, instance.Spec.Sender.ClusterNamespace,
 		instance.Spec.Sender.ClusterName, instance.Spec.Sender.HubKubeConfigSecret)
 
 	// set common Volumes based on the instance
-	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.SenderDeploymentName, "loglevel")
+	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB, res.SenderDeploymentName, "loglevel")
 
 	// Check if the Sender Deployment already exists, if not create a new one
 	newDeployment, err := r.deploymentForSender(instance)
@@ -216,13 +213,8 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 	senderImage = imageRegistry + "/" + res.DefaultSenderImageName + ":" + res.DefaultSenderImageTag + instance.Spec.ImageTagPostfix
 	reqLogger.Info("senderImage=" + senderImage)
 
-	// set the SECRET_LIST env var
-	nameList := res.CommonSecretCheckNames
-	// set the SECRET_DIR_LIST env var
-	dirList := res.CommonSecretCheckDirs
-	volumeMounts := res.CommonSecretCheckVolumeMounts
 	senderSecretCheckContainer := res.BuildSecretCheckContainer(res.SenderDeploymentName, senderImage,
-		res.SenderSecretCheckCmd, nameList, dirList, volumeMounts)
+		res.SenderSecretCheckCmd, instance.Spec.MongoDB, nil)
 	hubEnvVar := corev1.EnvVar{
 		Name:  "HC_HUB_CONFIG",
 		Value: instance.Spec.Sender.HubKubeConfigSecret,

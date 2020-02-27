@@ -33,15 +33,9 @@ spec:
           properties:
             clusterName:
               type: string
-            commonHeaderNamespace:
-              type: string
-            iamNamespace:
-              type: string
             imageRegistry:
               type: string
             imageTagPostfix:
-              type: string
-            ingressNamespace:
               type: string
             mongodb:
               description: MeteringSpecMongoDB defines the MongoDB configuration in
@@ -76,6 +70,21 @@ spec:
             replicas:
               format: int32
               type: integer
+            ui:
+              description: MeteringSpecUI defines the UI configuration in the MeteringUI
+                and MeteringMultiCloudUI specs
+              properties:
+                apikeySecret:
+                  type: string
+                commonHeaderNamespace:
+                  type: string
+                iamNamespace:
+                  type: string
+                ingressNamespace:
+                  type: string
+                platformOidcSecret:
+                  type: string
+              type: object
             version:
               description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                 Important: Run "operator-sdk generate k8s" to regenerate code after

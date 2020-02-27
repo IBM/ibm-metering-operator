@@ -32,6 +32,7 @@ type MeteringSpec struct {
 	ImageRegistry             string              `json:"imageRegistry,omitempty"`
 	ImageTagPostfix           string              `json:"imageTagPostfix,omitempty"`
 	IAMnamespace              string              `json:"iamNamespace,omitempty"`
+	ClusterIssuer             string              `json:"clusterIssuer,omitempty"`
 	MultiCloudReceiverEnabled bool                `json:"multiCloudReceiverEnabled,omitempty"`
 	MongoDB                   MeteringSpecMongoDB `json:"mongodb"`
 }

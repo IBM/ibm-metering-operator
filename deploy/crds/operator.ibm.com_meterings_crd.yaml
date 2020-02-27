@@ -31,6 +31,8 @@ spec:
         spec:
           description: MeteringSpec defines the desired state of Metering
           properties:
+            clusterIssuer:
+              type: string
             iamNamespace:
               type: string
             imageRegistry:

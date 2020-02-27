@@ -167,16 +167,12 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// set common MongoDB env vars based on the instance
-	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
-		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
+	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB)
 	// set common cluster env vars based on the instance
-	clusterEnvVars = res.BuildUIClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace, instance.Spec.IngressNamespace,
-		instance.Spec.CommonHeaderNamespace, instance.Spec.ClusterName, false)
+	clusterEnvVars = res.BuildUIClusterEnvVars(instance.Namespace, instance.Spec.ClusterName, instance.Spec.UI, false)
 
 	// set common Volumes based on the instance
-	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.UIDeploymentName, "loglevel")
+	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB, res.UIDeploymentName, "loglevel")
 
 	reqLogger.Info("Checking UI Deployment", "Deployment.Name", res.UIDeploymentName)
 	// Check if the UI Deployment already exists, if not create a new one
@@ -263,13 +259,30 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	uiImage = imageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag + instance.Spec.ImageTagPostfix
 	reqLogger.Info("uiImage=" + uiImage)
 
-	// set the SECRET_LIST env var
-	nameList := res.APIKeySecretName + " " + res.PlatformOidcSecretName + " " + res.CommonSecretCheckNames
-	// set the SECRET_DIR_LIST env var
-	dirList := res.APIKeySecretName + " " + res.PlatformOidcSecretName + " " + res.CommonSecretCheckDirs
-	volumeMounts := append(res.CommonSecretCheckVolumeMounts, res.PlatformOidcVolumeMount, res.APIKeyVolumeMount)
+	var apiKeySecretName string
+	if instance.Spec.UI.APIkeySecret != "" {
+		apiKeySecretName = instance.Spec.UI.APIkeySecret
+	} else {
+		// APIkeySecret is blank, use default name
+		apiKeySecretName = res.DefaultAPIKeySecretName
+	}
+	var platformOidcSecretName string
+	if instance.Spec.UI.PlatformOidcSecret != "" {
+		platformOidcSecretName = instance.Spec.UI.PlatformOidcSecret
+	} else {
+		// PlatformOidcSecret is blank, use default name
+		platformOidcSecretName = res.DefaultPlatformOidcSecretName
+	}
+
+	var additionalInfo res.SecretCheckData
+	// add to the SECRET_LIST env var
+	additionalInfo.Names = apiKeySecretName + " " + platformOidcSecretName
+	// add to the SECRET_DIR_LIST env var
+	additionalInfo.Dirs = apiKeySecretName + " " + platformOidcSecretName
+	// add the volume mounts for the secrets
+	additionalInfo.VolumeMounts = res.BuildUISecretVolumeMounts(apiKeySecretName, platformOidcSecretName)
 	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, dmImage,
-		res.SecretCheckCmd, nameList, dirList, volumeMounts)
+		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
 	initEnvVars := []corev1.EnvVar{}
 	initEnvVars = append(initEnvVars, res.CommonEnvVars...)
@@ -286,7 +299,8 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	uiMainContainer.Env = append(uiMainContainer.Env, mongoDBEnvVars...)
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
-	uiVolumes := append(commonVolumes, res.APIKeyVolume, res.PlatformOidcVolume)
+	secretVolumes := res.BuildUISecretVolumes(apiKeySecretName, platformOidcSecretName)
+	uiVolumes := append(commonVolumes, secretVolumes...)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{

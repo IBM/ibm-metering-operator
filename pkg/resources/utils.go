@@ -19,6 +19,7 @@ package resources
 import (
 	"strconv"
 
+	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
 	"os"
@@ -142,14 +143,24 @@ var log = logf.Log.WithName("resource_utils")
 // BuildCertificate returns a Certificate object.
 // Call controllerutil.SetControllerReference to set the owner and controller
 // for the Certificate object created by this function.
-func BuildCertificate(namespace string, certData CertificateData) *certmgr.Certificate {
+func BuildCertificate(instanceNamespace, instanceClusterIssuer string, certData CertificateData) *certmgr.Certificate {
+	reqLogger := log.WithValues("func", "BuildCertificate")
+
 	metaLabels := labelsForCertificateMeta(certData.App, certData.Component)
+	var clusterIssuer string
+	if instanceClusterIssuer != "" {
+		reqLogger.Info("clusterIssuer=" + instanceClusterIssuer)
+		clusterIssuer = instanceClusterIssuer
+	} else {
+		reqLogger.Info("clusterIssuer is blank, default=" + DefaultClusterIssuer)
+		clusterIssuer = DefaultClusterIssuer
+	}
 
 	certificate := &certmgr.Certificate{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      certData.Name,
 			Labels:    metaLabels,
-			Namespace: namespace,
+			Namespace: instanceNamespace,
 		},
 		Spec: certmgr.CertificateSpec{
 			CommonName: certData.Common,
@@ -157,11 +168,11 @@ func BuildCertificate(namespace string, certData CertificateData) *certmgr.Certi
 			IsCA:       false,
 			DNSNames: []string{
 				certData.Common,
-				certData.Common + "." + namespace + ".svc.cluster.local",
+				certData.Common + "." + instanceNamespace + ".svc.cluster.local",
 			},
 			Organization: []string{"IBM"},
 			IssuerRef: certmgr.ObjectReference{
-				Name: "icp-ca-issuer",
+				Name: clusterIssuer,
 				Kind: certmgr.ClusterIssuerKind,
 			},
 		},
@@ -212,25 +223,24 @@ func BuildIngress(namespace string, ingressData IngressData) *netv1.Ingress {
 	return ingress
 }
 
-func BuildMongoDBEnvVars(host string, port int, usernameSecret string, usernameKey string,
-	passwordSecret string, passwordKey string) []corev1.EnvVar {
+func BuildMongoDBEnvVars(mongoDB operatorv1alpha1.MeteringSpecMongoDB) []corev1.EnvVar {
 	mongoDBEnvVars := []corev1.EnvVar{
 		{
 			Name:  "HC_MONGO_HOST",
-			Value: host,
+			Value: mongoDB.Host,
 		},
 		{
 			Name:  "HC_MONGO_PORT",
-			Value: strconv.Itoa(port),
+			Value: strconv.Itoa(mongoDB.Port),
 		},
 		{
 			Name: "HC_MONGO_USER",
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: usernameSecret,
+						Name: mongoDB.UsernameSecret,
 					},
-					Key:      usernameKey,
+					Key:      mongoDB.UsernameKey,
 					Optional: &TrueVar,
 				},
 			},
@@ -240,9 +250,9 @@ func BuildMongoDBEnvVars(host string, port int, usernameSecret string, usernameK
 			ValueFrom: &corev1.EnvVarSource{
 				SecretKeyRef: &corev1.SecretKeySelector{
 					LocalObjectReference: corev1.LocalObjectReference{
-						Name: passwordSecret,
+						Name: mongoDB.PasswordSecret,
 					},
-					Key:      passwordKey,
+					Key:      mongoDB.PasswordKey,
 					Optional: &TrueVar,
 				},
 			},
@@ -290,49 +300,103 @@ func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace string) [
 
 // set isMcmUI to true when building env vars for metering-mcmui.
 // set isMcmUI to false when building env vars for any other component.
-func BuildUIClusterEnvVars(instanceNamespace, instanceIAMnamespace, instanceIngressNamespace,
-	instanceHeaderNamespace, instanceClusterName string, isMcmUI bool) []corev1.EnvVar {
+func BuildUIClusterEnvVars(instanceNamespace, instanceClusterName string,
+	instanceUI operatorv1alpha1.MeteringSpecUI, isMcmUI bool) []corev1.EnvVar {
 
 	reqLogger := log.WithValues("func", "BuildUIClusterEnvVars")
 
 	var iamNamespace string
-	if instanceIAMnamespace != "" {
-		reqLogger.Info("IAMnamespace=" + instanceIAMnamespace)
-		iamNamespace = instanceIAMnamespace
+	if instanceUI.IAMnamespace != "" {
+		reqLogger.Info("IAMnamespace=" + instanceUI.IAMnamespace)
+		iamNamespace = instanceUI.IAMnamespace
 	} else {
 		reqLogger.Info("IAMnamespace is blank, use instance=" + instanceNamespace)
 		iamNamespace = instanceNamespace
 	}
 	var ingressNamespace string
-	if instanceIngressNamespace != "" {
-		reqLogger.Info("IngressNamespace=" + instanceIngressNamespace)
-		ingressNamespace = instanceIngressNamespace
+	if instanceUI.IngressNamespace != "" {
+		reqLogger.Info("IngressNamespace=" + instanceUI.IngressNamespace)
+		ingressNamespace = instanceUI.IngressNamespace
 	} else {
 		reqLogger.Info("IngressNamespace is blank, use instance=" + instanceNamespace)
 		ingressNamespace = instanceNamespace
 	}
 	var headerNamespace string
-	if instanceHeaderNamespace != "" {
-		reqLogger.Info("HeaderNamespace=" + instanceHeaderNamespace)
-		headerNamespace = instanceHeaderNamespace
+	if instanceUI.CommonHeaderNamespace != "" {
+		reqLogger.Info("HeaderNamespace=" + instanceUI.CommonHeaderNamespace)
+		headerNamespace = instanceUI.CommonHeaderNamespace
 	} else {
 		reqLogger.Info("HeaderNamespace is blank, use instance=" + instanceNamespace)
 		headerNamespace = instanceNamespace
 	}
-
-	clusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace)
-
-	headerEnvVar := corev1.EnvVar{
-		Name:  "COMMON_HEADER_NAMESPACE",
-		Value: headerNamespace,
+	var apiKeySecretName string
+	if instanceUI.APIkeySecret != "" {
+		reqLogger.Info("apiKeySecretName=" + instanceUI.APIkeySecret)
+		apiKeySecretName = instanceUI.APIkeySecret
+	} else {
+		reqLogger.Info("apiKeySecretName is blank, default=" + DefaultAPIKeySecretName)
+		apiKeySecretName = DefaultAPIKeySecretName
+	}
+	var platformOidcSecretName string
+	if instanceUI.PlatformOidcSecret != "" {
+		reqLogger.Info("platformOidcSecretName=" + instanceUI.PlatformOidcSecret)
+		platformOidcSecretName = instanceUI.PlatformOidcSecret
+	} else {
+		reqLogger.Info("platformOidcSecretName is blank, default=" + DefaultPlatformOidcSecretName)
+		platformOidcSecretName = DefaultPlatformOidcSecretName
 	}
 
 	cfcRouterURL := "https://icp-management-ingress." + ingressNamespace + ".svc.cluster.local:443"
-	cfcEnvVar := corev1.EnvVar{
-		Name:  "cfcRouterUrl",
-		Value: cfcRouterURL,
+	commonClusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace)
+
+	uiClusterEnvVars := []corev1.EnvVar{
+		{
+			Name:  "COMMON_HEADER_NAMESPACE",
+			Value: headerNamespace,
+		},
+		{
+			Name:  "cfcRouterUrl",
+			Value: cfcRouterURL,
+		},
+		{
+			Name: "ICP_API_KEY",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: apiKeySecretName,
+					},
+					Key:      "ICP_API_KEY",
+					Optional: &TrueVar,
+				},
+			},
+		},
+		{
+			Name: "WLP_CLIENT_ID",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: platformOidcSecretName,
+					},
+					Key:      "WLP_CLIENT_ID",
+					Optional: &TrueVar,
+				},
+			},
+		},
+		{
+			Name: "WLP_CLIENT_SECRET",
+			ValueFrom: &corev1.EnvVarSource{
+				SecretKeyRef: &corev1.SecretKeySelector{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: platformOidcSecretName,
+					},
+					Key:      "WLP_CLIENT_SECRET",
+					Optional: &TrueVar,
+				},
+			},
+		},
 	}
-	clusterEnvVars = append(clusterEnvVars, headerEnvVar, cfcEnvVar)
+
+	clusterEnvVars := append(commonClusterEnvVars, uiClusterEnvVars...)
 
 	var providerURL string
 	if isMcmUI {
@@ -414,9 +478,7 @@ func BuildReceiverEnvVars(multiCloudReceiverEnabled bool) []corev1.EnvVar {
 
 // set loglevelType to "log4js" when building volumes for metering-mcmui.
 // set loglevelType to "loglevel" when building volumes for any other component.
-func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
-	passwordSecret, loglevelPrefix, loglevelType string) []corev1.Volume {
-
+func BuildCommonVolumes(mongoDB operatorv1alpha1.MeteringSpecMongoDB, loglevelPrefix, loglevelType string) []corev1.Volume {
 	// example for metering-ui
 	//   Name: loglevel
 	//     Key: metering-ui-loglevel.json
@@ -434,7 +496,7 @@ func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
 			Name: "mongodb-ca-cert",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  clusterSecret,
+					SecretName:  mongoDB.ClusterCertsSecret,
 					DefaultMode: &DefaultMode,
 					Optional:    &TrueVar,
 				},
@@ -444,7 +506,7 @@ func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
 			Name: "mongodb-client-cert",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  clientSecret,
+					SecretName:  mongoDB.ClientCertsSecret,
 					DefaultMode: &DefaultMode,
 					Optional:    &TrueVar,
 				},
@@ -454,7 +516,7 @@ func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
 			Name: "muser-icp-mongodb-admin",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  usernameSecret,
+					SecretName:  mongoDB.UsernameSecret,
 					DefaultMode: &DefaultMode,
 					Optional:    &TrueVar,
 				},
@@ -464,7 +526,7 @@ func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
 			Name: "mpass-icp-mongodb-admin",
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
-					SecretName:  passwordSecret,
+					SecretName:  mongoDB.PasswordSecret,
 					DefaultMode: &DefaultMode,
 					Optional:    &TrueVar,
 				},
@@ -492,10 +554,85 @@ func BuildCommonVolumes(clusterSecret, clientSecret, usernameSecret,
 	return commonVolumes
 }
 
-func BuildSecretCheckContainer(deploymentName, imageName, checkerCommand,
-	secretNames, secretDirs string, volumeMounts []corev1.VolumeMount) corev1.Container {
+func BuildUISecretVolumes(apiKeySecretName, platformOidcSecretName string) []corev1.Volume {
+	uiVolumes := []corev1.Volume{
+		{
+			Name: apiKeySecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  apiKeySecretName,
+					DefaultMode: &DefaultMode,
+					Optional:    &TrueVar,
+				},
+			},
+		},
+		{
+			Name: platformOidcSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName:  platformOidcSecretName,
+					DefaultMode: &DefaultMode,
+					Optional:    &TrueVar,
+				},
+			},
+		},
+	}
+	return uiVolumes
+}
+
+func BuildUISecretVolumeMounts(apiKeySecretName, platformOidcSecretName string) []corev1.VolumeMount {
+	uiVolumeMounts := []corev1.VolumeMount{
+		{
+			Name:      apiKeySecretName,
+			MountPath: "/sec/" + apiKeySecretName,
+		},
+		{
+			Name:      platformOidcSecretName,
+			MountPath: "/sec/" + platformOidcSecretName,
+		},
+	}
+	return uiVolumeMounts
+}
+
+// checkerCommand is the command to be executed by the secret-check container.
+// mongoDB contains the password names from the CR.
+// additionalInfo contains info about additional secrets to check.
+func BuildSecretCheckContainer(deploymentName, imageName, checkerCommand string,
+	mongoDB operatorv1alpha1.MeteringSpecMongoDB, additionalInfo *SecretCheckData) corev1.Container {
 
 	containerName := deploymentName + "-secret-check"
+	nameList := mongoDB.UsernameSecret + " " + mongoDB.PasswordSecret + " " +
+		mongoDB.ClusterCertsSecret + " " + mongoDB.ClientCertsSecret
+	usernameSecretDir := "muser-" + mongoDB.UsernameSecret
+	passwordSecretDir := "mpass-" + mongoDB.PasswordSecret
+	dirList := usernameSecretDir + " " + passwordSecretDir + " " +
+		mongoDB.ClusterCertsSecret + " " + mongoDB.ClientCertsSecret
+	volumeMounts := []corev1.VolumeMount{
+		{
+			Name:      "mongodb-ca-cert",
+			MountPath: "/sec/" + mongoDB.ClusterCertsSecret,
+		},
+		{
+			Name:      "mongodb-client-cert",
+			MountPath: "/sec/" + mongoDB.ClientCertsSecret,
+		},
+		{
+			Name:      usernameSecretDir,
+			MountPath: "/sec/" + usernameSecretDir,
+		},
+		{
+			Name:      passwordSecretDir,
+			MountPath: "/sec/" + passwordSecretDir,
+		},
+	}
+	if additionalInfo != nil {
+		nameList += " "
+		nameList += additionalInfo.Names
+		dirList += " "
+		dirList += additionalInfo.Dirs
+		volumeMounts = append(volumeMounts, additionalInfo.VolumeMounts...)
+	}
+
 	var secretCheckContainer = corev1.Container{
 		Image:           imageName,
 		Name:            containerName,
@@ -507,17 +644,14 @@ func BuildSecretCheckContainer(deploymentName, imageName, checkerCommand,
 		},
 		Env: []corev1.EnvVar{
 			{
-				Name: "SECRET_LIST",
-				// CommonSecretCheckNames will be added by the controller
-				Value: secretNames,
+				Name:  "SECRET_LIST",
+				Value: nameList,
 			},
 			{
-				// CommonSecretCheckDirs will be added by the controller
 				Name:  "SECRET_DIR_LIST",
-				Value: secretDirs,
+				Value: dirList,
 			},
 		},
-		// CommonSecretCheckVolumeMounts will be added by the controller
 		VolumeMounts:    volumeMounts,
 		Resources:       commonInitResources,
 		SecurityContext: &commonSecurityContext,
@@ -578,7 +712,7 @@ func labelsForCertificateMeta(appName, componentName string) map[string]string {
 
 // GetPodNames returns the pod names of the array of pods passed in
 func GetPodNames(pods []corev1.Pod) []string {
-	reqLogger := log.WithValues("func", "getPodNames")
+	reqLogger := log.WithValues("func", "GetPodNames")
 	var podNames []string
 	for _, pod := range pods {
 		podNames = append(podNames, pod.Name)

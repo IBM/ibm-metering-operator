@@ -27,3 +27,12 @@ type MeteringSpecMongoDB struct {
 	ClusterCertsSecret string `json:"clustercertssecret"`
 	ClientCertsSecret  string `json:"clientcertssecret"`
 }
+
+// MeteringSpecUI defines the UI configuration in the MeteringUI and MeteringMultiCloudUI specs
+type MeteringSpecUI struct {
+	IAMnamespace          string `json:"iamNamespace,omitempty"`
+	IngressNamespace      string `json:"ingressNamespace,omitempty"`
+	CommonHeaderNamespace string `json:"commonHeaderNamespace,omitempty"`
+	APIkeySecret          string `json:"apikeySecret,omitempty"`
+	PlatformOidcSecret    string `json:"platformOidcSecret,omitempty"`
+}

@@ -28,15 +28,13 @@ type MeteringUISpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Version               string              `json:"version"`
-	ImageRegistry         string              `json:"imageRegistry,omitempty"`
-	ImageTagPostfix       string              `json:"imageTagPostfix,omitempty"`
-	Replicas              int32               `json:"replicas"`
-	IAMnamespace          string              `json:"iamNamespace,omitempty"`
-	IngressNamespace      string              `json:"ingressNamespace,omitempty"`
-	CommonHeaderNamespace string              `json:"commonHeaderNamespace,omitempty"`
-	ClusterName           string              `json:"clusterName,omitempty"`
-	MongoDB               MeteringSpecMongoDB `json:"mongodb"`
+	Version         string              `json:"version"`
+	ImageRegistry   string              `json:"imageRegistry,omitempty"`
+	ImageTagPostfix string              `json:"imageTagPostfix,omitempty"`
+	Replicas        int32               `json:"replicas"`
+	UI              MeteringSpecUI      `json:"ui,omitempty"`
+	ClusterName     string              `json:"clusterName,omitempty"`
+	MongoDB         MeteringSpecMongoDB `json:"mongodb"`
 }
 
 // MeteringUIStatus defines the observed state of MeteringUI
