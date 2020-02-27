@@ -22,10 +22,9 @@ import (
 	gorun "runtime"
 	"time"
 
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	res "github.com/ibm/ibm-metering-operator/pkg/resources"
+	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -33,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -76,6 +76,8 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
+	reqLogger := log.WithValues("func", "add")
+
 	// Create a new controller
 	c, err := controller.New("metering-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -126,15 +128,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// Watch for changes to secondary resource "Certificate" and requeue the owner Metering
-	/* CS??? disable this code in case CertManager is not installed
 	err = c.Watch(&source.Kind{Type: &certmgr.Certificate{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.Metering{},
 	})
 	if err != nil {
-		return err
+		reqLogger.Error(err, "Failed to watch Certificate")
+		// CertManager might not be installed, so don't fail
+		//CS??? return err
 	}
-	CS??? */
 
 	return nil
 }
@@ -191,15 +193,12 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	reqLogger.Info("Checking DM Deployment", "Deployment.Name", res.DmDeploymentName)
 	// set common MongoDB env vars based on the instance
-	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB.Host, instance.Spec.MongoDB.Port,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.UsernameKey,
-		instance.Spec.MongoDB.PasswordSecret, instance.Spec.MongoDB.PasswordKey)
+	mongoDBEnvVars = res.BuildMongoDBEnvVars(instance.Spec.MongoDB)
 	// set common cluster env vars based on the instance
 	clusterEnvVars = res.BuildCommonClusterEnvVars(instance.Namespace, instance.Spec.IAMnamespace)
 
 	// set common Volumes based on the instance
-	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB.ClusterCertsSecret, instance.Spec.MongoDB.ClientCertsSecret,
-		instance.Spec.MongoDB.UsernameSecret, instance.Spec.MongoDB.PasswordSecret, res.DmDeploymentName, "loglevel")
+	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB, res.DmDeploymentName, "loglevel")
 
 	// Check if the DM Deployment already exists, if not create a new one
 	newDeployment, err := r.deploymentForDataMgr(instance)
@@ -327,7 +326,7 @@ func (r *ReconcileMetering) reconcileAllCertificates(instance *operatorv1alpha1.
 	}
 	for _, certData := range certificateList {
 		reqLogger.Info("Checking Certificate", "Certificate.Name", certData.Name)
-		newCertificate := res.BuildCertificate(instance.Namespace, certData)
+		newCertificate := res.BuildCertificate(instance.Namespace, instance.Spec.ClusterIssuer, certData)
 		// Set Metering instance as the owner and controller of the Certificate
 		err := controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
 		if err != nil {
@@ -385,23 +384,22 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	dmImage = imageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag + instance.Spec.ImageTagPostfix
 	reqLogger.Info("dmImage=" + dmImage)
 
-	volumeMounts := res.CommonSecretCheckVolumeMounts
-	var nameList, dirList string
+	var additionalInfo res.SecretCheckData
+	var additionalInfoPtr *res.SecretCheckData
 	if instance.Spec.MultiCloudReceiverEnabled {
-		// set the SECRET_LIST env var
-		nameList = res.ReceiverCertSecretName + " " + res.CommonSecretCheckNames
-		// set the SECRET_DIR_LIST env var
-		dirList = res.ReceiverCertSecretName + " " + res.CommonSecretCheckDirs
+		// add to the SECRET_LIST env var
+		additionalInfo.Names = res.ReceiverCertSecretName
+		// add to the SECRET_DIR_LIST env var
+		additionalInfo.Dirs = res.ReceiverCertSecretName
 		// add the volume mount for the receiver cert
-		volumeMounts = append(volumeMounts, res.ReceiverCertVolumeMountForSecretCheck)
+		additionalInfo.VolumeMounts = []corev1.VolumeMount{res.ReceiverCertVolumeMountForSecretCheck}
+		additionalInfoPtr = &additionalInfo
 	} else {
-		nameList = res.CommonSecretCheckNames
-		// set the SECRET_DIR_LIST env var
-		dirList = res.CommonSecretCheckDirs
+		additionalInfoPtr = nil
 	}
 
 	dmSecretCheckContainer := res.BuildSecretCheckContainer(res.DmDeploymentName, dmImage,
-		res.SecretCheckCmd, nameList, dirList, volumeMounts)
+		res.SecretCheckCmd, instance.Spec.MongoDB, additionalInfoPtr)
 
 	initEnvVars := []corev1.EnvVar{
 		{
@@ -640,13 +638,16 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 	rdrImage = imageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag + instance.Spec.ImageTagPostfix
 	reqLogger.Info("rdrImage=" + rdrImage)
 
-	// set the SECRET_LIST env var
-	nameList := res.APICertSecretName + " " + res.CommonSecretCheckNames
-	// set the SECRET_DIR_LIST env var
-	dirList := res.APICertSecretName + " " + res.CommonSecretCheckDirs
-	volumeMounts := append(res.CommonSecretCheckVolumeMounts, res.APICertVolumeMount)
+	var additionalInfo res.SecretCheckData
+	// add to the SECRET_LIST env var
+	additionalInfo.Names = res.APICertSecretName
+	// add to the SECRET_DIR_LIST env var
+	additionalInfo.Dirs = res.APICertSecretName
+	// add the volume mount for the API cert
+	additionalInfo.VolumeMounts = []corev1.VolumeMount{res.APICertVolumeMount}
+
 	rdrSecretCheckContainer := res.BuildSecretCheckContainer(res.ReaderDaemonSetName, rdrImage,
-		res.SecretCheckCmd, nameList, dirList, volumeMounts)
+		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
 	initEnvVars := []corev1.EnvVar{}
 	initEnvVars = append(initEnvVars, res.CommonEnvVars...)

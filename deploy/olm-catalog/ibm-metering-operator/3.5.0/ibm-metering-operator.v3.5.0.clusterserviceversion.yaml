@@ -34,10 +34,7 @@ metadata:
             "name": "meteringmcmui"
           },
           "spec": {
-            "commonHeaderNamespace": "ibm-common-services",
-            "iamNamespace": "ibm-common-services",
             "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
-            "ingressNamespace": "ibm-common-services",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
               "clustercertssecret": "mongodb-root-ca-cert",
@@ -49,6 +46,11 @@ metadata:
               "usernameSecret": "icp-mongodb-admin"
             },
             "replicas": 1,
+            "ui": {
+              "commonHeaderNamespace": "ibm-common-services",
+              "iamNamespace": "ibm-common-services",
+              "ingressNamespace": "ibm-common-services"
+            },
             "version": "3.5.0"
           }
         },
@@ -86,10 +88,7 @@ metadata:
           },
           "spec": {
             "clusterName": "mycluster",
-            "commonHeaderNamespace": "ibm-common-services",
-            "iamNamespace": "ibm-common-services",
             "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
-            "ingressNamespace": "ibm-common-services",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
               "clustercertssecret": "mongodb-root-ca-cert",
@@ -101,6 +100,11 @@ metadata:
               "usernameSecret": "icp-mongodb-admin"
             },
             "replicas": 1,
+            "ui": {
+              "commonHeaderNamespace": "ibm-common-services",
+              "iamNamespace": "ibm-common-services",
+              "ingressNamespace": "ibm-common-services"
+            },
             "version": "3.5.0"
           }
         }

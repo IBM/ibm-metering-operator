@@ -230,16 +230,14 @@ func ReconcileCertificate(client client.Client, instanceNamespace, certificateNa
 		} else if err != nil {
 			logger.Error(err, "Failed to create new Certificate", "Certificate.Namespace", newCertificate.Namespace,
 				"Certificate.Name", newCertificate.Name)
-			// CertManager might not be installed, so don't fail
-			//CS??? return err
+			return err
 		} else {
 			// Certificate created successfully - return and requeue
 			*needToRequeue = true
 		}
 	} else if err != nil {
 		logger.Error(err, "Failed to get Certificate", "Certificate.Name", certificateName)
-		// CertManager might not be installed, so don't fail
-		//CS??? return err
+		return err
 	} else {
 		// Found Certificate, so determine if the resource has changed
 		logger.Info("Comparing Certificates")
