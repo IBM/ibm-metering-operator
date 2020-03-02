@@ -45,7 +45,7 @@ const DefaultMcmUIImageName = "metering-mcmui"
 const DefaultMcmUIImageTag = "3.4.0"
 const DefaultSenderImageName = "metering-data-manager"
 const DefaultSenderImageTag = "3.4.0"
-const DefaultClusterIssuer = "cs-ca-issuer"
+const DefaultClusterIssuer = "cs-ca-clusterissuer"
 
 // use concatenation so linter won't complain about "Secret" vars
 const DefaultAPIKeySecretName = "icp-serviceid-apikey-secret" + ""
