@@ -176,6 +176,10 @@ spec:
           strategy: {}
           template:
             metadata:
+              annotations:
+                productID: 1234-567
+                productName: IBM Cloud Platform Common Services
+                productVersion: 3.5.0
               labels:
                 name: ibm-metering-operator
             spec:

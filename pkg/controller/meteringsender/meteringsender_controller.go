@@ -254,7 +254,8 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: podLabels,
+					Labels:      podLabels,
+					Annotations: res.AnnotationsForPod(),
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),

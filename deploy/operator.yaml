@@ -11,6 +11,10 @@ spec:
     metadata:
       labels:
         name: ibm-metering-operator
+      annotations:
+        productName: IBM Cloud Platform Common Services
+        productID: 1234-567
+        productVersion: 3.5.0
     spec:
       serviceAccountName: ibm-metering-operator
       containers:
