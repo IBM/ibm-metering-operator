@@ -49,6 +49,9 @@ type IngressData struct {
 
 const MeteringComponentName = "meteringsvc"
 const MeteringReleaseName = "metering"
+const MeteringProductName = "IBM Cloud Platform Common Services"
+const MeteringProductID = "1234-567"
+const MeteringProductVersion = "3.5.0"
 const DmDeploymentName = "metering-dm"
 const DmServiceName = "metering-dm"
 const ReaderDaemonSetName = "metering-reader"
@@ -708,6 +711,12 @@ func labelsForIngressMeta(ingressName string) map[string]string {
 
 func labelsForCertificateMeta(appName, componentName string) map[string]string {
 	return map[string]string{"app": appName, "component": componentName, "release": MeteringReleaseName}
+}
+
+// returns the annotations associated with the pod being created
+func AnnotationsForPod() map[string]string {
+	return map[string]string{"productName": MeteringProductName,
+		"productID": MeteringProductID, "productVersion": MeteringProductVersion}
 }
 
 // GetPodNames returns the pod names of the array of pods passed in

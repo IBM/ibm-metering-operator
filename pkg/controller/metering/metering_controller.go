@@ -441,7 +441,8 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: podLabels,
+					Labels:      podLabels,
+					Annotations: res.AnnotationsForPod(),
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
@@ -686,7 +687,8 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: podLabels,
+					Labels:      podLabels,
+					Annotations: res.AnnotationsForPod(),
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),

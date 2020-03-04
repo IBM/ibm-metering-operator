@@ -315,7 +315,8 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: podLabels,
+					Labels:      podLabels,
+					Annotations: res.AnnotationsForPod(),
 				},
 				Spec: corev1.PodSpec{
 					ServiceAccountName:            res.GetServiceAccountName(),
