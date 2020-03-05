@@ -37,15 +37,6 @@ type MeteringUISpec struct {
 	MongoDB         MeteringSpecMongoDB `json:"mongodb"`
 }
 
-// MeteringUIStatus defines the observed state of MeteringUI
-type MeteringUIStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
-	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	// Nodes are the names of the metering-ui pods
-	Nodes []string `json:"nodes"`
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // MeteringUI is the Schema for the meteringuis API
@@ -55,8 +46,8 @@ type MeteringUI struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   MeteringUISpec   `json:"spec,omitempty"`
-	Status MeteringUIStatus `json:"status,omitempty"`
+	Spec   MeteringUISpec `json:"spec,omitempty"`
+	Status MeteringStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
