@@ -171,6 +171,7 @@ func BuildCertificate(instanceNamespace, instanceClusterIssuer string, certData 
 			IsCA:       false,
 			DNSNames: []string{
 				certData.Common,
+				certData.Common + "." + instanceNamespace,
 				certData.Common + "." + instanceNamespace + ".svc.cluster.local",
 			},
 			Organization: []string{"IBM"},
@@ -349,7 +350,7 @@ func BuildUIClusterEnvVars(instanceNamespace, instanceClusterName string,
 		platformOidcSecretName = DefaultPlatformOidcSecretName
 	}
 
-	cfcRouterURL := "https://icp-management-ingress." + ingressNamespace + ".svc.cluster.local:443"
+	cfcRouterURL := "https://icp-management-ingress." + ingressNamespace + ":443"
 	commonClusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace)
 
 	uiClusterEnvVars := []corev1.EnvVar{
@@ -405,7 +406,7 @@ func BuildUIClusterEnvVars(instanceNamespace, instanceClusterName string,
 	if isMcmUI {
 		providerURL = cfcRouterURL + "/idprovider"
 	} else {
-		providerURL = "https://platform-identity-provider." + iamNamespace + ".svc.cluster.local:4300"
+		providerURL = "https://platform-identity-provider." + iamNamespace + ":4300"
 
 		var clusterName string
 		if instanceClusterName != "" {

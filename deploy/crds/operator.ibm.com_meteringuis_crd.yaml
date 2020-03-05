@@ -97,19 +97,20 @@ spec:
           - version
           type: object
         status:
-          description: MeteringUIStatus defines the observed state of MeteringUI
+          description: MeteringStatus defines the observed state of each Metering
+            service
           properties:
-            nodes:
+            pods:
               description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
                 of cluster Important: Run "operator-sdk generate k8s" to regenerate
                 code after modifying this file Add custom validation using kubebuilder
                 tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-                Nodes are the names of the metering-ui pods'
+                Pods are the names of the metering pods'
               items:
                 type: string
               type: array
           required:
-          - nodes
+          - pods
           type: object
       type: object
   version: v1alpha1

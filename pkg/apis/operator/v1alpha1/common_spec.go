@@ -36,3 +36,12 @@ type MeteringSpecUI struct {
 	APIkeySecret          string `json:"apikeySecret,omitempty"`
 	PlatformOidcSecret    string `json:"platformOidcSecret,omitempty"`
 }
+
+// MeteringStatus defines the observed state of each Metering service
+type MeteringStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
+	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+	// Pods are the names of the metering pods
+	Pods []string `json:"pods"`
+}

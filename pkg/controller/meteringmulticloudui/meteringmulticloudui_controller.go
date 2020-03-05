@@ -223,9 +223,9 @@ func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (re
 	}
 	podNames := res.GetPodNames(podList.Items)
 
-	// Update status.Nodes if needed
-	if !reflect.DeepEqual(podNames, instance.Status.Nodes) {
-		instance.Status.Nodes = podNames
+	// Update status.Pods if needed
+	if !reflect.DeepEqual(podNames, instance.Status.Pods) {
+		instance.Status.Pods = podNames
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update MeteringMultiCloudUI status")
