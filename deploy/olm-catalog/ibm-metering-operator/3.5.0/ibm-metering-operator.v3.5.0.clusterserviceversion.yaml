@@ -110,6 +110,8 @@ metadata:
         }
       ]
     capabilities: Basic Install
+    categories: Monitoring
+    certified: "false"
     containerImage: quay.io/opencloudio/ibm-metering-operator:latest
     createdAt: "2020-02-11T15:30:00Z"
     description: Operator for managing deployment of metering service.
@@ -127,21 +129,153 @@ spec:
       name: meteringmulticlouduis.operator.ibm.com
       version: v1alpha1
       displayName: Metering multicloud user interface
+      specDescriptors:
+        - description: Operator version
+          displayName: Version
+          path: version
+        - description: Registry where image is stored
+          displayName: ImageRegistry
+          path: imageRegistry
+        - description: Connection information for MongoDB
+          displayName: MongoDB
+          path: mongodb
+        - description: Configuration information for Metering multicloud UI
+          displayName: UI
+          path: ui
+        - description: The desired number of Metering multicloud UI replicas
+          displayName: Replicas
+          path: replicas
+      statusDescriptors:
+        - description: The list of Pods for the Metering multicloud UI service
+          displayName: Pod Status
+          path: nodes
+      resources:
+        - kind: Service
+          name: ''
+          version: v1
+        - kind: Deployment
+          name: ''
+          version: v1
+        - kind: Pod
+          name: ''
+          version: v1
+        - kind: Ingress
+          name: ''
+          version: v1beta1
     - description: Metering is the Schema for the meterings API
       kind: Metering
       name: meterings.operator.ibm.com
       version: v1alpha1
       displayName: Metering service
+      specDescriptors:
+        - description: Operator version
+          displayName: Version
+          path: version
+        - description: Registry where image is stored
+          displayName: ImageRegistry
+          path: imageRegistry
+        - description: Connection information for MongoDB
+          displayName: MongoDB
+          path: mongodb
+        - description: Namespace for IAM service
+          displayName: IAMNamespace
+          path: iamNamespace
+        - description: Name of the ClusterIssuer
+          displayName: ClusterIssuer
+          path: clusterIssuer
+        - description: Boolean to enable MultiCloudReceiver
+          displayName: MultiCloudReceiverEnabled
+          path: multiCloudReceiverEnabled
+      statusDescriptors:
+        - description: The list of Pods for the Metering service
+          displayName: Pod Status
+          path: nodes
+      resources:
+        - kind: Service
+          name: ''
+          version: v1
+        - kind: Deployment
+          name: ''
+          version: v1
+        - kind: Pod
+          name: ''
+          version: v1
+        - kind: Ingress
+          name: ''
+          version: v1beta1
+        - kind: Daemonset
+          name: ''
+          version: v1
+        - kind: Certificate
+          name: ''
+          version: v1alpha1
     - description: MeteringSender is the Schema for the meteringsenders API
       kind: MeteringSender
       name: meteringsenders.operator.ibm.com
       displayName: Metering multicloud sender
       version: v1alpha1
+      specDescriptors:
+        - description: Operator version
+          displayName: Version
+          path: version
+        - description: Registry where image is stored
+          displayName: ImageRegistry
+          path: imageRegistry
+        - description: Connection information for MongoDB
+          displayName: MongoDB
+          path: mongodb
+        - description: Configuration information for Metering multicloud sender
+          displayName: Sender
+          path: sender
+      statusDescriptors:
+        - description: The list of Pods for the Metering multicloud sender service
+          displayName: Pod Status
+          path: nodes
+      resources:
+        - kind: Deployment
+          name: ''
+          version: v1
     - description: MeteringUI is the Schema for the meteringuis API
       kind: MeteringUI
       name: meteringuis.operator.ibm.com
       displayName: Metering user interface
       version: v1alpha1
+      specDescriptors:
+        - description: Operator version
+          displayName: Version
+          path: version
+        - description: Registry where image is stored
+          displayName: ImageRegistry
+          path: imageRegistry
+        - description: Connection information for MongoDB
+          displayName: MongoDB
+          path: mongodb
+        - description: Configuration information for Metering UI
+          displayName: UI
+          path: ui
+        - description: The desired number of Metering UI replicas
+          displayName: Replicas
+          path: replicas
+        - description: The name of the cluster where Metering UI is running
+          displayName: ClusterName
+          path: clusterName
+      statusDescriptors:
+        - description: The list of Pods for the Metering UI service
+          displayName: Pod Status
+          path: nodes
+      resources:
+        - kind: Service
+          name: ''
+          version: v1
+        - kind: Deployment
+          name: ''
+          version: v1
+        - kind: Pod
+          name: ''
+          version: v1
+        - kind: Ingress
+          name: ''
+          version: v1beta1
   description: The metering operator manages the service used to meter workloads in
     a kubernetes cluster
   displayName: IBM Metering Operator
@@ -326,6 +460,9 @@ spec:
   - Metering
   - IBM
   - Cloud
+  links:
+  - name: IBM Metering Operator Project
+    url: https://github.com/IBM/ibm-metering-operator
   maintainers:
   - email: sgrube@us.ibm.com
     name: Steve Grube
