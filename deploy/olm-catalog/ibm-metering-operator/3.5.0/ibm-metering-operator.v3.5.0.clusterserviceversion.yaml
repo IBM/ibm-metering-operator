@@ -127,8 +127,8 @@ spec:
         API
       kind: MeteringMultiCloudUI
       name: meteringmulticlouduis.operator.ibm.com
-      version: v1alpha1
       displayName: Metering multicloud user interface
+      version: v1alpha1
       specDescriptors:
         - description: Operator version
           displayName: Version
@@ -165,8 +165,8 @@ spec:
     - description: Metering is the Schema for the meterings API
       kind: Metering
       name: meterings.operator.ibm.com
-      version: v1alpha1
       displayName: Metering service
+      version: v1alpha1
       specDescriptors:
         - description: Operator version
           displayName: Version
@@ -311,9 +311,10 @@ spec:
           template:
             metadata:
               annotations:
-                productID: 1234-567
+                productID: 068a62892a1e4db39641342e592daa25
+                productMetric: FREE
                 productName: IBM Cloud Platform Common Services
-                productVersion: 3.5.0
+                productVersion: 3.3.0
               labels:
                 name: ibm-metering-operator
             spec:
