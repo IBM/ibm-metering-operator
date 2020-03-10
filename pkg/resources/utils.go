@@ -62,6 +62,7 @@ const McmDeploymentName = "metering-mcmui"
 const McmServiceName = "metering-mcmui"
 const SenderDeploymentName = "metering-sender"
 const ReceiverServiceName = "metering-receiver"
+const MeteringDependencies = "ibm-common-services.auth-idp, mongodb, cert-manager"
 const apiIngressPort int32 = 4000
 
 var DefaultMode int32 = 420
@@ -714,10 +715,10 @@ func labelsForCertificateMeta(appName, componentName string) map[string]string {
 	return map[string]string{"app": appName, "component": componentName, "release": MeteringReleaseName}
 }
 
-// returns the annotations associated with the pod being created
+//AnnotationsForPod returns the annotations associated with the pod being created
 func AnnotationsForPod() map[string]string {
 	return map[string]string{"productName": CommonServicesProductName, "productID": CommonServicesProductID,
-		"productVersion": CommonServicesProductVersion, "productMetric": "FREE"}
+		"productVersion": CommonServicesProductVersion, "productMetric": "FREE", "clusterhealth.ibm.com/dependencies": MeteringDependencies}
 }
 
 // GetPodNames returns the pod names of the array of pods passed in
