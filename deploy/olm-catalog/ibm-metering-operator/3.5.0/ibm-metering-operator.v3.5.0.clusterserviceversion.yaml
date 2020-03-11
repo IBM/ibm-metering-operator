@@ -12,7 +12,7 @@ metadata:
           },
           "spec": {
             "iamNamespace": "ibm-common-services",
-            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "imageRegistry": "quay.io/opencloudio",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
               "clustercertssecret": "mongodb-root-ca-cert",
@@ -34,7 +34,7 @@ metadata:
             "name": "meteringmcmui"
           },
           "spec": {
-            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "imageRegistry": "quay.io/opencloudio",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
               "clustercertssecret": "mongodb-root-ca-cert",
@@ -61,7 +61,7 @@ metadata:
             "name": "meteringsender"
           },
           "spec": {
-            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "imageRegistry": "quay.io/opencloudio",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
               "clustercertssecret": "mongodb-root-ca-cert",
@@ -88,7 +88,7 @@ metadata:
           },
           "spec": {
             "clusterName": "mycluster",
-            "imageRegistry": "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64",
+            "imageRegistry": "quay.io/opencloudio",
             "mongodb": {
               "clientcertssecret": "icp-mongodb-client-cert",
               "clustercertssecret": "mongodb-root-ca-cert",
