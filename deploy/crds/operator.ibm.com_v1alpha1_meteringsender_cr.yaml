@@ -4,7 +4,7 @@ metadata:
   name: meteringsender
 spec:
   version: "3.5.0"
-  imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
+  imageRegistry: quay.io/opencloudio
   sender:
     clusterName: mycluster
     clusterNamespace: ibm-common-services

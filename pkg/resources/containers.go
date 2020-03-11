@@ -36,7 +36,7 @@ type SecretCheckData struct {
 	VolumeMounts []corev1.VolumeMount
 }
 
-const DefaultImageRegistry = "hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64"
+const DefaultImageRegistry = "quay.io/opencloudio"
 const DefaultDmImageName = "metering-data-manager"
 const DefaultDmImageTag = "3.4.0"
 const DefaultUIImageName = "metering-ui"

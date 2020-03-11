@@ -4,7 +4,7 @@ metadata:
   name: meteringui
 spec:
   version: "3.5.0"
-  imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
+  imageRegistry: quay.io/opencloudio
   replicas: 1
   clusterName: mycluster
   ui:

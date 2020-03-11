@@ -4,7 +4,7 @@ metadata:
   name: metering
 spec:
   version: "3.5.0"
-  imageRegistry: hyc-cloud-private-edge-docker-local.artifactory.swg-devops.com/ibmcom-amd64
+  imageRegistry: quay.io/opencloudio
   iamNamespace: ibm-common-services
   multiCloudReceiverEnabled: false
   mongodb:
