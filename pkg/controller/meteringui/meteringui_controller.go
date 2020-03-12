@@ -155,6 +155,17 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 
 	version := instance.Spec.Version
 	reqLogger.Info("got MeteringUI instance, version=" + version)
+
+	// set a default Status value
+	if len(instance.Status.PodNames) == 0 {
+		instance.Status.PodNames = res.DefaultStatusForCR
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set MeteringUI default status")
+			return reconcile.Result{}, err
+		}
+	}
+
 	reqLogger.Info("Checking UI Service", "Service.Name", res.UIDeploymentName)
 	// Check if the UI Service already exists, if not create a new one
 	newService, err := r.serviceForUI(instance)
@@ -223,9 +234,9 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 	podNames := res.GetPodNames(podList.Items)
 
-	// Update status.Pods if needed
-	if !reflect.DeepEqual(podNames, instance.Status.Pods) {
-		instance.Status.Pods = podNames
+	// Update status.PodNames if needed
+	if !reflect.DeepEqual(podNames, instance.Status.PodNames) {
+		instance.Status.PodNames = podNames
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update MeteringUI status")

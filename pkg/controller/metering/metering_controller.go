@@ -184,6 +184,17 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	version := instance.Spec.Version
 	reqLogger.Info("got Metering instance, version=" + version)
+
+	// set a default Status value
+	if len(instance.Status.PodNames) == 0 {
+		instance.Status.PodNames = res.DefaultStatusForCR
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set Metering default status")
+			return reconcile.Result{}, err
+		}
+	}
+
 	reqLogger.Info("Checking Services")
 	// Check if the DM, Reader and Receiver Services already exist. If not, create new ones.
 	err = r.reconcileAllServices(instance, &needToRequeue)
@@ -253,9 +264,9 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	// Update status.Pods if needed
-	if !reflect.DeepEqual(podNames, instance.Status.Pods) {
-		instance.Status.Pods = podNames
+	// Update status.PodNames if needed
+	if !reflect.DeepEqual(podNames, instance.Status.PodNames) {
+		instance.Status.PodNames = podNames
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update Metering status")

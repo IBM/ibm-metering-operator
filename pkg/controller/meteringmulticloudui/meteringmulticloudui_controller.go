@@ -155,6 +155,17 @@ func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (re
 
 	version := instance.Spec.Version
 	reqLogger.Info("got MeteringMultiCloudUI instance, version=" + version)
+
+	// set a default Status value
+	if len(instance.Status.PodNames) == 0 {
+		instance.Status.PodNames = res.DefaultStatusForCR
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set MeteringMultiCloudUI default status")
+			return reconcile.Result{}, err
+		}
+	}
+
 	reqLogger.Info("Checking MCM UI Service", "Service.Name", res.McmDeploymentName)
 	// Check if the MCM UI Service already exists, if not create a new one
 	newService, err := r.serviceForMCMUI(instance)
@@ -223,9 +234,9 @@ func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (re
 	}
 	podNames := res.GetPodNames(podList.Items)
 
-	// Update status.Pods if needed
-	if !reflect.DeepEqual(podNames, instance.Status.Pods) {
-		instance.Status.Pods = podNames
+	// Update status.PodNames if needed
+	if !reflect.DeepEqual(podNames, instance.Status.PodNames) {
+		instance.Status.PodNames = podNames
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update MeteringMultiCloudUI status")
