@@ -148,7 +148,7 @@ spec:
       statusDescriptors:
         - description: The list of Pods for the Metering multicloud UI service
           displayName: Pod Status
-          path: nodes
+          path: podNames
       resources:
         - kind: Service
           name: ''
@@ -189,7 +189,7 @@ spec:
       statusDescriptors:
         - description: The list of Pods for the Metering service
           displayName: Pod Status
-          path: nodes
+          path: podNames
       resources:
         - kind: Service
           name: ''
@@ -230,7 +230,7 @@ spec:
       statusDescriptors:
         - description: The list of Pods for the Metering multicloud sender service
           displayName: Pod Status
-          path: nodes
+          path: podNames
       resources:
         - kind: Deployment
           name: ''
@@ -262,7 +262,7 @@ spec:
       statusDescriptors:
         - description: The list of Pods for the Metering UI service
           displayName: Pod Status
-          path: nodes
+          path: podNames
       resources:
         - kind: Service
           name: ''
@@ -336,7 +336,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator
+                image: quay.io/opencloudio/ibm-metering-operator:latest
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources: {}
@@ -472,5 +472,5 @@ spec:
   maturity: alpha
   provider:
     name: IBM
-  replaces: ibm-metering-operator.v0.0.0
+  #replaces: ibm-metering-operator.v0.0.0
   version: 3.5.0

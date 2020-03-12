@@ -135,6 +135,17 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 
 	version := instance.Spec.Version
 	reqLogger.Info("got MeteringSender instance, version=" + version)
+
+	// set a default Status value
+	if len(instance.Status.PodNames) == 0 {
+		instance.Status.PodNames = res.DefaultStatusForCR
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set MeteringSender default status")
+			return reconcile.Result{}, err
+		}
+	}
+
 	reqLogger.Info("Checking Sender Deployment", "Deployment.Name", res.SenderDeploymentName)
 
 	// set common MongoDB env vars based on the instance
@@ -179,9 +190,9 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 	}
 	podNames := res.GetPodNames(podList.Items)
 
-	// Update status.Pods if needed
-	if !reflect.DeepEqual(podNames, instance.Status.Pods) {
-		instance.Status.Pods = podNames
+	// Update status.PodNames if needed
+	if !reflect.DeepEqual(podNames, instance.Status.PodNames) {
+		instance.Status.PodNames = podNames
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update MeteringSender status")

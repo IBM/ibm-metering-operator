@@ -65,6 +65,7 @@ const ReceiverServiceName = "metering-receiver"
 const MeteringDependencies = "ibm-common-services.auth-idp, mongodb, cert-manager"
 const apiIngressPort int32 = 4000
 
+var DefaultStatusForCR = []string{"none"}
 var DefaultMode int32 = 420
 
 var APICertificateData = CertificateData{
