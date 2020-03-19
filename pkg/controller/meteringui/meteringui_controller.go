@@ -19,7 +19,6 @@ package meteringui
 import (
 	"context"
 	"reflect"
-	gorun "runtime"
 	"time"
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
@@ -342,9 +341,9 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											{
-												Key:      "beta.kubernetes.io/arch",
+												Key:      "kubernetes.io/arch",
 												Operator: corev1.NodeSelectorOpIn,
-												Values:   []string{gorun.GOARCH},
+												Values:   res.ArchitectureList,
 											},
 										},
 									},
