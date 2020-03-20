@@ -280,7 +280,7 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											{
-												Key:      "kubernetes.io/arch",
+												Key:      "beta.kubernetes.io/arch",
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   res.ArchitectureList,
 											},
