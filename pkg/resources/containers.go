@@ -67,6 +67,12 @@ var memory2560 = resource.NewQuantity(2560*1024*1024, resource.BinarySI) // 2560
 
 const DefaultClusterName = "mycluster"
 
+var ArchitectureList = []string{
+	"amd64",
+	"ppc64le",
+	"s390x",
+}
+
 var CommonEnvVars = []corev1.EnvVar{
 	{
 		Name:  "NODE_TLS_REJECT_UNAUTHORIZED",

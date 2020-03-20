@@ -19,7 +19,6 @@ package meteringsender
 import (
 	"context"
 	"reflect"
-	gorun "runtime"
 	"time"
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
@@ -281,9 +280,9 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											{
-												Key:      "beta.kubernetes.io/arch",
+												Key:      "kubernetes.io/arch",
 												Operator: corev1.NodeSelectorOpIn,
-												Values:   []string{gorun.GOARCH},
+												Values:   res.ArchitectureList,
 											},
 										},
 									},
