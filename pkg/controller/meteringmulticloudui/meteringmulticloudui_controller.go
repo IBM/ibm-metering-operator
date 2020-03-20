@@ -26,7 +26,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	netv1 "k8s.io/api/networking/v1beta1"
+	netv1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -341,7 +341,7 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 									{
 										MatchExpressions: []corev1.NodeSelectorRequirement{
 											{
-												Key:      "kubernetes.io/arch",
+												Key:      "beta.kubernetes.io/arch",
 												Operator: corev1.NodeSelectorOpIn,
 												Values:   res.ArchitectureList,
 											},
