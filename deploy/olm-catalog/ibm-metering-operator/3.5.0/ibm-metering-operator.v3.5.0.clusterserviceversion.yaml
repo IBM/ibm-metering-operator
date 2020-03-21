@@ -276,12 +276,6 @@ spec:
         - kind: Ingress
           name: ''
           version: v1beta1
-    required:
-    - name: certificates.certmanager.k8s.io
-      kind: Certificate
-      version: v1alpha1
-      displayName: Certificate
-      description: Represents a certificate
   description: The metering operator manages the service used to meter workloads in
     a kubernetes cluster
   displayName: IBM Metering Operator
