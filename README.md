@@ -26,9 +26,9 @@ Operator used to manage the IBM metering service.  The IBM metering service capt
 
 1. Kubernetes 1.11 must be installed
 1. OpenShift 3.11+ must be installed
-1. IBM Mongodb service See: [IBM mongodb operator](https://github.com/IBM/ibm-mongodb-operator)
-1. IBM cert-manager service See: [IBM cert-manager operator](https://github.com/IBM/ibm-cert-manager-operator)
-1. IBM IAM service See: [IBM IAM operator](https://github.com/IBM/ibm-iam-operator) </br>Note that this is a soft dependency.  Metering will function without IAM for data collection, but the user interface and report download is not possible.
+1. IBM Mongodb service - See [IBM mongodb operator](https://github.com/IBM/ibm-mongodb-operator)
+1. IBM cert-manager service - See [IBM cert-manager operator](https://github.com/IBM/ibm-cert-manager-operator)
+1. IBM IAM service - See [IBM IAM operator](https://github.com/IBM/ibm-iam-operator) </br>Note that this is a soft dependency.  Metering will function without IAM for data collection, but the user interface and report download is not possible.
 
 ## Documentation
 
