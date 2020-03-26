@@ -38,19 +38,19 @@ For installation and configuration, see [IBM Knowledge Center link].
 
 Information about building and testing the operator.
 - Dev quick start
-  - Follow the [ODLM guide](https://github.com/IBM/operand-deployment-lifecycle-manager/blob/master/docs/install/common-service-integration.md#end-to-end-test)
+  1. Follow the [ODLM guide](https://github.com/IBM/operand-deployment-lifecycle-manager/blob/master/docs/install/common-service-integration.md#end-to-end-test)
 
 - Debugging the operator
-  - Check the Metering or MeteringUI custom resources (CR)
+  1. Check the Metering or MeteringUI custom resources (CR)
 
-  ````
-  kubectl get metering
-  kubectl describe metering <metering CR name>
-  ````
+    ````
+    kubectl get metering
+    kubectl describe metering <metering CR name>
+    ````
 
-  - Look at the logs of the metering-operator pod for errors
+  1. Look at the logs of the metering-operator pod for errors
 
-  ````
-  kubectl get po -n <namespace>
-  kubectl logs -n <namespace> <metering-operator pod name>
-  ````
+    ````
+    kubectl get po -n <namespace>
+    kubectl logs -n <namespace> <metering-operator pod name>
+    ````
