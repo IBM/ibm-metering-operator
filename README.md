@@ -1,6 +1,6 @@
 # ibm-metering-operator
 
-Operator used to manage the IBM metering service.  The IBM metering service captures detailed usage metrics for your applications and cluster.  The metric data is used for IBM Product licensing compliance and can be viewed in the metering UI or downloaded in a report for use in internal charge-back for cluster workloads.  
+Operator used to manage the IBM metering service.  The IBM metering service captures detailed usage metrics for your applications and cluster.  The metric data is used for IBM Product licensing compliance and can be viewed in the metering UI or downloaded in a report for use in internal charge-back for cluster workloads.
 
 ## Supported platforms
 
@@ -39,7 +39,7 @@ For installation and configuration, see [IBM Knowledge Center link].
 Information about building and testing the operator.
 - Dev quick start
   - Follow the [ODLM guide](https://github.com/IBM/operand-deployment-lifecycle-manager/blob/master/docs/install/common-service-integration.md#end-to-end-test)
-  
+
 - Debugging the operator
   - Check the Metering or MeteringUI custom resources (CR)
 
@@ -54,4 +54,3 @@ Information about building and testing the operator.
     kubectl get po -n <namespace>
     kubectl logs -n <namespace> <metering-operator pod name>
     ````
-    
