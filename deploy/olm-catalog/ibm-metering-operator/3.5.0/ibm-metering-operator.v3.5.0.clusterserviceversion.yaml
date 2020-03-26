@@ -112,7 +112,7 @@ metadata:
     capabilities: Basic Install
     categories: Monitoring
     certified: "false"
-    containerImage: quay.io/opencloudio/ibm-metering-operator:latest
+    containerImage: quay.io/opencloudio/ibm-metering-operator:3.5.0
     createdAt: "2020-02-11T15:30:00Z"
     description: Operator for managing deployment of metering service.
     repository: https://github.com/IBM/ibm-metering-operator
@@ -336,7 +336,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator:latest
+                image: quay.io/opencloudio/ibm-metering-operator:3.5.0
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources: {}
