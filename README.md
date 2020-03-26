@@ -32,7 +32,7 @@ Operator used to manage the IBM metering service.  The IBM metering service capt
 
 ## Documentation
 
-For installation and configuration, see [IBM Knowledge Center link].
+For installation and configuration, see [IBM Knowledge Center link](http://ibm.biz/cpcsdocs).
 
 ### Developer guide
 
