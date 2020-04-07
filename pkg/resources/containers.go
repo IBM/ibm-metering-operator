@@ -39,6 +39,8 @@ type SecretCheckData struct {
 const DefaultImageRegistry = "quay.io/opencloudio"
 const DefaultDmImageName = "metering-data-manager"
 const DefaultDmImageTag = "3.4.0"
+const DefaultReportImageName = "metering-report"
+const DefaultReportImageTag = "3.4.0"
 const DefaultUIImageName = "metering-ui"
 const DefaultUIImageTag = "3.4.0"
 const DefaultMcmUIImageName = "metering-mcmui"
@@ -46,6 +48,7 @@ const DefaultMcmUIImageTag = "3.4.0"
 const DefaultSenderImageName = "metering-data-manager"
 const DefaultSenderImageTag = "3.4.0"
 const DefaultClusterIssuer = "cs-ca-clusterissuer"
+const DefaultAPIServiceName = "v1.metering.ibm.com"
 
 // use concatenation so linter won't complain about "Secret" vars
 const DefaultAPIKeySecretName = "icp-serviceid-apikey-secret" + ""
@@ -119,6 +122,7 @@ var APICertVolumeMount = corev1.VolumeMount{
 	Name:      APICertVolumeName,
 	MountPath: "/sec/" + APICertSecretName,
 }
+
 var APICertVolume = corev1.Volume{
 	Name: APICertVolumeName,
 	VolumeSource: corev1.VolumeSource{
@@ -127,6 +131,13 @@ var APICertVolume = corev1.Volume{
 			DefaultMode: &DefaultMode,
 			Optional:    &TrueVar,
 		},
+	},
+}
+
+var TempDirVolume = corev1.Volume{
+	Name: "tmp-dir",
+	VolumeSource: corev1.VolumeSource{
+		EmptyDir: &corev1.EmptyDirVolumeSource{},
 	},
 }
 
@@ -328,6 +339,37 @@ var DmMainContainer = corev1.Container{
 			corev1.ResourceMemory: *memory256},
 	},
 	SecurityContext: &commonSecurityContext,
+}
+
+var ReportContainer = corev1.Container{
+	Image:           "metering-report",
+	Name:            "metering-report",
+	ImagePullPolicy: corev1.PullAlways,
+	Command: []string{
+		"./apiserver",
+	},
+	Args: []string{
+		"--cert-dir=/tmp",
+		"--secure-port=7443",
+	},
+	// CommonMainVolumeMounts will be added by the controller
+	VolumeMounts: []corev1.VolumeMount{
+		{
+			Name:      "tmp-dir",
+			MountPath: "/tmp",
+		},
+		{
+			Name:      APICertVolumeName,
+			MountPath: "/certs/metering-api",
+		},
+	},
+	SecurityContext: &commonSecurityContext,
+	Env: []corev1.EnvVar{
+		{
+			Name:  "SA_NAME",
+			Value: "ibm-metering-operator",
+		},
+	},
 }
 
 var RdrMainContainer = corev1.Container{

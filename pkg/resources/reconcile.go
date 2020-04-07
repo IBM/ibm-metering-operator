@@ -28,6 +28,7 @@ import (
 	netv1 "k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -70,6 +71,49 @@ func ReconcileService(client client.Client, instanceNamespace, serviceName, serv
 			if err != nil {
 				logger.Error(err, "Failed to update "+serviceType+" Service",
 					"Service.Namespace", currentService.Namespace, "Service.Name", currentService.Name)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func ReconcileAPIService(client client.Client, newAPIService *apiregistrationv1.APIService, needToRequeue *bool) error {
+	logger := log.WithValues("func", "ReconcileAPIService")
+
+	currentAPIService := &apiregistrationv1.APIService{}
+
+	err := client.Get(context.TODO(), types.NamespacedName{Name: DefaultAPIServiceName, Namespace: ""}, currentAPIService)
+	if err != nil && errors.IsNotFound(err) {
+		// Create a new APIService
+		logger.Info("Creating a new APIService", "APIService.Name", newAPIService.Name)
+		err := client.Create(context.TODO(), newAPIService)
+		if err != nil && errors.IsAlreadyExists(err) {
+			// Already exists from previous reconcile, requeue
+			logger.Info("APIService already exists")
+			*needToRequeue = true
+		} else if err != nil {
+			logger.Error(err, "Failed to create new APIService",
+				"APIService.Name", newAPIService.Name)
+			return err
+		} else {
+			// Deployment created successfully - return and requeue
+			*needToRequeue = true
+		}
+	} else if err != nil {
+		logger.Error(err, "Failed to get APIService", "APIService.Name", newAPIService)
+		return err
+	} else {
+		// Found apiservice, so determine if the resource has changed
+		logger.Info("Comparing APIService")
+		if !IsAPIServiceEqual(currentAPIService, newAPIService) {
+			logger.Info("Updating APIService", "APIService.Name", currentAPIService.Name)
+			currentAPIService.ObjectMeta.Name = newAPIService.ObjectMeta.Name
+			currentAPIService.ObjectMeta.Labels = newAPIService.ObjectMeta.Labels
+			currentAPIService.Spec = newAPIService.Spec
+			err = client.Update(context.TODO(), currentAPIService)
+			if err != nil {
+				logger.Error(err, "Failed to update APIService", "APIService.Name", currentAPIService.Name)
 				return err
 			}
 		}
@@ -288,6 +332,43 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 	}
 
 	logger.Info("Deployments are equal", "Deployment.Name", oldDeployment.ObjectMeta.Name)
+	return true
+}
+
+// Use DeepEqual to determine if 2 APIService are equal.
+// Check labels, insecureSkipTLSVerify, service name and service namespace.
+// If there are any differences, return false. Otherwise, return true.
+func IsAPIServiceEqual(oldAPIService, newAPIService *apiregistrationv1.APIService) bool {
+	logger := log.WithValues("func", "IsAPIServiceEqual")
+
+	if !reflect.DeepEqual(oldAPIService.ObjectMeta.Name, newAPIService.ObjectMeta.Name) {
+		logger.Info("Names not equal", "old", oldAPIService.ObjectMeta.Name, "new", newAPIService.ObjectMeta.Name)
+		return false
+	}
+
+	if !reflect.DeepEqual(oldAPIService.ObjectMeta.Labels, newAPIService.ObjectMeta.Labels) {
+		logger.Info("Labels not equal",
+			"old", fmt.Sprintf("%v", oldAPIService.ObjectMeta.Labels),
+			"new", fmt.Sprintf("%v", newAPIService.ObjectMeta.Labels))
+		return false
+	}
+
+	if !reflect.DeepEqual(oldAPIService.Spec.InsecureSkipTLSVerify, newAPIService.Spec.InsecureSkipTLSVerify) {
+		logger.Info("InsecureSkipTLSVerify not equal", "old", oldAPIService.Spec.InsecureSkipTLSVerify, "new", newAPIService.Spec.InsecureSkipTLSVerify)
+		return false
+	}
+
+	if !reflect.DeepEqual(oldAPIService.Spec.Service.Name, newAPIService.Spec.Service.Name) {
+		logger.Info("Service name not equal", "old", oldAPIService.Spec.Service.Name, "new", newAPIService.Spec.Service.Name)
+		return false
+	}
+
+	if !reflect.DeepEqual(oldAPIService.Spec.Service.Namespace, newAPIService.Spec.Service.Namespace) {
+		logger.Info("Service namespace not equal", "old", oldAPIService.Spec.Service.Namespace, "new", newAPIService.Spec.Service.Namespace)
+		return false
+	}
+
+	logger.Info("APIService are equal", "APIService.Name", oldAPIService.ObjectMeta.Name)
 	return true
 }
 
