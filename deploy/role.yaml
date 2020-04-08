@@ -3,6 +3,10 @@ kind: Role
 metadata:
   creationTimestamp: null
   name: ibm-metering-operator
+  labels:
+    app.kubernetes.io/instance: "ibm-metering-operator"
+    app.kubernetes.io/managed-by: "ibm-metering-operator"
+    app.kubernetes.io/name: "ibm-metering"
 rules:
 - apiGroups:
   - ""
@@ -113,6 +117,10 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: ibm-metering-operator
+  labels:
+    app.kubernetes.io/instance: "ibm-metering-operator"
+    app.kubernetes.io/managed-by: "ibm-metering-operator"
+    app.kubernetes.io/name: "ibm-metering"
 rules:
 #required by operator to create certificates
 - apiGroups: ["certmanager.k8s.io"]
