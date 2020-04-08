@@ -2,6 +2,10 @@ kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: ibm-metering-operator
+  labels:
+    app.kubernetes.io/instance: "ibm-metering-operator"
+    app.kubernetes.io/managed-by: "ibm-metering-operator"
+    app.kubernetes.io/name: "ibm-metering"
 subjects:
 - kind: ServiceAccount
   name: ibm-metering-operator
@@ -14,10 +18,14 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: ibm-metering-operator-cluster
+  labels:
+    app.kubernetes.io/instance: "ibm-metering-operator"
+    app.kubernetes.io/managed-by: "ibm-metering-operator"
+    app.kubernetes.io/name: "ibm-metering"
 subjects:
 - kind: ServiceAccount
   name: ibm-metering-operator
-  namespace: ibm-metering-operator
+  namespace: ibm-common-services
 roleRef:
   kind: ClusterRole
   name: ibm-metering-operator

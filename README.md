@@ -28,6 +28,10 @@ Operator used to manage the IBM metering service. The IBM metering service captu
 1. IBM Certificate manager service - See [IBM cert-manager operator](https://github.com/IBM/ibm-cert-manager-operator).
 1. IBM IAM service - See [IBM IAM operator](https://github.com/IBM/ibm-iam-operator). </br>**Note:** This service is a soft dependency. Metering functions without IAM for data collection, but the user interface and report download are not possible.
 
+## SecurityContextConstraints Requirements
+
+The metering service supports running under the OpenShift Container Platform default restricted security context constraints.
+
 ## Documentation
 
 For installation and configuration, see the [IBM Cloud Platform Common Services documentation](http://ibm.biz/cpcsdocs).

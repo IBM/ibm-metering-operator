@@ -2,6 +2,10 @@ apiVersion: operator.ibm.com/v1alpha1
 kind: MeteringUI
 metadata:
   name: meteringui
+  labels:
+    app.kubernetes.io/instance: "ibm-metering-operator"
+    app.kubernetes.io/managed-by: "ibm-metering-operator"
+    app.kubernetes.io/name: "ibm-metering"
 spec:
   version: "3.5.0"
   imageRegistry: quay.io/opencloudio
