@@ -29,7 +29,7 @@ metadata:
               "usernameSecret": "icp-mongodb-admin"
             },
             "multiCloudReceiverEnabled": false,
-            "version": "3.5.0"
+            "version": "3.6.0"
           }
         },
         {
@@ -61,7 +61,7 @@ metadata:
               "iamNamespace": "ibm-common-services",
               "ingressNamespace": "ibm-common-services"
             },
-            "version": "3.5.0"
+            "version": "3.6.0"
           }
         },
         {
@@ -92,7 +92,7 @@ metadata:
               "clusterNamespace": "ibm-common-services",
               "hubKubeConfigSecret": "multicluster-endpoint/endpoint-connmgr-hub-kubeconfig"
             },
-            "version": "3.5.0"
+            "version": "3.6.0"
           }
         },
         {
@@ -125,7 +125,7 @@ metadata:
               "iamNamespace": "ibm-common-services",
               "ingressNamespace": "ibm-common-services"
             },
-            "version": "3.5.0"
+            "version": "3.6.0"
           }
         }
       ]
