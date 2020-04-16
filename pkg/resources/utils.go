@@ -56,6 +56,8 @@ const DmDeploymentName = "metering-dm"
 const DmServiceName = "metering-dm"
 const ReaderDaemonSetName = "metering-reader"
 const ReaderServiceName = "metering-server"
+const ReportServiceName = "metering-report"
+const ReportDeploymentName = "metering-report"
 const UIDeploymentName = "metering-ui"
 const UIServiceName = "metering-ui"
 const McmDeploymentName = "metering-mcmui"
@@ -75,6 +77,7 @@ var APICertificateData = CertificateData{
 	App:       ReaderDaemonSetName,
 	Component: ReaderDaemonSetName,
 }
+
 var ReceiverCertificateData = CertificateData{
 	Name:      ReceiverCertName,
 	Secret:    ReceiverCertSecretName,

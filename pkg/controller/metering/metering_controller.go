@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -231,6 +232,26 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
+	reqLogger.Info("Checking Report Deployment", "Deployment.Name", res.ReportDeploymentName)
+	// Check if the Report Deployment already exists, if not create a new one
+	newReportDeployment, err := r.deploymentForReport(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = res.ReconcileDeployment(r.client, instance.Namespace, res.ReportDeploymentName, "Report", newReportDeployment, &needToRequeue)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	newAPIService, err := r.apiserviceForReport(instance)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	err = res.ReconcileAPIService(r.client, newAPIService, &needToRequeue)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	reqLogger.Info("Checking API Ingresses")
 	// Check if the Ingresses already exist, if not create new ones
 	err = r.reconcileAllIngress(instance, &needToRequeue)
@@ -291,6 +312,17 @@ func (r *ReconcileMetering) reconcileAllServices(instance *operatorv1alpha1.Mete
 		return err
 	}
 	err = res.ReconcileService(r.client, instance.Namespace, res.DmServiceName, "DM", newDmService, needToRequeue)
+	if err != nil {
+		return err
+	}
+
+	reqLogger.Info("Checking Report Service", "Service.Name", res.ReportServiceName)
+	// Check if the Report Service already exists, if not create a new one
+	newReportService, err := r.serviceForReport(instance)
+	if err != nil {
+		return err
+	}
+	err = res.ReconcileService(r.client, instance.Namespace, res.ReportServiceName, "Report", newReportService, needToRequeue)
 	if err != nil {
 		return err
 	}
@@ -509,6 +541,94 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	return deployment, nil
 }
 
+func (r *ReconcileMetering) apiserviceForReport(instance *operatorv1alpha1.Metering) (*apiregistrationv1.APIService, error) {
+	reqLogger := log.WithValues("func", "apiserviceForReport", "instance.Name", instance.Name)
+	metaLabels := res.LabelsForMetadata(res.ReportDeploymentName)
+	apiservice := &apiregistrationv1.APIService{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   res.DefaultAPIServiceName,
+			Labels: metaLabels,
+		},
+		Spec: apiregistrationv1.APIServiceSpec{
+			InsecureSkipTLSVerify: true,
+			Version:               "v1",
+			Group:                 "metering.ibm.com",
+			Service: &apiregistrationv1.ServiceReference{
+				Name:      "metering-report",
+				Namespace: instance.Namespace,
+			},
+		},
+	}
+	// Set Metering instance as the owner and controller of the APIService
+	err := controllerutil.SetControllerReference(instance, apiservice, r.scheme)
+	if err != nil {
+		reqLogger.Error(err, "Failed to set owner for Report APIService")
+		return nil, err
+	}
+	return apiservice, nil
+}
+
+// deploymentForReport returns a MeteringReport Deployment object
+func (r *ReconcileMetering) deploymentForReport(instance *operatorv1alpha1.Metering) (*appsv1.Deployment, error) {
+	reqLogger := log.WithValues("func", "deploymentForReport", "instance.Name", instance.Name)
+	metaLabels := res.LabelsForMetadata(res.ReportDeploymentName)
+	selectorLabels := res.LabelsForSelector(res.ReportDeploymentName, meteringCrType, instance.Name)
+	podLabels := res.LabelsForPodMetadata(res.ReportDeploymentName, meteringCrType, instance.Name)
+
+	var reportImage, imageRegistry string
+	if instance.Spec.ImageRegistry == "" {
+		imageRegistry = res.DefaultImageRegistry
+		reqLogger.Info("use default imageRegistry=" + imageRegistry)
+	} else {
+		imageRegistry = instance.Spec.ImageRegistry
+		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
+	}
+	reportImage = imageRegistry + "/" + res.DefaultReportImageName + ":" + res.DefaultReportImageTag + instance.Spec.ImageTagPostfix
+	reqLogger.Info("reportImage=" + reportImage)
+
+	ReportContainer := res.ReportContainer
+	ReportContainer.Image = reportImage
+
+	reportVolumes := []corev1.Volume{res.TempDirVolume, res.APICertVolume}
+
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      res.ReportDeploymentName,
+			Namespace: instance.Namespace,
+			Labels:    metaLabels,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &res.Replica1,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: selectorLabels,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels:      podLabels,
+					Annotations: res.AnnotationsForPod(),
+				},
+				Spec: corev1.PodSpec{
+					ServiceAccountName: res.GetServiceAccountName(),
+					HostNetwork:        false,
+					HostPID:            false,
+					HostIPC:            false,
+					Volumes:            reportVolumes,
+					Containers: []corev1.Container{
+						ReportContainer,
+					},
+				},
+			},
+		},
+	}
+	// Set Metering instance as the owner and controller of the Deployment
+	err := controllerutil.SetControllerReference(instance, deployment, r.scheme)
+	if err != nil {
+		reqLogger.Error(err, "Failed to set owner for Report Deployment")
+		return nil, err
+	}
+	return deployment, nil
+}
+
 // serviceForDataMgr returns a DataManager Service object
 func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Metering) (*corev1.Service, error) {
 	reqLogger := log.WithValues("func", "serviceForDataMgr", "instance.Name", instance.Name)
@@ -541,6 +661,43 @@ func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Meterin
 	err := controllerutil.SetControllerReference(instance, service, r.scheme)
 	if err != nil {
 		reqLogger.Error(err, "Failed to set owner for DM Service")
+		return nil, err
+	}
+	return service, nil
+}
+
+// serviceForReport returns a Report Service object
+func (r *ReconcileMetering) serviceForReport(instance *operatorv1alpha1.Metering) (*corev1.Service, error) {
+	reqLogger := log.WithValues("func", "serviceForReport", "instance.Name", instance.Name)
+	metaLabels := res.LabelsForMetadata(res.ReportServiceName)
+	selectorLabels := res.LabelsForSelector(res.ReportDeploymentName, meteringCrType, instance.Name)
+
+	service := &corev1.Service{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      res.ReportServiceName,
+			Namespace: instance.Namespace,
+			Labels:    metaLabels,
+		},
+		Spec: corev1.ServiceSpec{
+			Type: corev1.ServiceTypeClusterIP,
+			Ports: []corev1.ServicePort{
+				{
+					Protocol: corev1.ProtocolTCP,
+					Port:     443,
+					TargetPort: intstr.IntOrString{
+						Type:   intstr.Int,
+						IntVal: 7443,
+					},
+				},
+			},
+			Selector: selectorLabels,
+		},
+	}
+
+	// Set Metering instance as the owner and controller of the Service
+	err := controllerutil.SetControllerReference(instance, service, r.scheme)
+	if err != nil {
+		reqLogger.Error(err, "Failed to set owner for Report Service")
 		return nil, err
 	}
 	return service, nil
