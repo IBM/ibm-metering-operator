@@ -127,6 +127,46 @@ metadata:
             },
             "version": "3.6.0"
           }
+        },
+        {
+          "apiVersion": "operator.ibm.com/v1alpha1",
+          "kind": "OperandRequest",
+          "metadata": {
+            "name": "ibm-metering-request"
+          },
+          "spec": {
+            "requests": [
+              {
+                "operands": [
+                  {
+                    "name": "ibm-cert-manager-operator"
+                  },
+                  {
+                    "name": "ibm-mongodb-operator"
+                  }
+                ],
+                "registry": "common-service"
+              }
+            ]
+          }
+        },        
+        {
+          "apiVersion": "operator.ibm.com/v1alpha1",
+          "kind": "OperandBindInfo",
+          "metadata": {
+            "name": "ibm-metering-bindinfo"
+          },
+          "spec": {
+            "operand": "ibm-metering-operator",
+            "registry": "common-service",
+            "description": "Binding information that should be accessible to metering adopters",
+            "bindings": [
+              {
+                "scope": "public",
+                "secret": "icp-metering-api-secret"
+              }
+            ]
+          }
         }
       ]
     capabilities: Basic Install
