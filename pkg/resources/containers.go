@@ -40,7 +40,7 @@ const DefaultImageRegistry = "quay.io/opencloudio"
 const DefaultDmImageName = "metering-data-manager"
 const DefaultDmImageTag = "3.4.0"
 const DefaultReportImageName = "metering-report"
-const DefaultReportImageTag = "3.4.0"
+const DefaultReportImageTag = "3.5.0"
 const DefaultUIImageName = "metering-ui"
 const DefaultUIImageTag = "3.4.0"
 const DefaultMcmUIImageName = "metering-mcmui"
@@ -364,12 +364,6 @@ var ReportContainer = corev1.Container{
 		},
 	},
 	SecurityContext: &commonSecurityContext,
-	Env: []corev1.EnvVar{
-		{
-			Name:  "SA_NAME",
-			Value: "ibm-metering-operator",
-		},
-	},
 }
 
 var RdrMainContainer = corev1.Container{
