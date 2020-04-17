@@ -243,10 +243,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
-	newAPIService, err := r.apiserviceForReport(instance)
-	if err != nil {
-		return reconcile.Result{}, err
-	}
+	newAPIService := r.apiserviceForReport(instance)
 	err = res.ReconcileAPIService(r.client, newAPIService, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
@@ -541,8 +538,7 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	return deployment, nil
 }
 
-func (r *ReconcileMetering) apiserviceForReport(instance *operatorv1alpha1.Metering) (*apiregistrationv1.APIService, error) {
-	reqLogger := log.WithValues("func", "apiserviceForReport", "instance.Name", instance.Name)
+func (r *ReconcileMetering) apiserviceForReport(instance *operatorv1alpha1.Metering) *apiregistrationv1.APIService {
 	metaLabels := res.LabelsForMetadata(res.ReportDeploymentName)
 	apiservice := &apiregistrationv1.APIService{
 		ObjectMeta: metav1.ObjectMeta{
@@ -559,13 +555,7 @@ func (r *ReconcileMetering) apiserviceForReport(instance *operatorv1alpha1.Meter
 			},
 		},
 	}
-	// Set Metering instance as the owner and controller of the APIService
-	err := controllerutil.SetControllerReference(instance, apiservice, r.scheme)
-	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for Report APIService")
-		return nil, err
-	}
-	return apiservice, nil
+	return apiservice
 }
 
 // deploymentForReport returns a MeteringReport Deployment object
