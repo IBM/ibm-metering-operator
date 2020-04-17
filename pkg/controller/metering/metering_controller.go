@@ -549,6 +549,8 @@ func (r *ReconcileMetering) apiserviceForReport(instance *operatorv1alpha1.Meter
 			InsecureSkipTLSVerify: true,
 			Version:               "v1",
 			Group:                 "metering.ibm.com",
+			GroupPriorityMinimum:  1000,
+			VersionPriority:       15,
 			Service: &apiregistrationv1.ServiceReference{
 				Name:      "metering-report",
 				Namespace: instance.Namespace,
