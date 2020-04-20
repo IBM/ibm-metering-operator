@@ -38,7 +38,7 @@ type SecretCheckData struct {
 
 const DefaultImageRegistry = "quay.io/opencloudio"
 const DefaultDmImageName = "metering-data-manager"
-const DefaultDmImageTag = "3.4.0"
+const DefaultDmImageTag = "3.4.1"
 const DefaultUIImageName = "metering-ui"
 const DefaultUIImageTag = "3.4.0"
 const DefaultMcmUIImageName = "metering-mcmui"
