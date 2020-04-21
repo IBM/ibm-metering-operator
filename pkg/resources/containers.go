@@ -364,6 +364,40 @@ var ReportContainer = corev1.Container{
 		},
 	},
 	SecurityContext: &commonSecurityContext,
+	LivenessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/livenessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3000,
+				},
+				Scheme: corev1.URISchemeHTTP,
+			},
+		},
+		InitialDelaySeconds: 305,
+		TimeoutSeconds:      5,
+		PeriodSeconds:       300,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
+	ReadinessProbe: &corev1.Probe{
+		Handler: corev1.Handler{
+			HTTPGet: &corev1.HTTPGetAction{
+				Path: "/readinessProbe",
+				Port: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: 3000,
+				},
+				Scheme: corev1.URISchemeHTTP,
+			},
+		},
+		InitialDelaySeconds: 15,
+		TimeoutSeconds:      15,
+		PeriodSeconds:       30,
+		SuccessThreshold:    1,
+		FailureThreshold:    3,
+	},
 }
 
 var RdrMainContainer = corev1.Container{
