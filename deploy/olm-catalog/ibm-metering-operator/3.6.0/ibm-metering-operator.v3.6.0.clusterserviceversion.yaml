@@ -160,12 +160,11 @@ metadata:
             "operand": "ibm-metering-operator",
             "registry": "common-service",
             "description": "Binding information that should be accessible to metering adopters",
-            "bindings": [
-              {
-                "scope": "public",
+            "bindings": {
+              "public": {
                 "secret": "icp-metering-api-secret"
               }
-            ]
+            }
           }
         }
       ]
