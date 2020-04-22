@@ -49,15 +49,16 @@ type IngressData struct {
 
 const CommonServicesProductName = "IBM Cloud Platform Common Services"
 const CommonServicesProductID = "068a62892a1e4db39641342e592daa25"
-const CommonServicesProductVersion = "3.3.0"
+const CommonServicesProductVersion = "3.4.0"
 const MeteringComponentName = "meteringsvc"
 const MeteringReleaseName = "metering"
 const DmDeploymentName = "metering-dm"
 const DmServiceName = "metering-dm"
-const ReaderDaemonSetName = "metering-reader"
+const ReaderDeploymentName = "metering-reader"
 const ReaderServiceName = "metering-server"
-const ReportServiceName = "metering-report"
+const ReaderDaemonSetName = "metering-reader"
 const ReportDeploymentName = "metering-report"
+const ReportServiceName = "metering-report"
 const UIDeploymentName = "metering-ui"
 const UIServiceName = "metering-ui"
 const McmDeploymentName = "metering-mcmui"
@@ -74,8 +75,8 @@ var APICertificateData = CertificateData{
 	Name:      APICertName,
 	Secret:    APICertSecretName,
 	Common:    APICertCommonName,
-	App:       ReaderDaemonSetName,
-	Component: ReaderDaemonSetName,
+	App:       ReaderDeploymentName,
+	Component: ReaderDeploymentName,
 }
 
 var ReceiverCertificateData = CertificateData{

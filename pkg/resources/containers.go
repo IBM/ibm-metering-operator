@@ -38,17 +38,19 @@ type SecretCheckData struct {
 
 const DefaultImageRegistry = "quay.io/opencloudio"
 const DefaultDmImageName = "metering-data-manager"
-const DefaultDmImageTag = "3.4.0"
+const DefaultDmImageTag = "3.5.0"
 const DefaultReportImageName = "metering-report"
 const DefaultReportImageTag = "3.5.0"
 const DefaultUIImageName = "metering-ui"
-const DefaultUIImageTag = "3.4.0"
+const DefaultUIImageTag = "3.5.0"
 const DefaultMcmUIImageName = "metering-mcmui"
-const DefaultMcmUIImageTag = "3.4.0"
+const DefaultMcmUIImageTag = "3.5.0"
 const DefaultSenderImageName = "metering-data-manager"
-const DefaultSenderImageTag = "3.4.0"
+const DefaultSenderImageTag = "3.5.0"
 const DefaultClusterIssuer = "cs-ca-clusterissuer"
 const DefaultAPIServiceName = "v1.metering.ibm.com"
+const DefaultWatchNamespace = "ibm-common-services"
+const WatchNamespaceV350 = "ibm-common-services"
 
 // use concatenation so linter won't complain about "Secret" vars
 const DefaultAPIKeySecretName = "icp-serviceid-apikey-secret" + ""
@@ -283,14 +285,6 @@ var DmMainContainer = corev1.Container{
 			Name:  "HC_DM_SELFMETER_PURGER_ENABLED",
 			Value: "true",
 		},
-		{
-			Name:  "HC_DM_IS_ICP",
-			Value: "true",
-		},
-		{
-			Name:  "HC_DM_ALLOW_TEST",
-			Value: "false",
-		},
 	},
 	Ports: []corev1.ContainerPort{
 		{ContainerPort: 3000},
@@ -468,10 +462,6 @@ var RdrMainContainer = corev1.Container{
 			Value: "false",
 		},
 		{
-			Name:  "HC_DM_IS_ICP",
-			Value: "true",
-		},
-		{
 			Name:  "HC_DM_API_PORT",
 			Value: "4000",
 		},
@@ -490,15 +480,6 @@ var RdrMainContainer = corev1.Container{
 		{
 			Name:  "HC_API_SSL_KEY",
 			Value: "/certs/metering-api/tls.key",
-		},
-		{
-			Name: "MY_NODE_NAME",
-			ValueFrom: &corev1.EnvVarSource{
-				FieldRef: &corev1.ObjectFieldSelector{
-					FieldPath:  "spec.nodeName",
-					APIVersion: "v1",
-				},
-			},
 		},
 	},
 	Ports: []corev1.ContainerPort{
@@ -601,14 +582,6 @@ var SenderMainContainer = corev1.Container{
 			Name:  "HC_DM_MCM_SENDER_ENABLED",
 			Value: "true",
 		},
-		{
-			Name:  "HC_DM_IS_ICP",
-			Value: "true",
-		},
-		{
-			Name:  "HC_DM_ALLOW_TEST",
-			Value: "false",
-		},
 	},
 	LivenessProbe: &corev1.Probe{
 		Handler: corev1.Handler{
@@ -671,10 +644,6 @@ var UIEnvVars = []corev1.EnvVar{
 	{
 		Name:  "DEFAULT_PLATFORM_HEADER_SERVICE_PORT",
 		Value: "3000",
-	},
-	{
-		Name:  "HC_DM_ALLOW_TEST",
-		Value: "false",
 	},
 }
 
