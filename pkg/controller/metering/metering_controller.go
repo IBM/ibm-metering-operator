@@ -768,7 +768,6 @@ func (r *ReconcileMetering) checkDaemonSet(instance *operatorv1alpha1.Metering) 
 		// if err is NotFound do nothing, else print an error msg
 		reqLogger.Error(err, "Failed to get old Reader DaemonSet")
 	}
-	return
 }
 
 // getAllPodNames returns the list of pod names for the associated deployments
