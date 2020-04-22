@@ -1,0 +1,113 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: meteringsenders.operator.ibm.com
+spec:
+  group: operator.ibm.com
+  names:
+    kind: MeteringSender
+    listKind: MeteringSenderList
+    plural: meteringsenders
+    singular: meteringsender
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      description: MeteringSender is the Schema for the meteringsenders API
+      properties:
+        apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          type: string
+        kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          type: string
+        metadata:
+          type: object
+        spec:
+          description: MeteringSenderSpec defines the desired state of MeteringSender
+          properties:
+            imageRegistry:
+              type: string
+            imageTagPostfix:
+              type: string
+            mongodb:
+              description: MeteringSpecMongoDB defines the MongoDB configuration in
+                all the Metering specs
+              properties:
+                clientcertssecret:
+                  type: string
+                clustercertssecret:
+                  type: string
+                host:
+                  type: string
+                passwordKey:
+                  type: string
+                passwordSecret:
+                  type: string
+                port:
+                  type: integer
+                usernameKey:
+                  type: string
+                usernameSecret:
+                  type: string
+              required:
+              - clientcertssecret
+              - clustercertssecret
+              - host
+              - passwordKey
+              - passwordSecret
+              - port
+              - usernameKey
+              - usernameSecret
+              type: object
+            sender:
+              description: MeteringSenderSpecSender defines the metering-sender configuration
+                in the MeteringSender spec
+              properties:
+                clusterName:
+                  type: string
+                clusterNamespace:
+                  type: string
+                hubKubeConfigSecret:
+                  type: string
+              required:
+              - clusterNamespace
+              - hubKubeConfigSecret
+              type: object
+            version:
+              description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                Important: Run "operator-sdk generate k8s" to regenerate code after
+                modifying this file Add custom validation using kubebuilder tags:
+                https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html'
+              type: string
+          required:
+          - mongodb
+          - version
+          type: object
+        status:
+          description: MeteringStatus defines the observed state of each Metering
+            service
+          properties:
+            podNames:
+              description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
+                of cluster Important: Run "operator-sdk generate k8s" to regenerate
+                code after modifying this file Add custom validation using kubebuilder
+                tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
+                PodNames are the names of the metering pods'
+              items:
+                type: string
+              type: array
+          required:
+          - podNames
+          type: object
+      type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true
