@@ -165,13 +165,13 @@ func (r *ReconcileMeteringMultiCloudUI) Reconcile(request reconcile.Request) (re
 		}
 	}
 
-	reqLogger.Info("Checking MCM UI Service", "Service.Name", res.McmDeploymentName)
+	reqLogger.Info("Checking MCM UI Service", "Service.Name", res.McmServiceName)
 	// Check if the MCM UI Service already exists, if not create a new one
 	newService, err := r.serviceForMCMUI(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = res.ReconcileService(r.client, instance.Namespace, res.McmDeploymentName, "MCM UI", newService, &needToRequeue)
+	err = res.ReconcileService(r.client, instance.Namespace, res.McmServiceName, "MCM UI", newService, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

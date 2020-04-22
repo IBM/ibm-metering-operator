@@ -66,6 +66,22 @@ metadata:
         },
         {
           "apiVersion": "operator.ibm.com/v1alpha1",
+          "kind": "MeteringReport",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/instance": "ibm-metering-operator",
+              "app.kubernetes.io/managed-by": "ibm-metering-operator",
+              "app.kubernetes.io/name": "ibm-metering"
+            },
+            "name": "meteringreport"
+          },
+          "spec": {
+            "imageRegistry": "quay.io/opencloudio",
+            "version": "3.6.0"
+          }
+        },
+        {
+          "apiVersion": "operator.ibm.com/v1alpha1",
           "kind": "MeteringSender",
           "metadata": {
             "labels": {
@@ -221,6 +237,35 @@ spec:
         - kind: Ingress
           name: ''
           version: v1beta1
+    - description: MeteringReport is the Schema for the meteringreports API
+      kind: MeteringReport
+      name: meteringreports.operator.ibm.com
+      displayName: Metering report
+      version: v1alpha1
+      specDescriptors:
+        - description: Operator version
+          displayName: Version
+          path: version
+        - description: Registry where image is stored
+          displayName: ImageRegistry
+          path: imageRegistry
+      statusDescriptors:
+        - description: The list of Pods for the Metering report service
+          displayName: Pod Status
+          path: podNames
+      resources:
+        - kind: Service
+          name: ''
+          version: v1
+        - kind: Deployment
+          name: ''
+          version: v1
+        - kind: Pod
+          name: ''
+          version: v1
+        - kind: APIService
+          name: ''
+          version: v1
     - description: Metering is the Schema for the meterings API
       kind: Metering
       name: meterings.operator.ibm.com
@@ -294,6 +339,9 @@ spec:
         - kind: Deployment
           name: ''
           version: v1
+        - kind: Pod
+          name: ''
+          version: v1
     - description: MeteringUI is the Schema for the meteringuis API
       kind: MeteringUI
       name: meteringuis.operator.ibm.com
@@ -351,6 +399,16 @@ spec:
           - clusterissuers
           verbs:
           - use
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
         - apiGroups:
           - '*'
           resources:

@@ -63,7 +63,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 	ns, _ := k8sutil.GetWatchNamespace()
 
 	if ns == "" {
-		ns = "ibm-common-services"
+		ns = res.DefaultWatchNamespace
 	}
 
 	return &ReconcileMeteringReport{
@@ -88,8 +88,17 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	}
 
 	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource Pods and requeue the owner MeteringReport
-	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
+	// Watch for changes to secondary resource "Deployment" and requeue the owner MeteringReport
+	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.MeteringReport{},
+	})
+	if err != nil {
+		return err
+	}
+
+	// Watch for changes to secondary resource "Service" and requeue the owner Metering
+	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.MeteringReport{},
 	})
@@ -120,8 +129,8 @@ type ReconcileMeteringReport struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling MeteringReport")
+	reqLogger := log.WithValues("Request.Name", request.Name)
+	reqLogger.Info("Reconciling MeteringReport", "Request.Namespace", request.Namespace, "Watch.Namespace", r.watchNamespace)
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
@@ -140,11 +149,26 @@ func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	newAPIService, err := r.apiserviceForReport(instance)
+	version := instance.Spec.Version
+	reqLogger.Info("got MeteringReport instance, version=" + version)
+
+	// set a default Status value
+	if len(instance.Status.PodNames) == 0 {
+		instance.Status.PodNames = res.DefaultStatusForCR
+		err = r.client.Status().Update(context.TODO(), instance)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set MeteringReport default status")
+			return reconcile.Result{}, err
+		}
+	}
+
+	reqLogger.Info("Checking Report Service", "Service.Name", res.ReportServiceName)
+	// Check if the Report Service already exists, if not create a new one
+	newReportService, err := r.serviceForReport(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = reconcileAPIService(r.client, newAPIService, &needToRequeue)
+	err = res.ReconcileService(r.client, r.watchNamespace, res.ReportServiceName, "Report", newReportService, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -160,13 +184,12 @@ func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Checking Report Service", "Service.Name", res.ReportServiceName)
-	// Check if the Report Service already exists, if not create a new one
-	newReportService, err := r.serviceForReport(instance)
+	reqLogger.Info("Checking Report APIService", "APIService.Name", res.DefaultAPIServiceName)
+	newAPIService, err := r.apiserviceForReport(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = res.ReconcileService(r.client, r.watchNamespace, res.ReportServiceName, "Report", newReportService, &needToRequeue)
+	err = r.reconcileAPIService(newAPIService, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -229,8 +252,8 @@ func (r *ReconcileMeteringReport) deploymentForReport(instance *operatorv1alpha1
 	reportImage = imageRegistry + "/" + res.DefaultReportImageName + ":" + res.DefaultReportImageTag + instance.Spec.ImageTagPostfix
 	reqLogger.Info("reportImage=" + reportImage)
 
-	ReportContainer := res.ReportContainer
-	ReportContainer.Image = reportImage
+	reportContainer := res.ReportContainer
+	reportContainer.Image = reportImage
 
 	reportVolumes := []corev1.Volume{res.TempDirVolume, res.APICertVolume}
 
@@ -257,7 +280,7 @@ func (r *ReconcileMeteringReport) deploymentForReport(instance *operatorv1alpha1
 					HostIPC:            false,
 					Volumes:            reportVolumes,
 					Containers: []corev1.Container{
-						ReportContainer,
+						reportContainer,
 					},
 				},
 			},
@@ -342,17 +365,17 @@ func (r *ReconcileMeteringReport) apiserviceForReport(instance *operatorv1alpha1
 	return apiservice, nil
 }
 
-func reconcileAPIService(client client.Client, newAPIService *apiregistrationv1.APIService, needToRequeue *bool) error {
+func (r *ReconcileMeteringReport) reconcileAPIService(newAPIService *apiregistrationv1.APIService, needToRequeue *bool) error {
 	logger := log.WithValues("func", "ReconcileAPIService")
 
 	currentAPIService := &apiregistrationv1.APIService{}
 
 	// APIService is cluster-scoped, so set Namespace to ""
-	err := client.Get(context.TODO(), types.NamespacedName{Name: res.DefaultAPIServiceName, Namespace: ""}, currentAPIService)
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: res.DefaultAPIServiceName, Namespace: ""}, currentAPIService)
 	if err != nil && errors.IsNotFound(err) {
 		// Create a new APIService
 		logger.Info("Creating a new APIService", "APIService.Name", newAPIService.Name)
-		err := client.Create(context.TODO(), newAPIService)
+		err := r.client.Create(context.TODO(), newAPIService)
 		if err != nil && errors.IsAlreadyExists(err) {
 			// Already exists from previous reconcile, requeue
 			logger.Info("APIService already exists")
@@ -376,7 +399,7 @@ func reconcileAPIService(client client.Client, newAPIService *apiregistrationv1.
 			currentAPIService.ObjectMeta.Name = newAPIService.ObjectMeta.Name
 			currentAPIService.ObjectMeta.Labels = newAPIService.ObjectMeta.Labels
 			currentAPIService.Spec = newAPIService.Spec
-			err = client.Update(context.TODO(), currentAPIService)
+			err = r.client.Update(context.TODO(), currentAPIService)
 			if err != nil {
 				logger.Error(err, "Failed to update APIService", "APIService.Name", currentAPIService.Name)
 				return err

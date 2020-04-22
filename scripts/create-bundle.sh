@@ -28,8 +28,11 @@ else
     mkdir bundle
 fi
 
+VERSION=3.6.0
 cp -p deploy/olm-catalog/ibm-metering-operator/ibm-metering-operator.package.yaml bundle/
-cp -p deploy/olm-catalog/ibm-metering-operator/3.6.0/*.yaml bundle/
+cp -p deploy/olm-catalog/ibm-metering-operator/$VERSION/*yaml bundle/
+# need certificate-crd.yaml in the bundle so that the operator can be started during the RH scan
+cp -p scripts/rh-scan/certificate-crd.yaml bundle/
 
 cd bundle || exit
 zip ibm-metering-metadata ./*.yaml

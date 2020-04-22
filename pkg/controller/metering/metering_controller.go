@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -101,15 +102,6 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 
 	// Watch for changes to secondary resource "Service" and requeue the owner Metering
 	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
-		IsController: true,
-		OwnerType:    &operatorv1alpha1.Metering{},
-	})
-	if err != nil {
-		return err
-	}
-
-	// Watch for changes to secondary resource "DaemonSet" and requeue the owner Metering
-	err = c.Watch(&source.Kind{Type: &appsv1.DaemonSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &operatorv1alpha1.Metering{},
 	})
@@ -211,22 +203,22 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	commonVolumes = res.BuildCommonVolumes(instance.Spec.MongoDB, res.DmDeploymentName, "loglevel")
 
 	// Check if the DM Deployment already exists, if not create a new one
-	newDeployment, err := r.deploymentForDataMgr(instance)
+	newDmDeployment, err := r.deploymentForDataMgr(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = res.ReconcileDeployment(r.client, instance.Namespace, res.DmDeploymentName, "DM", newDeployment, &needToRequeue)
+	err = res.ReconcileDeployment(r.client, instance.Namespace, res.DmDeploymentName, "DM", newDmDeployment, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Checking Reader DaemonSet", "DaemonSet.Name", res.ReaderDaemonSetName)
-	// Check if the DaemonSet already exists, if not create a new one
-	newDaemonSet, err := r.daemonForReader(instance)
+	reqLogger.Info("Checking Reader Deployment", "Deployment.Name", res.ReaderDeploymentName)
+	// Check if the Reader Deployment already exists, if not create a new one
+	newRdrDeployment, err := r.deploymentForReader(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = res.ReconcileDaemonSet(r.client, instance.Namespace, res.ReaderDaemonSetName, "Reader", newDaemonSet, &needToRequeue)
+	err = res.ReconcileDeployment(r.client, instance.Namespace, res.ReaderDeploymentName, "Reader", newRdrDeployment, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -245,6 +237,10 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		return reconcile.Result{}, err
 	}
 
+	// Prior to version 3.6, metering-reader ran as a daemon set instead of a deployment.
+	// Delete the DaemonSet if it was leftover from a previous version.
+	r.checkDaemonSet(instance)
+
 	if needToRequeue {
 		// one or more resources was created, so requeue the request after 5 seconds
 		reqLogger.Info("Requeue the request")
@@ -256,7 +252,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	reqLogger.Info("Updating Metering status")
 	// Update the Metering status with the pod names.
-	// List the pods for this instance's Deployment and DaemonSet
+	// List the pods for this instance's Deployments
 	podNames, err := r.getAllPodNames(instance)
 	if err != nil {
 		reqLogger.Error(err, "Failed to list pods")
@@ -550,7 +546,7 @@ func (r *ReconcileMetering) serviceForDataMgr(instance *operatorv1alpha1.Meterin
 func (r *ReconcileMetering) serviceForReader(instance *operatorv1alpha1.Metering) (*corev1.Service, error) {
 	reqLogger := log.WithValues("func", "serviceForReader", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.ReaderServiceName)
-	selectorLabels := res.LabelsForSelector(res.ReaderDaemonSetName, meteringCrType, instance.Name)
+	selectorLabels := res.LabelsForSelector(res.ReaderDeploymentName, meteringCrType, instance.Name)
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -631,12 +627,12 @@ func (r *ReconcileMetering) serviceForReceiver(instance *operatorv1alpha1.Meteri
 	return service, nil
 }
 
-// daemonForReader returns a Reader DaemonSet object
-func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering) (*appsv1.DaemonSet, error) {
-	reqLogger := log.WithValues("func", "daemonForReader", "instance.Name", instance.Name)
-	metaLabels := res.LabelsForMetadata(res.ReaderDaemonSetName)
-	selectorLabels := res.LabelsForSelector(res.ReaderDaemonSetName, meteringCrType, instance.Name)
-	podLabels := res.LabelsForPodMetadata(res.ReaderDaemonSetName, meteringCrType, instance.Name)
+// deploymentForReader returns a Reader Deployment object
+func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Metering) (*appsv1.Deployment, error) {
+	reqLogger := log.WithValues("func", "deploymentForReader", "instance.Name", instance.Name)
+	metaLabels := res.LabelsForMetadata(res.ReaderDeploymentName)
+	selectorLabels := res.LabelsForSelector(res.ReaderDeploymentName, meteringCrType, instance.Name)
+	podLabels := res.LabelsForPodMetadata(res.ReaderDeploymentName, meteringCrType, instance.Name)
 
 	var rdrImage, imageRegistry string
 	if instance.Spec.ImageRegistry == "" {
@@ -657,17 +653,17 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 	// add the volume mount for the API cert
 	additionalInfo.VolumeMounts = []corev1.VolumeMount{res.APICertVolumeMount}
 
-	rdrSecretCheckContainer := res.BuildSecretCheckContainer(res.ReaderDaemonSetName, rdrImage,
+	rdrSecretCheckContainer := res.BuildSecretCheckContainer(res.ReaderDeploymentName, rdrImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
 	initEnvVars := []corev1.EnvVar{}
 	initEnvVars = append(initEnvVars, res.CommonEnvVars...)
 	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
-	rdrInitContainer := res.BuildInitContainer(res.ReaderDaemonSetName, rdrImage, initEnvVars)
+	rdrInitContainer := res.BuildInitContainer(res.ReaderDeploymentName, rdrImage, initEnvVars)
 
 	rdrMainContainer := res.RdrMainContainer
 	rdrMainContainer.Image = rdrImage
-	rdrMainContainer.Name = res.ReaderDaemonSetName
+	rdrMainContainer.Name = res.ReaderDeploymentName
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.IAMEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, clusterEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.CommonEnvVars...)
@@ -676,24 +672,16 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 
 	rdrVolumes := append(commonVolumes, res.APICertVolume)
 
-	daemon := &appsv1.DaemonSet{
+	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      res.ReaderDaemonSetName,
+			Name:      res.ReaderDeploymentName,
 			Namespace: instance.Namespace,
 			Labels:    metaLabels,
 		},
-		Spec: appsv1.DaemonSetSpec{
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &res.Replica1,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
-			},
-			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
-				Type: appsv1.RollingUpdateDaemonSetStrategyType,
-				RollingUpdate: &appsv1.RollingUpdateDaemonSet{
-					MaxUnavailable: &intstr.IntOrString{
-						Type:   intstr.Int,
-						IntVal: 1,
-					},
-				},
 			},
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
@@ -747,19 +735,45 @@ func (r *ReconcileMetering) daemonForReader(instance *operatorv1alpha1.Metering)
 		},
 	}
 
-	// Set Metering instance as the owner and controller of the DaemonSet
-	err := controllerutil.SetControllerReference(instance, daemon, r.scheme)
+	// Set Metering instance as the owner and controller of the Deployment
+	err := controllerutil.SetControllerReference(instance, deployment, r.scheme)
 	if err != nil {
-		reqLogger.Error(err, "Failed to set owner for Reader DaemonSet")
+		reqLogger.Error(err, "Failed to set owner for Reader Deployment")
 		return nil, err
 	}
-	return daemon, nil
+	return deployment, nil
 }
 
-// getAllPodNames returns the pod names of the array of pods passed in
+// delete the Reader DaemonSet if it was leftover from a previous version
+func (r *ReconcileMetering) checkDaemonSet(instance *operatorv1alpha1.Metering) {
+	reqLogger := log.WithValues("func", "checkDaemonSet", "instance.Name", instance.Name)
+	daemonSet := &appsv1.DaemonSet{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      res.ReaderDaemonSetName,
+			Namespace: res.WatchNamespaceV350,
+		},
+	}
+	// check if the DaemonSet exists
+	err := r.client.Get(context.TODO(),
+		types.NamespacedName{Name: res.ReaderDaemonSetName, Namespace: res.WatchNamespaceV350}, daemonSet)
+	if err == nil {
+		// found DaemonSet so delete it
+		err := r.client.Delete(context.TODO(), daemonSet)
+		if err != nil {
+			reqLogger.Error(err, "Failed to delete old Reader DaemonSet")
+		} else {
+			reqLogger.Info("Deleted old Reader DaemonSet")
+		}
+	} else if !errors.IsNotFound(err) {
+		// if err is NotFound do nothing, else print an error msg
+		reqLogger.Error(err, "Failed to get old Reader DaemonSet")
+	}
+}
+
+// getAllPodNames returns the list of pod names for the associated deployments
 func (r *ReconcileMetering) getAllPodNames(instance *operatorv1alpha1.Metering) ([]string, error) {
 	reqLogger := log.WithValues("func", "getAllPodNames")
-	// List the pods for this instance's Deployment
+	// List the pods for this instance's DM Deployment
 	dmPodList := &corev1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.Namespace),
@@ -769,14 +783,14 @@ func (r *ReconcileMetering) getAllPodNames(instance *operatorv1alpha1.Metering) 
 		reqLogger.Error(err, "Failed to list pods", "Metering.Namespace", instance.Namespace, "Deployment.Name", res.DmDeploymentName)
 		return nil, err
 	}
-	// List the pods for this instance's DaemonSet
+	// List the pods for this instance's Rdr Deployment
 	rdrPodList := &corev1.PodList{}
 	listOpts = []client.ListOption{
 		client.InNamespace(instance.Namespace),
-		client.MatchingLabels(res.LabelsForSelector(res.ReaderDaemonSetName, meteringCrType, instance.Name)),
+		client.MatchingLabels(res.LabelsForSelector(res.ReaderDeploymentName, meteringCrType, instance.Name)),
 	}
 	if err := r.client.List(context.TODO(), rdrPodList, listOpts...); err != nil {
-		reqLogger.Error(err, "Failed to list pods", "Metering.Namespace", instance.Namespace, "DaemonSet.Name", res.ReaderDaemonSetName)
+		reqLogger.Error(err, "Failed to list pods", "Metering.Namespace", instance.Namespace, "Deployment.Name", res.ReaderDeploymentName)
 		return nil, err
 	}
 

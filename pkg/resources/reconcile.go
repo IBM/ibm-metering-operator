@@ -123,51 +123,6 @@ func ReconcileDeployment(client client.Client, instanceNamespace, deploymentName
 	return nil
 }
 
-// Check if a DaemonSet already exists. If not, create a new one.
-func ReconcileDaemonSet(client client.Client, instanceNamespace, daemonSetName, daemonSetType string,
-	newDaemonSet *appsv1.DaemonSet, needToRequeue *bool) error {
-	logger := log.WithValues("func", "ReconcileDaemonSet")
-
-	currentDaemonSet := &appsv1.DaemonSet{}
-	err := client.Get(context.TODO(), types.NamespacedName{Name: daemonSetName, Namespace: instanceNamespace}, currentDaemonSet)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new DaemonSet
-		logger.Info("Creating a new "+daemonSetType+" DaemonSet", "DaemonSet.Namespace", newDaemonSet.Namespace, "DaemonSet.Name", newDaemonSet.Name)
-		err = client.Create(context.TODO(), newDaemonSet)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			logger.Info(daemonSetType + " DaemonSet already exists")
-			*needToRequeue = true
-		} else if err != nil {
-			logger.Error(err, "Failed to create new "+daemonSetType+" DaemonSet", "DaemonSet.Namespace", newDaemonSet.Namespace,
-				"DaemonSet.Name", newDaemonSet.Name)
-			return err
-		} else {
-			// DaemonSet created successfully - return and requeue
-			*needToRequeue = true
-		}
-	} else if err != nil {
-		logger.Error(err, "Failed to get "+daemonSetType+" DaemonSet", "DaemonSet.Name", daemonSetName)
-		return err
-	} else {
-		// Found DaemonSet, so determine if the resource has changed
-		logger.Info("Comparing " + daemonSetType + " DaemonSets")
-		if !IsDaemonSetEqual(currentDaemonSet, newDaemonSet) {
-			logger.Info("Updating "+daemonSetType+" DaemonSet", "DaemonSet.Name", currentDaemonSet.Name)
-			currentDaemonSet.ObjectMeta.Name = newDaemonSet.ObjectMeta.Name
-			currentDaemonSet.ObjectMeta.Labels = newDaemonSet.ObjectMeta.Labels
-			currentDaemonSet.Spec = newDaemonSet.Spec
-			err = client.Update(context.TODO(), currentDaemonSet)
-			if err != nil {
-				logger.Error(err, "Failed to update "+daemonSetType+" DaemonSet",
-					"DaemonSet.Namespace", currentDaemonSet.Namespace, "DaemonSet.Name", currentDaemonSet.Name)
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // Check if the Ingress already exists, if not create a new one.
 func ReconcileIngress(client client.Client, instanceNamespace, ingressName, ingressType string,
 	newIngress *netv1.Ingress, needToRequeue *bool) error {
