@@ -165,13 +165,13 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		}
 	}
 
-	reqLogger.Info("Checking UI Service", "Service.Name", res.UIDeploymentName)
+	reqLogger.Info("Checking UI Service", "Service.Name", res.UIServiceName)
 	// Check if the UI Service already exists, if not create a new one
 	newService, err := r.serviceForUI(instance)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
-	err = res.ReconcileService(r.client, instance.Namespace, res.UIDeploymentName, "UI", newService, &needToRequeue)
+	err = res.ReconcileService(r.client, instance.Namespace, res.UIServiceName, "UI", newService, &needToRequeue)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
