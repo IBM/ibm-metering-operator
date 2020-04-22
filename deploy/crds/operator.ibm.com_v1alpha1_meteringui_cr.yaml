@@ -3,7 +3,7 @@ kind: MeteringUI
 metadata:
   name: meteringui
 spec:
-  version: "3.5.0"
+  version: "3.5.1"
   imageRegistry: quay.io/opencloudio
   replicas: 1
   clusterName: mycluster
