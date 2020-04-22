@@ -78,49 +78,6 @@ func ReconcileService(client client.Client, instanceNamespace, serviceName, serv
 	return nil
 }
 
-func ReconcileAPIService(client client.Client, newAPIService *apiregistrationv1.APIService, needToRequeue *bool) error {
-	logger := log.WithValues("func", "ReconcileAPIService")
-
-	currentAPIService := &apiregistrationv1.APIService{}
-
-	err := client.Get(context.TODO(), types.NamespacedName{Name: DefaultAPIServiceName, Namespace: ""}, currentAPIService)
-	if err != nil && errors.IsNotFound(err) {
-		// Create a new APIService
-		logger.Info("Creating a new APIService", "APIService.Name", newAPIService.Name)
-		err := client.Create(context.TODO(), newAPIService)
-		if err != nil && errors.IsAlreadyExists(err) {
-			// Already exists from previous reconcile, requeue
-			logger.Info("APIService already exists")
-			*needToRequeue = true
-		} else if err != nil {
-			logger.Error(err, "Failed to create new APIService",
-				"APIService.Name", newAPIService.Name)
-			return err
-		} else {
-			// Deployment created successfully - return and requeue
-			*needToRequeue = true
-		}
-	} else if err != nil {
-		logger.Error(err, "Failed to get APIService", "APIService.Name", newAPIService)
-		return err
-	} else {
-		// Found apiservice, so determine if the resource has changed
-		logger.Info("Comparing APIService")
-		if !IsAPIServiceEqual(currentAPIService, newAPIService) {
-			logger.Info("Updating APIService", "APIService.Name", currentAPIService.Name)
-			currentAPIService.ObjectMeta.Name = newAPIService.ObjectMeta.Name
-			currentAPIService.ObjectMeta.Labels = newAPIService.ObjectMeta.Labels
-			currentAPIService.Spec = newAPIService.Spec
-			err = client.Update(context.TODO(), currentAPIService)
-			if err != nil {
-				logger.Error(err, "Failed to update APIService", "APIService.Name", currentAPIService.Name)
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 // Check if a Deployment already exists. If not, create a new one.
 func ReconcileDeployment(client client.Client, instanceNamespace, deploymentName, deploymentType string,
 	newDeployment *appsv1.Deployment, needToRequeue *bool) error {
