@@ -1,4 +1,4 @@
-# Copyright 2019 The Kubernetes Authors.
+# Copyright 2020 IBM Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -208,6 +208,34 @@ multiarch-image:
 ############################################################
 csv: ## Push CSV package to the catalog
 	@RELEASE=${CSV_VERSION} common/scripts/push-csv.sh
+
+############################################################
+# Red Hat certification section
+############################################################
+.PHONY: bundle
+bundle:
+	@echo --- Updating the bundle directory with latest yamls from olm-catalog ---
+	-mkdir bundle
+	rm -rf bundle/*
+	cp -r deploy/olm-catalog/ibm-metering-operator/${CSV_VERSION}/* bundle/
+	cp deploy/olm-catalog/ibm-metering-operator/ibm-metering-operator.package.yaml bundle/
+	# need certificate-crd.yaml in the bundle so that the operator can be started during the RH scan
+	cp scripts/rh-scan/certificate-crd.yaml bundle/
+	cd bundle && zip ibm-metering-metadata ./*.yaml && cd ..
+
+.PHONY: install-operator-courier
+install-operator-courier:
+	@echo --- Installing Operator Courier ---
+	pip3 install operator-courier
+
+.PHONY: verify-bundle
+verify-bundle:
+	@echo --- Verify bundle is ready for Red Hat certification ---
+	operator-courier --verbose verify --ui_validate_io bundle/
+
+#redhat-certify-ready: bundle install-operator-courier verify-bundle
+.PHONY: redhat-certify-ready
+redhat-certify-ready: bundle verify-bundle
 
 ############################################################
 # clean section
