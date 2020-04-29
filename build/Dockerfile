@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.1-398
+FROM registry.access.redhat.com/ubi8/ubi-minimal:8.1-409
 
 ARG IMAGE_NAME
 ARG IMAGE_DISPLAY_NAME
