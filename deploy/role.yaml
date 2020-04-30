@@ -130,6 +130,7 @@ rules:
   - clusterissuers
   verbs:
   - use
+# required by metering-report to create APIService
 - apiGroups:
   - authorization.k8s.io
   resources:
@@ -140,6 +141,32 @@ rules:
   - get
   - list
   - update
+# required by metering-report to create APIService
+- apiGroups:
+  - apiregistration.k8s.io
+  resources:
+  - apiservices
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
+# required by operator to update meteringreport CR at cluster scope
+- apiGroups:
+  - operator.ibm.com
+  resources:
+  - meteringreports
+  - meteringreports/status
+  - meteringreports/finalizers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - update
+  - watch
 #required by reader to meter pods, clusters, pvcs (configmaps for mcmreader)
 #- apiGroups: [""]
 #  resources: ["namespaces", "pods", "nodes", "nodes/proxy", "configmaps", "persistentvolumes", "persistentvolumeclaims"]
