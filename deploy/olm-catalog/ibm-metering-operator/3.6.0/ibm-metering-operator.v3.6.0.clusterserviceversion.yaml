@@ -66,14 +66,14 @@ metadata:
         },
         {
           "apiVersion": "operator.ibm.com/v1alpha1",
-          "kind": "MeteringReport",
+          "kind": "MeteringReportServer",
           "metadata": {
             "labels": {
               "app.kubernetes.io/instance": "ibm-metering-operator",
               "app.kubernetes.io/managed-by": "ibm-metering-operator",
               "app.kubernetes.io/name": "ibm-metering"
             },
-            "name": "meteringreport"
+            "name": "meteringreportserver"
           },
           "spec": {
             "imageRegistry": "quay.io/opencloudio",
@@ -237,10 +237,10 @@ spec:
         - kind: Ingress
           name: ''
           version: v1beta1
-    - description: MeteringReport is the Schema for the meteringreports API
-      kind: MeteringReport
-      name: meteringreports.operator.ibm.com
-      displayName: Metering report
+    - description: MeteringReportServer is the Schema for the meteringreportservers API
+      kind: MeteringReportServer
+      name: meteringreportservers.operator.ibm.com
+      displayName: Metering report server
       version: v1alpha1
       specDescriptors:
         - description: Operator version
