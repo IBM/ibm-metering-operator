@@ -17,10 +17,10 @@
 package controller
 
 import (
-	"github.com/ibm/ibm-metering-operator/pkg/controller/meteringreport"
+	"github.com/ibm/ibm-metering-operator/pkg/controller/meteringreportserver"
 )
 
 func init() {
 	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
-	AddToManagerFuncs = append(AddToManagerFuncs, meteringreport.Add)
+	AddToManagerFuncs = append(AddToManagerFuncs, meteringreportserver.Add)
 }
