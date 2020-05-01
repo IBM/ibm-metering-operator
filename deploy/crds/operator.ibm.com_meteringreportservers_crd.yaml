@@ -1,7 +1,7 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  name: meteringreports.operator.ibm.com
+  name: meteringreportservers.operator.ibm.com
   labels:
     app.kubernetes.io/instance: "ibm-metering-operator"
     app.kubernetes.io/managed-by: "ibm-metering-operator"
@@ -9,16 +9,17 @@ metadata:
 spec:
   group: operator.ibm.com
   names:
-    kind: MeteringReport
-    listKind: MeteringReportList
-    plural: meteringreports
-    singular: meteringreport
+    kind: MeteringReportServer
+    listKind: MeteringReportServerList
+    plural: meteringreportservers
+    singular: meteringreportserver
   scope: Cluster
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: MeteringReport is the Schema for the meteringreports API
+      description: MeteringReportServer is the Schema for the meteringreportservers
+        API
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation
@@ -33,7 +34,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: MeteringReportSpec defines the desired state of MeteringReport
+          description: MeteringReportServerSpec defines the desired state of MeteringReportServer
           properties:
             imageRegistry:
               type: string

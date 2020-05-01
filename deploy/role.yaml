@@ -76,7 +76,7 @@ rules:
   - '*'
   - meteringuis
   - meteringmulticlouduis
-  - meteringreports
+  - meteringreportservers
   - meteringsenders
   verbs:
   - create
@@ -130,7 +130,6 @@ rules:
   - clusterissuers
   verbs:
   - use
-# required by metering-report to create APIService
 - apiGroups:
   - authorization.k8s.io
   resources:
@@ -141,7 +140,7 @@ rules:
   - get
   - list
   - update
-# required by metering-report to create APIService
+# required by metering-report-server to create APIService
 - apiGroups:
   - apiregistration.k8s.io
   resources:
@@ -153,13 +152,13 @@ rules:
   - list
   - update
   - watch
-# required by operator to update meteringreport CR at cluster scope
+# required by operator to update meteringreportserver CR at cluster scope
 - apiGroups:
   - operator.ibm.com
   resources:
-  - meteringreports
-  - meteringreports/status
-  - meteringreports/finalizers
+  - meteringreportservers
+  - meteringreportservers/status
+  - meteringreportservers/finalizers
   verbs:
   - create
   - delete

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-package meteringreport
+package meteringreportserver
 
 import (
 	"context"
@@ -23,8 +23,8 @@ import (
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	res "github.com/ibm/ibm-metering-operator/pkg/resources"
-
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -43,16 +43,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const meteringReportCrType = "meteringreport_cr"
+const meteringReportServerCrType = "meteringreportserver_cr"
 
-var log = logf.Log.WithName("controller_meteringreport")
+var log = logf.Log.WithName("controller_meteringreportserver")
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
 * business logic.  Delete these comments after modifying this file.*
  */
 
-// Add creates a new MeteringReport Controller and adds it to the Manager. The Manager will set fields on the Controller
+// Add creates a new MeteringReportServer Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
 	return add(mgr, newReconciler(mgr))
@@ -66,7 +66,7 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 		ns = res.DefaultWatchNamespace
 	}
 
-	return &ReconcileMeteringReport{
+	return &ReconcileMeteringReportServer{
 		client:         mgr.GetClient(),
 		scheme:         mgr.GetScheme(),
 		watchNamespace: ns,
@@ -76,22 +76,22 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Create a new controller
-	c, err := controller.New("meteringreport-controller", mgr, controller.Options{Reconciler: r})
+	c, err := controller.New("meteringreportserver-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
 		return err
 	}
 
-	// Watch for changes to primary resource MeteringReport
-	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.MeteringReport{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to primary resource MeteringReportServer
+	err = c.Watch(&source.Kind{Type: &operatorv1alpha1.MeteringReportServer{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
 
 	// TODO(user): Modify this to be the types you create that are owned by the primary resource
-	// Watch for changes to secondary resource "Deployment" and requeue the owner MeteringReport
+	// Watch for changes to secondary resource "Deployment" and requeue the owner MeteringReportServer
 	err = c.Watch(&source.Kind{Type: &appsv1.Deployment{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.MeteringReport{},
+		OwnerType:    &operatorv1alpha1.MeteringReportServer{},
 	})
 	if err != nil {
 		return err
@@ -100,7 +100,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource "Service" and requeue the owner Metering
 	err = c.Watch(&source.Kind{Type: &corev1.Service{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.MeteringReport{},
+		OwnerType:    &operatorv1alpha1.MeteringReportServer{},
 	})
 	if err != nil {
 		return err
@@ -109,11 +109,11 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	return nil
 }
 
-// blank assignment to verify that ReconcileMeteringReport implements reconcile.Reconciler
-var _ reconcile.Reconciler = &ReconcileMeteringReport{}
+// blank assignment to verify that ReconcileMeteringReportServer implements reconcile.Reconciler
+var _ reconcile.Reconciler = &ReconcileMeteringReportServer{}
 
-// ReconcileMeteringReport reconciles a MeteringReport object
-type ReconcileMeteringReport struct {
+// ReconcileMeteringReportServer reconciles a MeteringReportServer object
+type ReconcileMeteringReportServer struct {
 	// This client, initialized using mgr.Client() above, is a split client
 	// that reads objects from the cache and writes to the apiserver
 	client         client.Client
@@ -121,22 +121,21 @@ type ReconcileMeteringReport struct {
 	watchNamespace string
 }
 
-// Reconcile reads that state of the cluster for a MeteringReport object and makes changes based on the state read
-// and what is in the MeteringReport.Spec
+// Reconcile reads that state of the cluster for a MeteringReportServer object and makes changes based on the state read
+// and what is in the MeteringReportServer.Spec
 // TODO(user): Modify this Reconcile function to implement your Controller logic.  This example creates
 // a Pod as an example
 // Note:
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
-func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Name", request.Name)
-	reqLogger.Info("Reconciling MeteringReport", "Request.Namespace", request.Namespace, "Watch.Namespace", r.watchNamespace)
+func (r *ReconcileMeteringReportServer) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
+	reqLogger.Info("Reconciling MeteringReportServer")
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
-
-	// Fetch the MeteringReport instance
-	instance := &operatorv1alpha1.MeteringReport{}
+	// Fetch the MeteringReportServer instance
+	instance := &operatorv1alpha1.MeteringReportServer{}
 	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -150,14 +149,14 @@ func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	version := instance.Spec.Version
-	reqLogger.Info("got MeteringReport instance, version=" + version)
+	reqLogger.Info("got MeteringReportServer instance, version=" + version)
 
 	// set a default Status value
 	if len(instance.Status.PodNames) == 0 {
 		instance.Status.PodNames = res.DefaultStatusForCR
 		err = r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
-			reqLogger.Error(err, "Failed to set MeteringReport default status")
+			reqLogger.Error(err, "Failed to set MeteringReportServer default status")
 			return reconcile.Result{}, err
 		}
 	}
@@ -203,17 +202,17 @@ func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	reqLogger.Info("Updating MeteringReport status")
-	// Update the MeteringReport status with the pod names.
+	reqLogger.Info("Updating MeteringReportServer status")
+	// Update the MeteringReportServer status with the pod names.
 	// List the pods for this instance's deployment.
 	podList := &corev1.PodList{}
 	listOpts := []client.ListOption{
 		client.InNamespace(instance.Namespace),
-		client.MatchingLabels(res.LabelsForSelector(res.ReportDeploymentName, meteringReportCrType, instance.Name)),
+		client.MatchingLabels(res.LabelsForSelector(res.ReportDeploymentName, meteringReportServerCrType, instance.Name)),
 	}
 	if err = r.client.List(context.TODO(), podList, listOpts...); err != nil {
-		reqLogger.Error(err, "Failed to list pods", "MeteringReport.Namespace", instance.Namespace,
-			"MeteringReport.Name", res.ReportDeploymentName)
+		reqLogger.Error(err, "Failed to list pods", "MeteringReportServer.Namespace", instance.Namespace,
+			"MeteringReportServer.Name", res.ReportDeploymentName)
 		return reconcile.Result{}, err
 	}
 	podNames := res.GetPodNames(podList.Items)
@@ -223,7 +222,7 @@ func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcil
 		instance.Status.PodNames = podNames
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
-			reqLogger.Error(err, "Failed to update MeteringReport status")
+			reqLogger.Error(err, "Failed to update MeteringReportServer status")
 			return reconcile.Result{}, err
 		}
 	}
@@ -234,12 +233,12 @@ func (r *ReconcileMeteringReport) Reconcile(request reconcile.Request) (reconcil
 	return reconcile.Result{}, nil
 }
 
-// deploymentForReport returns a MeteringReport Deployment object
-func (r *ReconcileMeteringReport) deploymentForReport(instance *operatorv1alpha1.MeteringReport) (*appsv1.Deployment, error) {
+// deploymentForReport returns a MeteringReportServer Deployment object
+func (r *ReconcileMeteringReportServer) deploymentForReport(instance *operatorv1alpha1.MeteringReportServer) (*appsv1.Deployment, error) {
 	reqLogger := log.WithValues("func", "deploymentForReport", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.ReportDeploymentName)
-	selectorLabels := res.LabelsForSelector(res.ReportDeploymentName, meteringReportCrType, instance.Name)
-	podLabels := res.LabelsForPodMetadata(res.ReportDeploymentName, meteringReportCrType, instance.Name)
+	selectorLabels := res.LabelsForSelector(res.ReportDeploymentName, meteringReportServerCrType, instance.Name)
+	podLabels := res.LabelsForPodMetadata(res.ReportDeploymentName, meteringReportServerCrType, instance.Name)
 
 	var reportImage, imageRegistry string
 	if instance.Spec.ImageRegistry == "" {
@@ -296,10 +295,10 @@ func (r *ReconcileMeteringReport) deploymentForReport(instance *operatorv1alpha1
 }
 
 // serviceForReport returns a Report Service object
-func (r *ReconcileMeteringReport) serviceForReport(instance *operatorv1alpha1.MeteringReport) (*corev1.Service, error) {
+func (r *ReconcileMeteringReportServer) serviceForReport(instance *operatorv1alpha1.MeteringReportServer) (*corev1.Service, error) {
 	reqLogger := log.WithValues("func", "serviceForReport", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.ReportServiceName)
-	selectorLabels := res.LabelsForSelector(res.ReportDeploymentName, meteringReportCrType, instance.Name)
+	selectorLabels := res.LabelsForSelector(res.ReportDeploymentName, meteringReportServerCrType, instance.Name)
 
 	service := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -332,7 +331,7 @@ func (r *ReconcileMeteringReport) serviceForReport(instance *operatorv1alpha1.Me
 	return service, nil
 }
 
-func (r *ReconcileMeteringReport) apiserviceForReport(instance *operatorv1alpha1.MeteringReport) (*apiregistrationv1.APIService, error) {
+func (r *ReconcileMeteringReportServer) apiserviceForReport(instance *operatorv1alpha1.MeteringReportServer) (*apiregistrationv1.APIService, error) {
 	reqLogger := log.WithValues("func", "apiserviceForReport", "instance.Name", instance.Name)
 	metaLabels := res.LabelsForMetadata(res.ReportDeploymentName)
 	// APIService is cluster-scoped, so don't set Namespace in ObjectMeta.
@@ -356,7 +355,7 @@ func (r *ReconcileMeteringReport) apiserviceForReport(instance *operatorv1alpha1
 	}
 
 	// Since both the APIService and the instance (CR) are cluster-scoped,
-	// we can set the MeteringReport instance as the owner and controller of the APIService.
+	// we can set the MeteringReportServer instance as the owner and controller of the APIService.
 	err := controllerutil.SetControllerReference(instance, apiservice, r.scheme)
 	if err != nil {
 		reqLogger.Error(err, "Failed to set owner for APIService")
@@ -365,7 +364,7 @@ func (r *ReconcileMeteringReport) apiserviceForReport(instance *operatorv1alpha1
 	return apiservice, nil
 }
 
-func (r *ReconcileMeteringReport) reconcileAPIService(newAPIService *apiregistrationv1.APIService, needToRequeue *bool) error {
+func (r *ReconcileMeteringReportServer) reconcileAPIService(newAPIService *apiregistrationv1.APIService, needToRequeue *bool) error {
 	logger := log.WithValues("func", "ReconcileAPIService")
 
 	currentAPIService := &apiregistrationv1.APIService{}
