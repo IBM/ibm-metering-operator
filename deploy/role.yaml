@@ -130,6 +130,7 @@ rules:
   - clusterissuers
   verbs:
   - use
+# required by meteringreportserver to create APIService
 - apiGroups:
   - authorization.k8s.io
   resources:
@@ -140,7 +141,7 @@ rules:
   - get
   - list
   - update
-# required by metering-report-server to create APIService
+# required by meteringreportserver to create APIService
 - apiGroups:
   - apiregistration.k8s.io
   resources:
@@ -151,6 +152,26 @@ rules:
   - get
   - list
   - update
+  - watch
+# required by meteringreportserver
+- apiGroups: 
+  - admissionregistration.k8s.io
+  resources:
+  - mutatingwebhookconfigurations
+  - validatingwebhookconfigurations
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - patch
+  - update
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
   - watch
 # required by operator to update meteringreportserver CR at cluster scope
 - apiGroups:
