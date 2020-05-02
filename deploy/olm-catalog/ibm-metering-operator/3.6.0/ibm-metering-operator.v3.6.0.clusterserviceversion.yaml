@@ -187,7 +187,7 @@ metadata:
     capabilities: Basic Install
     categories: Monitoring
     certified: "false"
-    containerImage: quay.io/opencloudio/ibm-metering-operator:3.5.0
+    containerImage: quay.io/opencloudio/ibm-metering-operator:3.6.0
     createdAt: "2020-02-11T15:30:00Z"
     description: Operator for managing deployment of metering service.
     repository: https://github.com/IBM/ibm-metering-operator
@@ -237,7 +237,8 @@ spec:
         - kind: Ingress
           name: ''
           version: v1beta1
-    - description: MeteringReportServer is the Schema for the meteringreportservers API
+    - description: MeteringReportServer is the Schema for the meteringreportservers
+        API
       kind: MeteringReportServer
       name: meteringreportservers.operator.ibm.com
       displayName: Metering report server
@@ -410,6 +411,49 @@ spec:
           - list
           - update
         - apiGroups:
+          - apiregistration.k8s.io
+          resources:
+          - apiservices
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
+          - admissionregistration.k8s.io
+          resources:
+          - mutatingwebhookconfigurations
+          - validatingwebhookconfigurations
+          verbs:
+          - create
+          - get
+          - list
+          - watch
+          - patch
+          - update
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - watch
+        - apiGroups:
+          - operator.ibm.com
+          resources:
+          - meteringreportservers
+          - meteringreportservers/status
+          - meteringreportservers/finalizers
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - update
+          - watch
+        - apiGroups:
           - '*'
           resources:
           - '*'
@@ -556,6 +600,7 @@ spec:
           - '*'
           - meteringuis
           - meteringmulticlouduis
+          - meteringreportservers
           - meteringsenders
           verbs:
           - create
