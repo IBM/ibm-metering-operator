@@ -756,7 +756,7 @@ func GetImageID(instanceImageRegistry, instanceImageTagPostfix, defaultImageRegi
 	reqLogger := log.WithValues("func", "GetImageID")
 
 	// determine if the image registry has been overridden by the CR
-	var imageSuffix, imageRegistry string
+	var imageRegistry, imageID string
 	if instanceImageRegistry == "" {
 		imageRegistry = defaultImageRegistry
 		reqLogger.Info("use default imageRegistry=" + imageRegistry)
@@ -768,17 +768,21 @@ func GetImageID(instanceImageRegistry, instanceImageTagPostfix, defaultImageRegi
 	// determine if an image SHA or tag has been set in an env var.
 	// if not, use the default tag (mainly used during development).
 	imageTagOrSHA := os.Getenv(envVarName)
-	if len(imageTagOrSHA) > 1 && (strings.HasPrefix(imageTagOrSHA, "@sha256:") || strings.HasPrefix(imageTagOrSHA, ":")) {
-		// use the value from the env var to build the image ID if the value
-		// begins with "@" for a SHA or ":" for a tag.
-		imageSuffix = imageTagOrSHA
+	if len(imageTagOrSHA) > 0 {
+		// use the value from the env var to build the image ID.
+		// a SHA value looks like "sha256:nnnn".
+		// a tag value looks like "3.5.0".
+		if strings.HasPrefix(imageTagOrSHA, "sha256:") {
+			// use the SHA value
+			imageID = imageRegistry + "/" + imageName + "@" + imageTagOrSHA
+		} else {
+			// use the tag value
+			imageID = imageRegistry + "/" + imageName + ":" + imageTagOrSHA + instanceImageTagPostfix
+		}
 	} else {
-		// the value is not in the correct format, so use the default tag
-		reqLogger.Info("The value [" + imageTagOrSHA + "] for env var " + envVarName +
-			" is not a SHA or a tag. Using the default tag [" + defaultImageTag + "]")
-		imageSuffix = defaultImageTag
+		// use the default tag to build the image ID
+		imageID = imageRegistry + "/" + imageName + ":" + defaultImageTag + instanceImageTagPostfix
 	}
-	imageID := imageRegistry + "/" + imageName + imageSuffix + instanceImageTagPostfix
 
 	return imageID
 }

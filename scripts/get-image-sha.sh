@@ -71,11 +71,11 @@ echo "SHA=$SHA"
 # delete the "name" and "value" lines for the old SHA
 # for example:
 #     - name: IMAGE_SHA_FOR_DM
-#       value: "@sha256:10a844ffaf7733176e927e6c4faa04c2bc4410cf4d4ef61b9ae5240aa62d1456"
+#       value: "sha256:10a844ffaf7733176e927e6c4faa04c2bc4410cf4d4ef61b9ae5240aa62d1456"
 
 sed -i "/name: IMAGE_SHA_FOR_$TYPE/{N;d;}" $FILE
 
 # insert the new SHA lines
 LINE1="\            - name: IMAGE_SHA_FOR_$TYPE"
-LINE2="\              value: \"@$SHA\""
+LINE2="\              value: \"$SHA\""
 sed -i "/DO NOT DELETE. Add image SHAs here/a $LINE1\n$LINE2" $FILE
