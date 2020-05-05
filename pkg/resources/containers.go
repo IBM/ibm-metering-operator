@@ -38,19 +38,28 @@ type SecretCheckData struct {
 
 const DefaultImageRegistry = "quay.io/opencloudio"
 const DefaultDmImageName = "metering-data-manager"
-const DefaultDmImageTag = "3.5.0"
 const DefaultReportImageName = "metering-report"
-const DefaultReportImageTag = "3.5.0"
 const DefaultUIImageName = "metering-ui"
-const DefaultUIImageTag = "3.5.0"
 const DefaultMcmUIImageName = "metering-mcmui"
-const DefaultMcmUIImageTag = "3.5.0"
-const DefaultSenderImageName = "metering-data-manager"
-const DefaultSenderImageTag = "3.5.0"
 const DefaultClusterIssuer = "cs-ca-clusterissuer"
 const DefaultAPIServiceName = "v1.metering.ibm.com"
 const DefaultWatchNamespace = "ibm-common-services"
 const WatchNamespaceV350 = "ibm-common-services"
+
+// starting with Common Services 3.4, images can be pulled by SHA or tag.
+// run scripts/get-image-sha.sh to update operator.yaml with the SHA values.
+// all SHA values look like this: "@sha256:nnnnnnnn"
+// make sure all image tags start with ":"
+const DefaultDmImageTag = ":3.5.0"
+const DefaultReportImageTag = ":3.5.0"
+const DefaultUIImageTag = ":3.5.0"
+const DefaultMcmUIImageTag = ":3.5.0"
+
+// define the env vars that contain either the SHA or the tag
+const VarImageSHAforDM = "IMAGE_SHA_FOR_DM"
+const VarImageSHAforUI = "IMAGE_SHA_FOR_UI"
+const VarImageSHAforMCMUI = "IMAGE_SHA_FOR_MCMUI"
+const VarImageSHAforReport = "IMAGE_SHA_FOR_REPORT"
 
 // use concatenation so linter won't complain about "Secret" vars
 const DefaultAPIKeySecretName = "icp-serviceid-apikey-secret" + ""

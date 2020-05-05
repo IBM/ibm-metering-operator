@@ -17,10 +17,14 @@
 BUILD_LOCALLY ?= 1
 
 # Image URL to use all building/pushing image targets;
-# Use your own docker registry and image name for dev/test by overridding the IMG and REGISTRY environment variable.
+# Use your own docker registry and image name for dev/test by overriding the IMG and REGISTRY environment variable.
 IMG ?= ibm-metering-operator
 REGISTRY ?= quay.io/opencloudio
 CSV_VERSION ?= $(VERSION)
+
+# Set the registry and tag for the operand images
+OPERAND_REGISTRY ?= $(REGISTRY)
+OPERAND_TAG ?= 3.5.0
 
 # Github host to use for checking the source tree;
 # Override this variable ue with your own value if you're working on forked repo.
@@ -208,6 +212,33 @@ multiarch-image:
 ############################################################
 csv: ## Push CSV package to the catalog
 	@RELEASE=${CSV_VERSION} common/scripts/push-csv.sh
+
+############################################################
+# SHA section
+############################################################
+.PHONY: get-all-image-sha
+get-all-image-sha: get-report-image-sha get-mcmui-image-sha get-ui-image-sha get-dm-image-sha
+	@echo Got SHAs for all operand images
+	
+.PHONY: get-dm-image-sha
+get-dm-image-sha:
+	@echo Get SHA for metering-data-manager:$(OPERAND_TAG)
+	@scripts/get-image-sha.sh DM $(OPERAND_REGISTRY)/metering-data-manager $(OPERAND_TAG)
+
+.PHONY: get-ui-image-sha
+get-ui-image-sha:
+	@echo Get SHA for metering-ui:$(OPERAND_TAG)
+	@scripts/get-image-sha.sh UI $(OPERAND_REGISTRY)/metering-ui $(OPERAND_TAG)
+
+.PHONY: get-mcmui-image-sha
+get-mcmui-image-sha:
+	@echo Get SHA for metering-mcmui:$(OPERAND_TAG)
+	@scripts/get-image-sha.sh MCMUI $(OPERAND_REGISTRY)/metering-mcmui $(OPERAND_TAG)
+
+.PHONY: get-report-image-sha
+get-report-image-sha:
+	@echo Get SHA for metering-report:$(OPERAND_TAG)
+	@scripts/get-image-sha.sh REPORT $(OPERAND_REGISTRY)/metering-report $(OPERAND_TAG)
 
 ############################################################
 # Red Hat certification section

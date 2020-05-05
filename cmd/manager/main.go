@@ -200,10 +200,10 @@ func serveCRMetrics(cfg *rest.Config) error {
 	}
 	// since the operator is namespace-scoped, the ServiceMonitor cannot
 	// collect metrics for cluster-scoped resources.
-	// APIService and MeteringReport are cluster-scoped resources.
+	// APIService and MeteringReportServer are cluster-scoped resources.
 	// remove those resources from the GVK list.
 	myGVK := filteredGVK
-	resourceList := []string{"APIService", "MeteringReport"}
+	resourceList := []string{"APIService", "MeteringReportServer"}
 	for _, resource := range resourceList {
 		for i := range myGVK {
 			if myGVK[i].Kind == resource {

@@ -379,15 +379,8 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	selectorLabels := res.LabelsForSelector(res.DmDeploymentName, meteringCrType, instance.Name)
 	podLabels := res.LabelsForPodMetadata(res.DmDeploymentName, meteringCrType, instance.Name)
 
-	var dmImage, imageRegistry string
-	if instance.Spec.ImageRegistry == "" {
-		imageRegistry = res.DefaultImageRegistry
-		reqLogger.Info("use default imageRegistry=" + imageRegistry)
-	} else {
-		imageRegistry = instance.Spec.ImageRegistry
-		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
-	}
-	dmImage = imageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag + instance.Spec.ImageTagPostfix
+	dmImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
 	reqLogger.Info("dmImage=" + dmImage)
 
 	var additionalInfo res.SecretCheckData
@@ -634,15 +627,10 @@ func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Meter
 	selectorLabels := res.LabelsForSelector(res.ReaderDeploymentName, meteringCrType, instance.Name)
 	podLabels := res.LabelsForPodMetadata(res.ReaderDeploymentName, meteringCrType, instance.Name)
 
-	var rdrImage, imageRegistry string
-	if instance.Spec.ImageRegistry == "" {
-		imageRegistry = res.DefaultImageRegistry
-		reqLogger.Info("use default imageRegistry=" + imageRegistry)
-	} else {
-		imageRegistry = instance.Spec.ImageRegistry
-		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
-	}
-	rdrImage = imageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag + instance.Spec.ImageTagPostfix
+	// the Reader code is part of the metering-data-manager image
+	rdrImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
+
 	reqLogger.Info("rdrImage=" + rdrImage)
 
 	var additionalInfo res.SecretCheckData

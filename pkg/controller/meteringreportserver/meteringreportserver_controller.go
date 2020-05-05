@@ -23,8 +23,8 @@ import (
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	res "github.com/ibm/ibm-metering-operator/pkg/resources"
-	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 
+	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -129,8 +129,8 @@ type ReconcileMeteringReportServer struct {
 // The Controller will requeue the Request to be processed again if the returned error is non-nil or
 // Result.Requeue is true, otherwise upon completion it will remove the work from the queue.
 func (r *ReconcileMeteringReportServer) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	reqLogger := log.WithValues("Request.Namespace", request.Namespace, "Request.Name", request.Name)
-	reqLogger.Info("Reconciling MeteringReportServer")
+	reqLogger := log.WithValues("Request.Name", request.Name)
+	reqLogger.Info("Reconciling MeteringReportServer", "Request.Namespace", request.Namespace, "Watch.Namespace", r.watchNamespace)
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
@@ -240,15 +240,8 @@ func (r *ReconcileMeteringReportServer) deploymentForReport(instance *operatorv1
 	selectorLabels := res.LabelsForSelector(res.ReportDeploymentName, meteringReportServerCrType, instance.Name)
 	podLabels := res.LabelsForPodMetadata(res.ReportDeploymentName, meteringReportServerCrType, instance.Name)
 
-	var reportImage, imageRegistry string
-	if instance.Spec.ImageRegistry == "" {
-		imageRegistry = res.DefaultImageRegistry
-		reqLogger.Info("use default imageRegistry=" + imageRegistry)
-	} else {
-		imageRegistry = instance.Spec.ImageRegistry
-		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
-	}
-	reportImage = imageRegistry + "/" + res.DefaultReportImageName + ":" + res.DefaultReportImageTag + instance.Spec.ImageTagPostfix
+	reportImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
+		res.DefaultImageRegistry, res.DefaultReportImageName, res.VarImageSHAforReport, res.DefaultReportImageTag)
 	reqLogger.Info("reportImage=" + reportImage)
 
 	reportContainer := res.ReportContainer
