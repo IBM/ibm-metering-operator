@@ -53,14 +53,14 @@ fi
 # pull the image
 IMAGE="$NAME:$TAG"
 echo "Pulling image $IMAGE"
-docker pull $IMAGE
+docker pull "$IMAGE"
 
 # get the SHA for the image
-DIGEST="$(docker image inspect --format='{{index .RepoDigests 0}}' $IMAGE )"
+DIGEST="$(docker image inspect --format='{{index .RepoDigests 0}}' "$IMAGE" )"
 
 # DIGEST should look like this: quay.io/opencloudio/metering-data-manager@sha256:nnnnnnnnnnnn
 IFS='@'; ARRAY=($DIGEST); unset IFS
-if [[ ${#ARRAY[@]} < 2 ]]
+if [[ ${#ARRAY[@]} -lt 2 ]]
 then
    echo "Cannot find SHA (@sha256:nnnnnnnnnnnn) in digest: $DIGEST"
    exit 1
