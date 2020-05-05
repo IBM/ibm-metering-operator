@@ -256,17 +256,12 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	selectorLabels := res.LabelsForSelector(res.UIDeploymentName, meteringUICrType, instance.Name)
 	podLabels := res.LabelsForPodMetadata(res.UIDeploymentName, meteringUICrType, instance.Name)
 
-	var dmImage, uiImage, imageRegistry string
-	if instance.Spec.ImageRegistry == "" {
-		imageRegistry = res.DefaultImageRegistry
-		reqLogger.Info("use default imageRegistry=" + imageRegistry)
-	} else {
-		imageRegistry = instance.Spec.ImageRegistry
-		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
-	}
-	dmImage = imageRegistry + "/" + res.DefaultDmImageName + ":" + res.DefaultDmImageTag + instance.Spec.ImageTagPostfix
-	reqLogger.Info("dmImage=" + dmImage)
-	uiImage = imageRegistry + "/" + res.DefaultUIImageName + ":" + res.DefaultUIImageTag + instance.Spec.ImageTagPostfix
+	// the InitContainer code is part of the metering-data-manager image
+	initImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
+	reqLogger.Info("initImage=" + initImage)
+	uiImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
+		res.DefaultImageRegistry, res.DefaultUIImageName, res.VarImageSHAforUI, res.DefaultUIImageTag)
 	reqLogger.Info("uiImage=" + uiImage)
 
 	var apiKeySecretName string
@@ -291,13 +286,13 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	additionalInfo.Dirs = apiKeySecretName + " " + platformOidcSecretName
 	// add the volume mounts for the secrets
 	additionalInfo.VolumeMounts = res.BuildUISecretVolumeMounts(apiKeySecretName, platformOidcSecretName)
-	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, dmImage,
+	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, initImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
 	initEnvVars := []corev1.EnvVar{}
 	initEnvVars = append(initEnvVars, res.CommonEnvVars...)
 	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
-	uiInitContainer := res.BuildInitContainer(res.UIDeploymentName, dmImage, initEnvVars)
+	uiInitContainer := res.BuildInitContainer(res.UIDeploymentName, initImage, initEnvVars)
 
 	uiMainContainer := res.UIMainContainer
 	uiMainContainer.Image = uiImage

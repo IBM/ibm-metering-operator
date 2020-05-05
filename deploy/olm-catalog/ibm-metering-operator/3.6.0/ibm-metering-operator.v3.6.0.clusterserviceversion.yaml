@@ -511,6 +511,14 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
+                - name: IMAGE_SHA_FOR_DM
+                  value: '3.5.0'
+                - name: IMAGE_SHA_FOR_UI
+                  value: '3.5.0'
+                - name: IMAGE_SHA_FOR_MCMUI
+                  value: '3.5.0'
+                - name: IMAGE_SHA_FOR_REPORT
+                  value: '3.5.0'
                 image: quay.io/opencloudio/ibm-metering-operator:latest
                 imagePullPolicy: Always
                 name: ibm-metering-operator

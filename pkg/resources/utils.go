@@ -18,6 +18,7 @@ package resources
 
 import (
 	"strconv"
+	"strings"
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
@@ -737,7 +738,7 @@ func GetPodNames(pods []corev1.Pod) []string {
 	return podNames
 }
 
-// returns the service account name or default if it is not set in the environment
+// GetServiceAccountName returns the service account name or default if it is not set in the environment
 func GetServiceAccountName() string {
 
 	sa := "default"
@@ -747,4 +748,41 @@ func GetServiceAccountName() string {
 		sa = envSa
 	}
 	return sa
+}
+
+// GetImageID returns the ID of an operand image, either <imageName>@<SHA> or <imageName>:<tag>
+func GetImageID(instanceImageRegistry, instanceImageTagPostfix, defaultImageRegistry,
+	imageName, envVarName, defaultImageTag string) string {
+	reqLogger := log.WithValues("func", "GetImageID")
+
+	// determine if the image registry has been overridden by the CR
+	var imageRegistry, imageID string
+	if instanceImageRegistry == "" {
+		imageRegistry = defaultImageRegistry
+		reqLogger.Info("use default imageRegistry=" + imageRegistry)
+	} else {
+		imageRegistry = instanceImageRegistry
+		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
+	}
+
+	// determine if an image SHA or tag has been set in an env var.
+	// if not, use the default tag (mainly used during development).
+	imageTagOrSHA := os.Getenv(envVarName)
+	if len(imageTagOrSHA) > 0 {
+		// use the value from the env var to build the image ID.
+		// a SHA value looks like "sha256:nnnn".
+		// a tag value looks like "3.5.0".
+		if strings.HasPrefix(imageTagOrSHA, "sha256:") {
+			// use the SHA value
+			imageID = imageRegistry + "/" + imageName + "@" + imageTagOrSHA
+		} else {
+			// use the tag value
+			imageID = imageRegistry + "/" + imageName + ":" + imageTagOrSHA + instanceImageTagPostfix
+		}
+	} else {
+		// use the default tag to build the image ID
+		imageID = imageRegistry + "/" + imageName + ":" + defaultImageTag + instanceImageTagPostfix
+	}
+
+	return imageID
 }

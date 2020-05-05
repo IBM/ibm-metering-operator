@@ -212,15 +212,9 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 	selectorLabels := res.LabelsForSelector(res.SenderDeploymentName, meteringSenderCrType, instance.Name)
 	podLabels := res.LabelsForPodMetadata(res.SenderDeploymentName, meteringSenderCrType, instance.Name)
 
-	var senderImage, imageRegistry string
-	if instance.Spec.ImageRegistry == "" {
-		imageRegistry = res.DefaultImageRegistry
-		reqLogger.Info("use default imageRegistry=" + imageRegistry)
-	} else {
-		imageRegistry = instance.Spec.ImageRegistry
-		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
-	}
-	senderImage = imageRegistry + "/" + res.DefaultSenderImageName + ":" + res.DefaultSenderImageTag + instance.Spec.ImageTagPostfix
+	// the Sender code is part of the metering-data-manager image
+	senderImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
 	reqLogger.Info("senderImage=" + senderImage)
 
 	senderSecretCheckContainer := res.BuildSecretCheckContainer(res.SenderDeploymentName, senderImage,
