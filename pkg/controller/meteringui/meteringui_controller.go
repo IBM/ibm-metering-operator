@@ -114,7 +114,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	// Watch for changes to secondary resource "Certificate" and requeue the owner Metering
 	err = c.Watch(&source.Kind{Type: &certmgr.Certificate{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
-		OwnerType:    &operatorv1alpha1.Metering{},
+		OwnerType:    &operatorv1alpha1.MeteringUI{},
 	})
 	if err != nil {
 		reqLogger.Error(err, "Failed to watch Certificate")
