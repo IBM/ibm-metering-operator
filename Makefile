@@ -295,6 +295,7 @@ install: ## Install all resources (CR/CRD's, RBCA and Operator)
 	@echo ....... Creating the Instance .......
 	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_metering_cr.yaml -n ${NAMESPACE}
 	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_meteringui_cr.yaml -n ${NAMESPACE}
+	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_meteringreportserver_cr.yaml -n ${NAMESPACE}
 
 uninstall: ## Uninstall all that all performed in the $ make install
 	@echo ....... Uninstalling .......

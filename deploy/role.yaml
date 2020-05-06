@@ -76,7 +76,6 @@ rules:
   - '*'
   - meteringuis
   - meteringmulticlouduis
-  - meteringreportservers
   - meteringsenders
   verbs:
   - create
