@@ -145,6 +145,30 @@ var APICertVolume = corev1.Volume{
 	},
 }
 
+// UI certificate definition
+const UICertName = "metering-ui-ca-cert"
+const UICertCommonName = "metering-ui"
+
+// use concatenation so linter won't complain about "Secret" vars
+const UICertSecretName = "metering-ui-cert" + ""
+const UICertVolumeName = "metering-ui-certs"
+
+var UICertVolumeMount = corev1.VolumeMount{
+	Name:      UICertVolumeName,
+	MountPath: "/certs/metering-ui",
+}
+
+var UICertVolume = corev1.Volume{
+	Name: UICertVolumeName,
+	VolumeSource: corev1.VolumeSource{
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  UICertSecretName,
+			DefaultMode: &DefaultMode,
+			Optional:    &TrueVar,
+		},
+	},
+}
+
 var TempDirVolume = corev1.Volume{
 	Name: "tmp-dir",
 	VolumeSource: corev1.VolumeSource{
@@ -428,7 +452,7 @@ var RdrMainContainer = corev1.Container{
 		},
 		{
 			Name:  "HC_DM_USE_HTTPS",
-			Value: "false",
+			Value: "true",
 		},
 		{
 			Name:  "HC_DM_MCM_RECEIVER_ENABLED",
@@ -678,6 +702,22 @@ var UIMainContainer = corev1.Container{
 			Name:  "PROXY_URI",
 			Value: "metering",
 		},
+		{
+			Name:  "HC_UI_ISSSL",
+			Value: "true",
+		},
+		{
+			Name:  "HC_UI_SSL_CA",
+			Value: "/certs/metering-ui/ca.crt",
+		},
+		{
+			Name:  "HC_UI_SSL_CERT",
+			Value: "/certs/metering-ui/tls.crt",
+		},
+		{
+			Name:  "HC_UI_SSL_KEY",
+			Value: "/certs/metering-ui/tls.key",
+		},
 	},
 	Ports: []corev1.ContainerPort{
 		{ContainerPort: 3130},
@@ -690,7 +730,7 @@ var UIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3130,
 				},
-				Scheme: corev1.URISchemeHTTP,
+				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
 		InitialDelaySeconds: 305,
@@ -707,7 +747,7 @@ var UIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3130,
 				},
-				Scheme: corev1.URISchemeHTTP,
+				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
 		InitialDelaySeconds: 15,

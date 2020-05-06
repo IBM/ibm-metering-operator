@@ -88,6 +88,14 @@ var ReceiverCertificateData = CertificateData{
 	Component: ReceiverCertCommonName,
 }
 
+var UICertificateData = CertificateData{
+	Name:      UICertName,
+	Secret:    UICertSecretName,
+	Common:    UICertCommonName,
+	App:       UIDeploymentName,
+	Component: UIDeploymentName,
+}
+
 var CommonIngressAnnotations = map[string]string{
 	"app.kubernetes.io/managed-by": "operator",
 	"kubernetes.io/ingress.class":  "ibm-icp-management",
@@ -95,18 +103,22 @@ var CommonIngressAnnotations = map[string]string{
 var apiCheckIngressAnnotations = map[string]string{
 	"icp.management.ibm.com/location-modifier": "=",
 	"icp.management.ibm.com/upstream-uri":      "/api/v1",
+	"icp.management.ibm.com/secure-backends":   "true",
 }
 var apiRBACIngressAnnotations = map[string]string{
-	"icp.management.ibm.com/authz-type":     "rbac",
-	"icp.management.ibm.com/rewrite-target": "/api",
+	"icp.management.ibm.com/authz-type":      "rbac",
+	"icp.management.ibm.com/rewrite-target":  "/api",
+	"icp.management.ibm.com/secure-backends": "true",
 }
 var apiSwaggerIngressAnnotations = map[string]string{
 	"icp.management.ibm.com/location-modifier": "=",
 	"icp.management.ibm.com/upstream-uri":      "/api/swagger",
+	"icp.management.ibm.com/secure-backends":   "true",
 }
 var uiIngressAnnotations = map[string]string{
-	"icp.management.ibm.com/auth-type":      "id-token",
-	"icp.management.ibm.com/rewrite-target": "/",
+	"icp.management.ibm.com/auth-type":       "id-token",
+	"icp.management.ibm.com/rewrite-target":  "/",
+	"icp.management.ibm.com/secure-backends": "true",
 }
 var mcmIngressAnnotations = map[string]string{
 	"icp.management.ibm.com/auth-type": "id-token",

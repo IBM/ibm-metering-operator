@@ -23,6 +23,7 @@ import (
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	res "github.com/ibm/ibm-metering-operator/pkg/resources"
+	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -68,6 +69,8 @@ func newReconciler(mgr manager.Manager) reconcile.Reconciler {
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, r reconcile.Reconciler) error {
+	reqLogger := log.WithValues("func", "add")
+
 	// Create a new controller
 	c, err := controller.New("meteringui-controller", mgr, controller.Options{Reconciler: r})
 	if err != nil {
@@ -106,6 +109,16 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	})
 	if err != nil {
 		return err
+	}
+
+	// Watch for changes to secondary resource "Certificate" and requeue the owner Metering
+	err = c.Watch(&source.Kind{Type: &certmgr.Certificate{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType:    &operatorv1alpha1.Metering{},
+	})
+	if err != nil {
+		reqLogger.Error(err, "Failed to watch Certificate")
+		// CertManager might not be installed, so don't fail
 	}
 
 	return nil
@@ -210,6 +223,13 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
+	reqLogger.Info("Checking Certificates")
+	// Check if the Certificates already exist, if not create new ones
+	err = r.reconcileAllCertificates(instance, &needToRequeue)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	if needToRequeue {
 		// one or more resources was created, so requeue the request after 5 seconds
 		reqLogger.Info("Requeue the request")
@@ -281,11 +301,17 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 
 	var additionalInfo res.SecretCheckData
 	// add to the SECRET_LIST env var
-	additionalInfo.Names = apiKeySecretName + " " + platformOidcSecretName
+	additionalInfo.Names = apiKeySecretName + " " + platformOidcSecretName + " " + res.UICertSecretName
 	// add to the SECRET_DIR_LIST env var
-	additionalInfo.Dirs = apiKeySecretName + " " + platformOidcSecretName
+	additionalInfo.Dirs = apiKeySecretName + " " + platformOidcSecretName + " " + res.UICertSecretName
 	// add the volume mounts for the secrets
 	additionalInfo.VolumeMounts = res.BuildUISecretVolumeMounts(apiKeySecretName, platformOidcSecretName)
+	// add the cert secret which is only used by the UI today
+	additionalInfo.VolumeMounts = append(additionalInfo.VolumeMounts, corev1.VolumeMount{
+		Name:      res.UICertVolumeName,
+		MountPath: "/sec/" + res.UICertSecretName,
+	})
+
 	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, initImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
@@ -303,9 +329,11 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	uiMainContainer.Env = append(uiMainContainer.Env, res.CommonEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, mongoDBEnvVars...)
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
+	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.UICertVolumeMount)
 
 	secretVolumes := res.BuildUISecretVolumes(apiKeySecretName, platformOidcSecretName)
 	uiVolumes := append(commonVolumes, secretVolumes...)
+	uiVolumes = append(uiVolumes, res.UICertVolume)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -414,4 +442,31 @@ func (r *ReconcileMeteringUI) serviceForUI(instance *operatorv1alpha1.MeteringUI
 		return nil, err
 	}
 	return service, nil
+}
+
+// Check if the Certificate already exists, if not create a new one.
+// This function was created to reduce the cyclomatic complexity :)
+func (r *ReconcileMeteringUI) reconcileAllCertificates(instance *operatorv1alpha1.MeteringUI, needToRequeue *bool) error {
+	reqLogger := log.WithValues("func", "reconcileAllCertificates")
+
+	certificateList := []res.CertificateData{
+		res.UICertificateData,
+	}
+
+	for _, certData := range certificateList {
+		reqLogger.Info("Checking Certificate", "Certificate.Name", certData.Name)
+		newCertificate := res.BuildCertificate(instance.Namespace, "", certData)
+		// Set MeteringUI instance as the owner and controller of the Certificate
+		err := controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
+		if err != nil {
+			reqLogger.Error(err, "Failed to set owner for Certificate", "Certificate.Namespace", newCertificate.Namespace,
+				"Certificate.Name", newCertificate.Name)
+			return err
+		}
+		err = res.ReconcileCertificate(r.client, instance.Namespace, certData.Name, newCertificate, needToRequeue)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
