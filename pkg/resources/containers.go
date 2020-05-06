@@ -67,6 +67,7 @@ const DefaultPlatformOidcSecretName = "platform-oidc-credentials" + ""
 
 var TrueVar = true
 var FalseVar = false
+var Replica0 int32 = 0
 var Replica1 int32 = 1
 var Seconds60 int64 = 60
 

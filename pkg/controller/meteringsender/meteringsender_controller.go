@@ -188,6 +188,10 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 		return reconcile.Result{}, err
 	}
 	podNames := res.GetPodNames(podList.Items)
+	// if no pods were found set the default status
+	if len(podNames) == 0 {
+		podNames = res.DefaultStatusForCR
+	}
 
 	// Update status.PodNames if needed
 	if !reflect.DeepEqual(podNames, instance.Status.PodNames) {

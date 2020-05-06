@@ -258,6 +258,10 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		reqLogger.Error(err, "Failed to list pods")
 		return reconcile.Result{}, err
 	}
+	// if no pods were found set the default status
+	if len(podNames) == 0 {
+		podNames = res.DefaultStatusForCR
+	}
 
 	// Update status.PodNames if needed
 	if !reflect.DeepEqual(podNames, instance.Status.PodNames) {
