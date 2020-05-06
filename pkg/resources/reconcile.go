@@ -156,6 +156,7 @@ func ReconcileIngress(client client.Client, instanceNamespace, ingressName, ingr
 			logger.Info("Updating "+ingressType+" Ingress", "Ingress.Name", currentIngress.Name)
 			currentIngress.ObjectMeta.Name = newIngress.ObjectMeta.Name
 			currentIngress.ObjectMeta.Labels = newIngress.ObjectMeta.Labels
+			currentIngress.ObjectMeta.Annotations = newIngress.ObjectMeta.Annotations
 			currentIngress.Spec = newIngress.Spec
 			err = client.Update(context.TODO(), currentIngress)
 			if err != nil {
@@ -609,6 +610,13 @@ func IsIngressEqual(oldIngress, newIngress *netv1.Ingress) bool {
 		logger.Info("Labels not equal",
 			"old", fmt.Sprintf("%v", oldIngress.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newIngress.ObjectMeta.Labels))
+		return false
+	}
+
+	if !reflect.DeepEqual(oldIngress.ObjectMeta.Annotations, newIngress.ObjectMeta.Annotations) {
+		logger.Info("Annotations not equal",
+			"old", fmt.Sprintf("%v", oldIngress.ObjectMeta.Annotations),
+			"new", fmt.Sprintf("%v", newIngress.ObjectMeta.Annotations))
 		return false
 	}
 
