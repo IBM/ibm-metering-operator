@@ -111,7 +111,13 @@ func ReconcileDeployment(client client.Client, instanceNamespace, deploymentName
 			logger.Info("Updating "+deploymentType+" Deployment", "Deployment.Name", currentDeployment.Name)
 			currentDeployment.ObjectMeta.Name = newDeployment.ObjectMeta.Name
 			currentDeployment.ObjectMeta.Labels = newDeployment.ObjectMeta.Labels
+			currentReplicas := *currentDeployment.Spec.Replicas
 			currentDeployment.Spec = newDeployment.Spec
+			if currentReplicas == 0 {
+				// since currentDeployment has been scaled to 0,
+				// don't use the default replica count in newDeployment.
+				currentDeployment.Spec.Replicas = &currentReplicas
+			}
 			err = client.Update(context.TODO(), currentDeployment)
 			if err != nil {
 				logger.Error(err, "Failed to update "+deploymentType+" Deployment",
@@ -238,9 +244,6 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 	if *oldDeployment.Spec.Replicas != *newDeployment.Spec.Replicas {
 		if *oldDeployment.Spec.Replicas == 0 {
 			logger.Info("Allowing deployment to scale to 0", "name", oldDeployment.ObjectMeta.Name)
-			// set Replicas to 0 in newDeployment so that if we copy the Spec (see ReconcileDeployment)
-			// due to a change in the PodTemplate, we don't overwrite the replica count.
-			newDeployment.Spec.Replicas = &Replica0
 		} else {
 			logger.Info("Replicas not equal", "old", oldDeployment.Spec.Replicas, "new", newDeployment.Spec.Replicas)
 			return false
