@@ -497,6 +497,14 @@ spec:
               - command:
                 - ibm-metering-operator
                 env:
+                - name: IMAGE_SHA_OR_TAG_DM
+                  value: 3.5.0
+                - name: IMAGE_SHA_OR_TAG_UI
+                  value: 3.5.0
+                - name: IMAGE_SHA_OR_TAG_MCMUI
+                  value: 3.5.0
+                - name: IMAGE_SHA_OR_TAG_REPORT
+                  value: 3.5.0
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -511,14 +519,6 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                - name: IMAGE_SHA_FOR_DM
-                  value: 3.5.0
-                - name: IMAGE_SHA_FOR_UI
-                  value: 3.5.0
-                - name: IMAGE_SHA_FOR_MCMUI
-                  value: 3.5.0
-                - name: IMAGE_SHA_FOR_REPORT
-                  value: 3.5.0
                 image: quay.io/opencloudio/ibm-metering-operator:latest
                 imagePullPolicy: Always
                 name: ibm-metering-operator

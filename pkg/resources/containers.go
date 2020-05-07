@@ -56,10 +56,10 @@ const DefaultUIImageTag = "3.5.0"
 const DefaultMcmUIImageTag = "3.5.0"
 
 // define the env vars that contain either the SHA or the tag
-const VarImageSHAforDM = "IMAGE_SHA_FOR_DM"
-const VarImageSHAforUI = "IMAGE_SHA_FOR_UI"
-const VarImageSHAforMCMUI = "IMAGE_SHA_FOR_MCMUI"
-const VarImageSHAforReport = "IMAGE_SHA_FOR_REPORT"
+const VarImageSHAforDM = "IMAGE_SHA_OR_TAG_DM"
+const VarImageSHAforUI = "IMAGE_SHA_OR_TAG_UI"
+const VarImageSHAforMCMUI = "IMAGE_SHA_OR_TAG_MCMUI"
+const VarImageSHAforReport = "IMAGE_SHA_OR_TAG_REPORT"
 
 // use concatenation so linter won't complain about "Secret" vars
 const DefaultAPIKeySecretName = "icp-serviceid-apikey-secret" + ""
