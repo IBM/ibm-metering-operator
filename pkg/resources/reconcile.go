@@ -218,6 +218,8 @@ func ReconcileCertificate(client client.Client, instanceNamespace, certificateNa
 // Check labels, replicas, pod template labels, service account names, volumes,
 // containers, init containers, image name, volume mounts, env vars, liveness, readiness.
 // If there are any differences, return false. Otherwise, return true.
+// oldDeployment is the deployment that is currently running.
+// newDeployment is what we expect the deployment to look like.
 func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 	logger := log.WithValues("func", "IsDeploymentEqual")
 
@@ -233,9 +235,16 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 		return false
 	}
 
-	if !reflect.DeepEqual(oldDeployment.Spec.Replicas, newDeployment.Spec.Replicas) {
-		logger.Info("Replicas not equal", "old", oldDeployment.Spec.Replicas, "new", newDeployment.Spec.Replicas)
-		return false
+	if *oldDeployment.Spec.Replicas != *newDeployment.Spec.Replicas {
+		if *oldDeployment.Spec.Replicas == 0 {
+			logger.Info("Allowing deployment to scale to 0", "name", oldDeployment.ObjectMeta.Name)
+			// set Replicas to 0 in newDeployment so that if we copy the Spec (see ReconcileDeployment)
+			// due to a change in the PodTemplate, we don't overwrite the replica count.
+			newDeployment.Spec.Replicas = &Replica0
+		} else {
+			logger.Info("Replicas not equal", "old", oldDeployment.Spec.Replicas, "new", newDeployment.Spec.Replicas)
+			return false
+		}
 	}
 
 	oldPodTemplate := oldDeployment.Spec.Template
