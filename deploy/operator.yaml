@@ -47,6 +47,14 @@ spec:
           - ibm-metering-operator
           imagePullPolicy: Always
           env:
+            - name: IMAGE_SHA_OR_TAG_DM
+              value: 3.5.0
+            - name: IMAGE_SHA_OR_TAG_UI
+              value: 3.5.0
+            - name: IMAGE_SHA_OR_TAG_MCMUI
+              value: 3.5.0
+            - name: IMAGE_SHA_OR_TAG_REPORT
+              value: 3.5.0
             - name: WATCH_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -61,15 +69,6 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
-            # DO NOT DELETE. Add image SHAs here. See get-image-sha.sh
-            - name: IMAGE_SHA_FOR_DM
-              value: "3.5.0"
-            - name: IMAGE_SHA_FOR_UI
-              value: "3.5.0"
-            - name: IMAGE_SHA_FOR_MCMUI
-              value: "3.5.0"
-            - name: IMAGE_SHA_FOR_REPORT
-              value: "3.5.0"
           resources:
             limits:
               cpu: 20m
