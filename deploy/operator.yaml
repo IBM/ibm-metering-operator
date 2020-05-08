@@ -21,7 +21,7 @@ spec:
       annotations:
         productName: IBM Cloud Platform Common Services
         productID: "068a62892a1e4db39641342e592daa25"
-        productVersion: "3.3.0"
+        productVersion: "3.4.0"
         productMetric: FREE
     spec:
       serviceAccountName: ibm-metering-operator
@@ -71,11 +71,11 @@ spec:
                   fieldPath: spec.serviceAccountName
           resources:
             limits:
-              cpu: 20m
-              memory: 40Mi
+              cpu: 100m
+              memory: 150Mi
             requests:
               cpu: 10m
-              memory: 25Mi
+              memory: 50Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
