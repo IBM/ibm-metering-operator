@@ -475,7 +475,7 @@ spec:
                 productID: 068a62892a1e4db39641342e592daa25
                 productMetric: FREE
                 productName: IBM Cloud Platform Common Services
-                productVersion: 3.3.0
+                productVersion: 3.4.0
               labels:
                 app.kubernetes.io/instance: ibm-metering-operator
                 app.kubernetes.io/managed-by: ibm-metering-operator
@@ -524,11 +524,11 @@ spec:
                 name: ibm-metering-operator
                 resources:
                   limits:
-                    cpu: 20m
-                    memory: 40Mi
+                    cpu: 100m
+                    memory: 150Mi
                   requests:
                     cpu: 10m
-                    memory: 25Mi
+                    memory: 50Mi
                 securityContext:
                   allowPrivilegeEscalation: false
                   capabilities:
