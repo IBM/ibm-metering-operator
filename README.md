@@ -9,6 +9,7 @@ You can use the ibm-metering-operator to install the Metering service for the IB
 The Metering service captures detailed usage metrics for your applications and cluster. The metric data is used for IBM Product licensing compliance and can be viewed in the metering UI or downloaded in a report for use in internal charge-back for cluster workloads.
 
 ## Supported platforms
+
 Red Hat OpenShift Container Platform 4.3 or newer installed on one of the following platforms:
    - Linux x86_64
    - Linux on Power (ppc64le)
