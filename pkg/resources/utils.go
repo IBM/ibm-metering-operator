@@ -352,22 +352,11 @@ func BuildUIClusterEnvVars(instanceNamespace, instanceClusterName string,
 		reqLogger.Info("HeaderNamespace is blank, use instance=" + instanceNamespace)
 		headerNamespace = instanceNamespace
 	}
-	var apiKeySecretName string
-	if instanceUI.APIkeySecret != "" {
-		reqLogger.Info("apiKeySecretName=" + instanceUI.APIkeySecret)
-		apiKeySecretName = instanceUI.APIkeySecret
-	} else {
-		reqLogger.Info("apiKeySecretName is blank, default=" + DefaultAPIKeySecretName)
-		apiKeySecretName = DefaultAPIKeySecretName
-	}
-	var platformOidcSecretName string
-	if instanceUI.PlatformOidcSecret != "" {
-		reqLogger.Info("platformOidcSecretName=" + instanceUI.PlatformOidcSecret)
-		platformOidcSecretName = instanceUI.PlatformOidcSecret
-	} else {
-		reqLogger.Info("platformOidcSecretName is blank, default=" + DefaultPlatformOidcSecretName)
-		platformOidcSecretName = DefaultPlatformOidcSecretName
-	}
+
+	// The apikey and OIDC secret names can be set in the CR, but will be ignored
+	// We are hardcoding here since the operand is using hardcoded names
+	apiKeySecretName := DefaultAPIKeySecretName
+	platformOidcSecretName := DefaultPlatformOidcSecretName
 
 	cfcRouterURL := "https://icp-management-ingress." + ingressNamespace + ":443"
 	commonClusterEnvVars := BuildCommonClusterEnvVars(instanceNamespace, iamNamespace)

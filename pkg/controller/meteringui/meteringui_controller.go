@@ -288,28 +288,18 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 		res.DefaultImageRegistry, res.DefaultUIImageName, res.VarImageSHAforUI, res.DefaultUIImageTag)
 	reqLogger.Info("uiImage=" + uiImage)
 
-	var apiKeySecretName string
-	if instance.Spec.UI.APIkeySecret != "" {
-		apiKeySecretName = instance.Spec.UI.APIkeySecret
-	} else {
-		// APIkeySecret is blank, use default name
-		apiKeySecretName = res.DefaultAPIKeySecretName
-	}
-	var platformOidcSecretName string
-	if instance.Spec.UI.PlatformOidcSecret != "" {
-		platformOidcSecretName = instance.Spec.UI.PlatformOidcSecret
-	} else {
-		// PlatformOidcSecret is blank, use default name
-		platformOidcSecretName = res.DefaultPlatformOidcSecretName
-	}
+	// The apikey and OIDC secret names can be set in the CR, but will be ignored
+	// We are hardcoding here since the operand is using hardcoded names
+	// save me apiKeySecretName := res.DefaultAPIKeySecretName
+	// save me platformOidcSecretName := res.DefaultPlatformOidcSecretName
 
+	// Apikey and OIDC secrets are now read dynamically in the UI container and are no longer
+	// part of the secret checker
 	var additionalInfo res.SecretCheckData
 	// add to the SECRET_LIST env var
-	additionalInfo.Names = apiKeySecretName + " " + platformOidcSecretName + " " + res.UICertSecretName
+	additionalInfo.Names = res.UICertSecretName
 	// add to the SECRET_DIR_LIST env var
-	additionalInfo.Dirs = apiKeySecretName + " " + platformOidcSecretName + " " + res.UICertSecretName
-	// add the volume mounts for the secrets
-	additionalInfo.VolumeMounts = res.BuildUISecretVolumeMounts(apiKeySecretName, platformOidcSecretName)
+	additionalInfo.Dirs = res.UICertSecretName
 	// add the cert secret which is only used by the UI today
 	additionalInfo.VolumeMounts = append(additionalInfo.VolumeMounts, corev1.VolumeMount{
 		Name:      res.UICertVolumeName,
@@ -335,9 +325,7 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.UICertVolumeMount)
 
-	secretVolumes := res.BuildUISecretVolumes(apiKeySecretName, platformOidcSecretName)
-	uiVolumes := append(commonVolumes, secretVolumes...)
-	uiVolumes = append(uiVolumes, res.UICertVolume)
+	uiVolumes := append(commonVolumes, res.UICertVolume)
 
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
