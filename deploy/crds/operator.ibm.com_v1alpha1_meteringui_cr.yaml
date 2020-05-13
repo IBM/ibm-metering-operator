@@ -8,7 +8,7 @@ metadata:
     app.kubernetes.io/name: "ibm-metering"
 spec:
   version: "3.6.0"
-  imageRegistry: quay.io/opencloudio
+  imageRegistry: hyc-cloud-private-scratch-docker-local.artifactory.swg-devops.com/sgrube
   replicas: 1
   clusterName: mycluster
   ui:
