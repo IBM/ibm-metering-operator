@@ -2,6 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
+    olm.skipRange: '>=3.5.0 <3.6.0'
     alm-examples: |-
       [
         {
@@ -548,7 +549,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator:latest
+                image: quay.io/opencloudio/ibm-metering-operator@sha256:379f904da31ad1e1e2c5d4c4088026a8e074f8d8cdecd55650191c43b5ce1b14
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
