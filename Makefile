@@ -22,9 +22,12 @@ IMG ?= ibm-metering-operator
 REGISTRY ?= quay.io/opencloudio
 CSV_VERSION ?= $(VERSION)
 
-# Set the registry and tag for the operand images
+# Set the registry and tags for the operand images
 OPERAND_REGISTRY ?= $(REGISTRY)
-OPERAND_TAG ?= 3.5.0
+OPERAND_TAG_DM ?= 3.5.0
+OPERAND_TAG_UI ?= 3.5.1
+OPERAND_TAG_MCMUI ?= 3.5.0
+OPERAND_TAG_REPORT ?= 3.5.1
 
 # Github host to use for checking the source tree;
 # Override this variable ue with your own value if you're working on forked repo.
@@ -222,23 +225,23 @@ get-all-image-sha: get-report-image-sha get-mcmui-image-sha get-ui-image-sha get
 	
 .PHONY: get-dm-image-sha
 get-dm-image-sha:
-	@echo Get SHA for metering-data-manager:$(OPERAND_TAG)
-	@scripts/get-image-sha.sh DM $(OPERAND_REGISTRY)/metering-data-manager $(OPERAND_TAG)
+	@echo Get SHA for metering-data-manager:$(OPERAND_TAG_DM)
+	@scripts/get-image-sha.sh DM $(OPERAND_REGISTRY)/metering-data-manager $(OPERAND_TAG_DM)
 
 .PHONY: get-ui-image-sha
 get-ui-image-sha:
-	@echo Get SHA for metering-ui:$(OPERAND_TAG)
-	@scripts/get-image-sha.sh UI $(OPERAND_REGISTRY)/metering-ui $(OPERAND_TAG)
+	@echo Get SHA for metering-ui:$(OPERAND_TAG_UI)
+	@scripts/get-image-sha.sh UI $(OPERAND_REGISTRY)/metering-ui $(OPERAND_TAG_UI)
 
 .PHONY: get-mcmui-image-sha
 get-mcmui-image-sha:
-	@echo Get SHA for metering-mcmui:$(OPERAND_TAG)
-	@scripts/get-image-sha.sh MCMUI $(OPERAND_REGISTRY)/metering-mcmui $(OPERAND_TAG)
+	@echo Get SHA for metering-mcmui:$(OPERAND_TAG_MCMUI)
+	@scripts/get-image-sha.sh MCMUI $(OPERAND_REGISTRY)/metering-mcmui $(OPERAND_TAG_MCMUI)
 
 .PHONY: get-report-image-sha
 get-report-image-sha:
-	@echo Get SHA for metering-report:$(OPERAND_TAG)
-	@scripts/get-image-sha.sh REPORT $(OPERAND_REGISTRY)/metering-report $(OPERAND_TAG)
+	@echo Get SHA for metering-report:$(OPERAND_TAG_REPORT)
+	@scripts/get-image-sha.sh REPORT $(OPERAND_REGISTRY)/metering-report $(OPERAND_TAG_REPORT)
 
 ############################################################
 # Red Hat certification section

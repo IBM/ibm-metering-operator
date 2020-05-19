@@ -9,6 +9,7 @@ scorecard:
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringmulticloudui_cr.yaml"
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringsender_cr.yaml"
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringui_cr.yaml"
+          - "deploy/crds/operator.ibm.com_v1alpha1_meteringreportserver_cr.yaml"
     # `olm` tests configured to test the CRs
     - olm:
         cr-manifest:
@@ -16,4 +17,5 @@ scorecard:
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringmulticloudui_cr.yaml"
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringsender_cr.yaml"
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringui_cr.yaml"
-        csv-path: "deploy/olm-catalog/ibm-metering-operator/3.5.0/ibm-metering-operator.v3.5.0.clusterserviceversion.yaml"
+          - "deploy/crds/operator.ibm.com_v1alpha1_meteringreportserver_cr.yaml"
+        csv-path: "deploy/olm-catalog/ibm-metering-operator/3.6.1/ibm-metering-operator.v3.6.1.clusterserviceversion.yaml"

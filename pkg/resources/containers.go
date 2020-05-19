@@ -51,8 +51,8 @@ const WatchNamespaceV350 = "ibm-common-services"
 // a SHA value looks like this: "sha256:nnnnnnnn"
 // a tag value looks like this: "3.5.0".
 const DefaultDmImageTag = "3.5.0"
-const DefaultReportImageTag = "3.5.0"
-const DefaultUIImageTag = "3.5.0"
+const DefaultReportImageTag = "3.5.1"
+const DefaultUIImageTag = "3.5.1"
 const DefaultMcmUIImageTag = "3.5.0"
 
 // define the env vars that contain either the SHA or the tag
