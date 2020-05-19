@@ -170,6 +170,7 @@ rules:
   - ""
   resources:
   - namespaces
+  - configmaps
   verbs:
   - watch
 # required by operator to update meteringreportserver CR at cluster scope

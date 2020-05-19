@@ -48,13 +48,13 @@ spec:
           imagePullPolicy: Always
           env:
             - name: IMAGE_SHA_OR_TAG_DM
-              value: sha256:c9cc0f65793dd12121cb11465d1b026b39297d391221d97096bbbea377fbb9a6
+              value: 3.5.0
             - name: IMAGE_SHA_OR_TAG_UI
-              value: sha256:862bb8ba66d7d6fe73c30e480719b900427f9ce0a471f8d182abdfb1c18afe16
+              value: 3.5.1
             - name: IMAGE_SHA_OR_TAG_MCMUI
-              value: sha256:3bf9c081966a4e7b55fd59af74844fdab4327f54c1927597cd16b79240155131
+              value: 3.5.0
             - name: IMAGE_SHA_OR_TAG_REPORT
-              value: sha256:bf949a583dd738e6a099a01d3092dc9002528661968dcc3b566243c2dbfec831
+              value: 3.5.1
             - name: WATCH_NAMESPACE
               valueFrom:
                 fieldRef:
