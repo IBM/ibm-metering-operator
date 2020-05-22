@@ -379,7 +379,6 @@ var ReportContainer = corev1.Container{
 		"--cert-dir=/tmp",
 		"--secure-port=7443",
 		"--disable-admission-plugins=NamespaceLifecycle,MutatingAdmissionWebhook,ValidatingAdmissionWebhook",
-		"--authentication-skip-lookup=true",
 	},
 	// CommonMainVolumeMounts will be added by the controller
 	VolumeMounts: []corev1.VolumeMount{
