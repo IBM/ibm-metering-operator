@@ -529,7 +529,7 @@ spec:
                 - ibm-metering-operator
                 env:
                 - name: IMAGE_SHA_OR_TAG_DM
-                  value: 3.5.0
+                  value: 3.5.1
                 - name: IMAGE_SHA_OR_TAG_UI
                   value: 3.5.1
                 - name: IMAGE_SHA_OR_TAG_MCMUI
