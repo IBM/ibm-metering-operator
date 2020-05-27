@@ -18,13 +18,15 @@
 # Do "docker login" before running this script.
 # Run this script from the parent dir by typing "scripts/get-image-sha.sh"
 
-
-# array of valid TYPE values
-declare -A TYPE_LIST
-TYPE_LIST[DM]=1
-TYPE_LIST[UI]=1
-TYPE_LIST[MCMUI]=1
-TYPE_LIST[REPORT]=1
+SED="sed"
+unamestr=$(uname)
+if [[ "$unamestr" == "Darwin" ]] ; then
+    SED=gsed
+    type $SED >/dev/null 2>&1 || {
+        echo >&2 "$SED it's not installed. Try: brew install gnu-sed" ;
+        exit 1;
+    }
+fi
 
 # check the input parms
 TYPE=$1
@@ -42,11 +44,24 @@ then
 fi
 
 # check the TYPE value
-if ! [[ ${TYPE_LIST[$TYPE]} ]]
-then
+if [[ $TYPE != "DM" && $TYPE != "UI" && $TYPE != "MCMUI" && $TYPE != "REPORT" ]]; then
    echo "$TYPE is not valid. Must be DM, UI, MCMUI, or REPORT"
    exit 1
 fi
+
+# check the TYPE value (doesn't work on mac)
+
+# array of valid TYPE values
+#declare -A TYPE_LIST
+#TYPE_LIST[DM]=1
+#TYPE_LIST[UI]=1
+#TYPE_LIST[MCMUI]=1
+#TYPE_LIST[REPORT]=1
+#if ! [[ ${TYPE_LIST[$TYPE]} ]]
+#then
+#   echo "$TYPE is not valid. Must be DM, UI, MCMUI, or REPORT"
+#   exit 1
+#fi
 
 #---------------------------------------------------------
 # pull the image
@@ -97,12 +112,12 @@ OPER_FILE=deploy/operator.yaml
 #     - name: IMAGE_SHA_OR_TAG_DM
 #       value: sha256:10a844ffaf7733176e927e6c4faa04c2bc4410cf4d4ef61b9ae5240aa62d1456
 
-sed -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" $OPER_FILE
+$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" $OPER_FILE
 
 # insert the new SHA lines
 LINE1="\            - name: IMAGE_SHA_OR_TAG_$TYPE"
 LINE2="\              value: $SHA"
-sed -i "/env:/a $LINE1\n$LINE2" $OPER_FILE
+$SED -i "/env:/a $LINE1\n$LINE2" $OPER_FILE
 
 #---------------------------------------------------------
 # update the CSV
@@ -114,9 +129,9 @@ CSV_FILE=deploy/olm-catalog/ibm-metering-operator/${CSV_VER}/ibm-metering-operat
 #     - name: IMAGE_SHA_OR_TAG_DM
 #       value: sha256:10a844ffaf7733176e927e6c4faa04c2bc4410cf4d4ef61b9ae5240aa62d1456
 
-sed -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" "$CSV_FILE"
+$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" "$CSV_FILE"
 
 # insert the new SHA lines. need 4 more leading spaces compared to operator.yaml
 LINE1="\                - name: IMAGE_SHA_OR_TAG_$TYPE"
 LINE2="\                  value: $SHA"
-sed -i "/env:/a $LINE1\n$LINE2" "$CSV_FILE"
+$SED -i "/env:/a $LINE1\n$LINE2" "$CSV_FILE"
