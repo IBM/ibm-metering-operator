@@ -24,7 +24,7 @@ CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
 OPERAND_REGISTRY ?= $(REGISTRY)
-OPERAND_TAG_DM ?= 3.5.0
+OPERAND_TAG_DM ?= 3.5.1
 OPERAND_TAG_UI ?= 3.5.1
 OPERAND_TAG_MCMUI ?= 3.5.0
 OPERAND_TAG_REPORT ?= 3.5.1
