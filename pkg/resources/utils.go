@@ -96,6 +96,14 @@ var UICertificateData = CertificateData{
 	Component: UIDeploymentName,
 }
 
+var McmUICertificateData = CertificateData{
+	Name:      McmUICertName,
+	Secret:    McmUICertSecretName,
+	Common:    McmUICertCommonName,
+	App:       McmDeploymentName,
+	Component: McmDeploymentName,
+}
+
 var CommonIngressAnnotations = map[string]string{
 	"app.kubernetes.io/managed-by": "operator",
 	"kubernetes.io/ingress.class":  "ibm-icp-management",
@@ -121,7 +129,8 @@ var uiIngressAnnotations = map[string]string{
 	"icp.management.ibm.com/secure-backends": "true",
 }
 var mcmIngressAnnotations = map[string]string{
-	"icp.management.ibm.com/auth-type": "id-token",
+	"icp.management.ibm.com/auth-type":       "id-token",
+	"icp.management.ibm.com/secure-backends": "true",
 }
 
 var APIcheckIngressData = IngressData{
