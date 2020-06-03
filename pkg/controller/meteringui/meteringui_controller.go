@@ -223,7 +223,7 @@ func (r *ReconcileMeteringUI) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, err
 	}
 
-	reqLogger.Info("Checking Certificates")
+	reqLogger.Info("Checking UI Certificates")
 	// Check if the Certificates already exist, if not create new ones
 	err = r.reconcileAllCertificates(instance, &needToRequeue)
 	if err != nil {
@@ -299,12 +299,9 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	// add to the SECRET_LIST env var
 	additionalInfo.Names = res.UICertSecretName
 	// add to the SECRET_DIR_LIST env var
-	additionalInfo.Dirs = res.UICertSecretName
+	additionalInfo.Dirs = res.UICertDirName
 	// add the cert secret which is only used by the UI today
-	additionalInfo.VolumeMounts = append(additionalInfo.VolumeMounts, corev1.VolumeMount{
-		Name:      res.UICertVolumeName,
-		MountPath: "/sec/" + res.UICertSecretName,
-	})
+	additionalInfo.VolumeMounts = append(additionalInfo.VolumeMounts, res.UICertVolumeMountForSecretCheck)
 
 	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, initImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
@@ -323,7 +320,7 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	uiMainContainer.Env = append(uiMainContainer.Env, res.CommonEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, mongoDBEnvVars...)
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
-	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.UICertVolumeMount)
+	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.UICertVolumeMountForMain)
 
 	uiVolumes := append(commonVolumes, res.UICertVolume)
 

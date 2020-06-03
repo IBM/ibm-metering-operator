@@ -393,7 +393,7 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 		// add to the SECRET_LIST env var
 		additionalInfo.Names = res.ReceiverCertSecretName
 		// add to the SECRET_DIR_LIST env var
-		additionalInfo.Dirs = res.ReceiverCertSecretName
+		additionalInfo.Dirs = res.ReceiverCertDirName
 		// add the volume mount for the receiver cert
 		additionalInfo.VolumeMounts = []corev1.VolumeMount{res.ReceiverCertVolumeMountForSecretCheck}
 		additionalInfoPtr = &additionalInfo
@@ -641,7 +641,7 @@ func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Meter
 	// add to the SECRET_LIST env var
 	additionalInfo.Names = res.APICertSecretName
 	// add to the SECRET_DIR_LIST env var
-	additionalInfo.Dirs = res.APICertSecretName
+	additionalInfo.Dirs = res.APICertDirName
 	// add the volume mount for the API cert
 	additionalInfo.VolumeMounts = []corev1.VolumeMount{res.APICertVolumeMount}
 

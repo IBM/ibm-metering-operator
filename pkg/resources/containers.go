@@ -53,7 +53,7 @@ const WatchNamespaceV350 = "ibm-common-services"
 const DefaultDmImageTag = "3.5.1"
 const DefaultReportImageTag = "3.5.1"
 const DefaultUIImageTag = "3.5.1"
-const DefaultMcmUIImageTag = "3.5.0"
+const DefaultMcmUIImageTag = "3.5.1"
 
 // define the env vars that contain either the SHA or the tag
 const VarImageSHAforDM = "IMAGE_SHA_OR_TAG_DM"
@@ -122,8 +122,10 @@ var SenderSecretCheckCmd = SecretCheckCmd + ";" +
 	`echo ` + "`date`" + `: Further, checking for kubeConfig secret...;` +
 	`node /datamanager/lib/metering_init.js kubeconfig_secretcheck `
 
+// API certificate definition
 const APICertName = "icp-metering-api-ca-cert"
 const APICertCommonName = "metering-server"
+const APICertDirName = "metering-api"
 
 // use concatenation so linter won't complain about "Secret" vars
 const APICertSecretName = "icp-metering-api-secret" + ""
@@ -131,7 +133,7 @@ const APICertVolumeName = "icp-metering-api-certs"
 
 var APICertVolumeMount = corev1.VolumeMount{
 	Name:      APICertVolumeName,
-	MountPath: "/sec/" + APICertSecretName,
+	MountPath: "/sec/" + APICertDirName,
 }
 
 var APICertVolume = corev1.Volume{
@@ -148,14 +150,19 @@ var APICertVolume = corev1.Volume{
 // UI certificate definition
 const UICertName = "metering-ui-ca-cert"
 const UICertCommonName = "metering-ui"
+const UICertDirName = "metering-ui"
 
 // use concatenation so linter won't complain about "Secret" vars
 const UICertSecretName = "metering-ui-cert" + ""
 const UICertVolumeName = "metering-ui-certs"
 
-var UICertVolumeMount = corev1.VolumeMount{
+var UICertVolumeMountForSecretCheck = corev1.VolumeMount{
 	Name:      UICertVolumeName,
-	MountPath: "/certs/metering-ui",
+	MountPath: "/sec/" + UICertDirName,
+}
+var UICertVolumeMountForMain = corev1.VolumeMount{
+	Name:      UICertVolumeName,
+	MountPath: "/certs/" + UICertDirName,
 }
 
 var UICertVolume = corev1.Volume{
@@ -169,15 +176,39 @@ var UICertVolume = corev1.Volume{
 	},
 }
 
-var TempDirVolume = corev1.Volume{
-	Name: "tmp-dir",
+// MCMUI certificate definition
+const McmUICertName = "metering-mcmui-ca-cert"
+const McmUICertCommonName = "metering-mcmui"
+const McmUICertDirName = "metering-mcmui"
+
+// use concatenation so linter won't complain about "Secret" vars
+const McmUICertSecretName = "metering-mcmui-cert" + ""
+const McmUICertVolumeName = "metering-mcmui-certs"
+
+var McmUICertVolumeMountForSecretCheck = corev1.VolumeMount{
+	Name:      McmUICertVolumeName,
+	MountPath: "/sec/" + McmUICertDirName,
+}
+var McmUICertVolumeMountForMain = corev1.VolumeMount{
+	Name:      McmUICertVolumeName,
+	MountPath: "/certs/" + McmUICertDirName,
+}
+
+var McmUICertVolume = corev1.Volume{
+	Name: McmUICertVolumeName,
 	VolumeSource: corev1.VolumeSource{
-		EmptyDir: &corev1.EmptyDirVolumeSource{},
+		Secret: &corev1.SecretVolumeSource{
+			SecretName:  McmUICertSecretName,
+			DefaultMode: &DefaultMode,
+			Optional:    &TrueVar,
+		},
 	},
 }
 
+// Receiver certificate definition
 const ReceiverCertName = "icp-metering-receiver-ca-cert"
 const ReceiverCertCommonName = "metering-receiver"
+const ReceiverCertDirName = "metering-receiver"
 
 // use concatenation so linter won't complain about "Secret" vars
 const ReceiverCertSecretName = "icp-metering-receiver-secret" + ""
@@ -185,11 +216,11 @@ const ReceiverCertVolumeName = "icp-metering-receiver-certs"
 
 var ReceiverCertVolumeMountForSecretCheck = corev1.VolumeMount{
 	Name:      ReceiverCertVolumeName,
-	MountPath: "/sec/" + ReceiverCertSecretName,
+	MountPath: "/sec/" + ReceiverCertDirName,
 }
 var ReceiverCertVolumeMountForMain = corev1.VolumeMount{
 	Name:      ReceiverCertVolumeName,
-	MountPath: "/certs/" + ReceiverCertCommonName,
+	MountPath: "/certs/" + ReceiverCertDirName,
 }
 var ReceiverCertVolume = corev1.Volume{
 	Name: ReceiverCertVolumeName,
@@ -202,21 +233,26 @@ var ReceiverCertVolume = corev1.Volume{
 	},
 }
 
+//***************************************************************
+// these vars are used when multiCloudReceiverEnabled = true
+//***************************************************************
+
 var ReceiverSslEnvVars = []corev1.EnvVar{
 	{
 		Name:  "HC_RECEIVER_SSL_CA",
-		Value: "/certs/" + ReceiverCertCommonName + "/ca.crt",
+		Value: "/certs/" + ReceiverCertDirName + "/ca.crt",
 	},
 	{
 		Name:  "HC_RECEIVER_SSL_CERT",
-		Value: "/certs/" + ReceiverCertCommonName + "/tls.crt",
+		Value: "/certs/" + ReceiverCertDirName + "/tls.crt",
 	},
 	{
 		Name:  "HC_RECEIVER_SSL_KEY",
-		Value: "/certs/" + ReceiverCertCommonName + "/tls.key",
+		Value: "/certs/" + ReceiverCertDirName + "/tls.key",
 	},
 }
 
+// Common definitions
 var commonInitVolumeMounts = []corev1.VolumeMount{
 	{
 		Name:      "mongodb-ca-cert",
@@ -269,6 +305,17 @@ var Log4jsVolumeMount = corev1.VolumeMount{
 	Name:      "log4js",
 	MountPath: "/etc/config",
 }
+
+var TempDirVolume = corev1.Volume{
+	Name: "tmp-dir",
+	VolumeSource: corev1.VolumeSource{
+		EmptyDir: &corev1.EmptyDirVolumeSource{},
+	},
+}
+
+//***************************************************************
+// Container definitions
+//***************************************************************
 
 var DmMainContainer = corev1.Container{
 	Image:           "metering-data-manager",
@@ -388,7 +435,7 @@ var ReportContainer = corev1.Container{
 		},
 		{
 			Name:      APICertVolumeName,
-			MountPath: "/certs/metering-api",
+			MountPath: "/certs/" + APICertDirName,
 		},
 	},
 	SecurityContext: &commonSecurityContext,
@@ -436,7 +483,7 @@ var RdrMainContainer = corev1.Container{
 	VolumeMounts: []corev1.VolumeMount{
 		{
 			Name:      APICertVolumeName,
-			MountPath: "/certs/metering-api",
+			MountPath: "/certs/" + APICertDirName,
 		},
 		LoglevelVolumeMount,
 	},
@@ -505,15 +552,15 @@ var RdrMainContainer = corev1.Container{
 		},
 		{
 			Name:  "HC_API_SSL_CA",
-			Value: "/certs/metering-api/ca.crt",
+			Value: "/certs/" + APICertDirName + "/ca.crt",
 		},
 		{
 			Name:  "HC_API_SSL_CERT",
-			Value: "/certs/metering-api/tls.crt",
+			Value: "/certs/" + APICertDirName + "/tls.crt",
 		},
 		{
 			Name:  "HC_API_SSL_KEY",
-			Value: "/certs/metering-api/tls.key",
+			Value: "/certs/" + APICertDirName + "/tls.key",
 		},
 	},
 	Ports: []corev1.ContainerPort{
@@ -709,15 +756,15 @@ var UIMainContainer = corev1.Container{
 		},
 		{
 			Name:  "HC_UI_SSL_CA",
-			Value: "/certs/metering-ui/ca.crt",
+			Value: "/certs/" + UICertDirName + "/ca.crt",
 		},
 		{
 			Name:  "HC_UI_SSL_CERT",
-			Value: "/certs/metering-ui/tls.crt",
+			Value: "/certs/" + UICertDirName + "/tls.crt",
 		},
 		{
 			Name:  "HC_UI_SSL_KEY",
-			Value: "/certs/metering-ui/tls.key",
+			Value: "/certs/" + UICertDirName + "/tls.key",
 		},
 	},
 	Ports: []corev1.ContainerPort{
@@ -786,6 +833,22 @@ var McmUIMainContainer = corev1.Container{
 			Name:  "PROXY_URI",
 			Value: "metering-mcm",
 		},
+		{
+			Name:  "MCM_UI_ISSSL",
+			Value: "true",
+		},
+		{
+			Name:  "MCM_UI_SSL_CA",
+			Value: "/certs/" + McmUICertDirName + "/ca.crt",
+		},
+		{
+			Name:  "MCM_UI_SSL_CERT",
+			Value: "/certs/" + McmUICertDirName + "/tls.crt",
+		},
+		{
+			Name:  "MCM_UI_SSL_KEY",
+			Value: "/certs/" + McmUICertDirName + "/tls.key",
+		},
 	},
 	Ports: []corev1.ContainerPort{
 		{ContainerPort: 3001},
@@ -798,7 +861,7 @@ var McmUIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3001,
 				},
-				Scheme: corev1.URISchemeHTTP,
+				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
 		InitialDelaySeconds: 305,
@@ -815,7 +878,7 @@ var McmUIMainContainer = corev1.Container{
 					Type:   intstr.Int,
 					IntVal: 3001,
 				},
-				Scheme: corev1.URISchemeHTTP,
+				Scheme: corev1.URISchemeHTTPS,
 			},
 		},
 		InitialDelaySeconds: 15,
