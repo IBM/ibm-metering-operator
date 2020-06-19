@@ -26,7 +26,7 @@ CSV_VERSION ?= $(VERSION)
 OPERAND_REGISTRY ?= $(REGISTRY)
 OPERAND_TAG_DM ?= 3.5.1
 OPERAND_TAG_UI ?= 3.5.1
-OPERAND_TAG_MCMUI ?= 3.5.1
+OPERAND_TAG_MCMUI ?= 3.5.2
 OPERAND_TAG_REPORT ?= 3.5.1
 
 # Github host to use for checking the source tree;

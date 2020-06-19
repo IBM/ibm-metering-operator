@@ -53,7 +53,7 @@ const WatchNamespaceV350 = "ibm-common-services"
 const DefaultDmImageTag = "3.5.1"
 const DefaultReportImageTag = "3.5.1"
 const DefaultUIImageTag = "3.5.1"
-const DefaultMcmUIImageTag = "3.5.1"
+const DefaultMcmUIImageTag = "3.5.2"
 
 // define the env vars that contain either the SHA or the tag
 const VarImageSHAforDM = "IMAGE_SHA_OR_TAG_DM"
