@@ -27,38 +27,38 @@
 # use the "-scan" parm the first time to upload the image with a temp tag so you can verify the image will pass the scan
 #
 
-IMAGE=$(echo $1 | cut -d ':' -f1)
-TAG=$(echo $1 | cut -d ':' -f2)
+IMAGE=$(echo "$1" | cut -d ':' -f1)
+TAG=$(echo "$1" | cut -d ':' -f2)
 PASSWORD=$2
-REPO=$(echo $6 | cut -d '/' -f2)
+REPO=$(echo "$6" | cut -d '/' -f2)
 TEST=$7
 
 QUAY=quay.io/opencloudio/$IMAGE:$TAG
 REDHAT=scan.connect.redhat.com/$REPO/$IMAGE:$TAG$TEST
 
 echo "### This is going to pull your image from quay"
-echo docker pull $QUAY
+echo docker pull "$QUAY"
 echo
 echo "### This will log you into your RH project for THIS image"
-echo docker login -u unused -p $PASSWORD scan.connect.redhat.com
+echo docker login -u unused -p "$PASSWORD" scan.connect.redhat.com
 echo
 echo "### This will tag the quay image for redhat scan"
-echo docker tag $QUAY $REDHAT
+echo docker tag "$QUAY" "$REDHAT"
 echo
 echo "### This will push to redhat...if this is the first scan there MUST be something appended to the end."
-echo docker push $REDHAT
+echo docker push "$REDHAT"
 
 echo
 echo
 echo "Does the above look correct? (y/n) "
-read ANSWER
+read -r ANSWER
 if [[ "$ANSWER" != "y" ]]
 then
   echo "Not going to run commands"
   exit 1
 fi
 
-docker pull $QUAY
-docker login -u unused -p $PASSWORD scan.connect.redhat.com
-docker tag $QUAY $REDHAT
-docker push $REDHAT
+docker pull "$QUAY"
+docker login -u unused -p "$PASSWORD" scan.connect.redhat.com
+docker tag "$QUAY" "$REDHAT"
+docker push "$REDHAT"

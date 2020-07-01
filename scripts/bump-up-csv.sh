@@ -64,7 +64,7 @@ echo " CURRENT_CSV_VERSION:   $LAST_CSV_VERSION"
 echo " NEW_CSV_VERSION:       $NEW_CSV_VERSION"
 echo "******************************************"
 echo "Does the above look correct? (y/n) "
-read ANSWER
+read -r ANSWER
 if [[ "$ANSWER" != "y" ]]
 then
   echo "Not going to bump up CSV version"

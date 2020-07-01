@@ -36,7 +36,7 @@ then
    exit 1
 fi
 
-CSV_FILE=bundle/ibm-metering-operator.v$CSV_VERSION.clusterserviceversion.yaml
+CSV_FILE=bundle/ibm-metering-operator.v${CSV_VERSION}.clusterserviceversion.yaml
 
 # insert the cert-manager lines
 LINE1="\    required:"
@@ -46,4 +46,4 @@ LINE4="\      version: v1alpha1"
 LINE5="\      displayName: Certificate"
 LINE6="\      description: Represents a certificate"
 
-$SED -i "/customresourcedefinitions:/a $LINE1\n$LINE2\n$LINE3\n$LINE4\n$LINE5\n$LINE6" $CSV_FILE
+$SED -i "/customresourcedefinitions:/a $LINE1\n$LINE2\n$LINE3\n$LINE4\n$LINE5\n$LINE6" "$CSV_FILE"

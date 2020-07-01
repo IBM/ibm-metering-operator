@@ -72,7 +72,7 @@ echo " TYPE:         $TYPE"
 echo " IMAGE_TAG:    $IMAGE_TAG"
 echo "******************************************"
 echo "Does the above look correct? (y/n) "
-read ANSWER
+read -r ANSWER
 if [[ "$ANSWER" != "y" ]]
 then
   echo "Not going to update operand versions"

@@ -43,12 +43,12 @@ else
 fi
 
 cp -p deploy/olm-catalog/ibm-metering-operator/ibm-metering-operator.package.yaml bundle/
-cp -p deploy/olm-catalog/ibm-metering-operator/$CSV_VERSION/*yaml bundle/
+cp -p deploy/olm-catalog/ibm-metering-operator/${CSV_VERSION}/*yaml bundle/
 # need certificate-crd.yaml in the bundle so that the operator can be started during the RH scan
 cp -p scripts/rh-scan/certificate-crd.yaml bundle/
 
 echo Add certmanager info to CSV for scan
-scripts/rh-scan/add-certman-info.sh $CSV_VERSION
+scripts/rh-scan/add-certman-info.sh "$CSV_VERSION"
 
 cd bundle || exit
 zip ibm-metering-metadata ./*.yaml
