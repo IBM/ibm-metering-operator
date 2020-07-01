@@ -14,9 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+###############################################################################
+#
+# ***** run "make bundle" instead of running this script *****
+#
+###############################################################################
+
 # create zip file containing the bundle to submit for Red Hat certification
 # the bundle consists of package.yaml, clusterserviceversion.yaml, crd.yaml
-# run as 'scripts/create-bundle.sh'
+# run as 'scripts/rh-scan/create-bundle.sh <CSV version>'
+
+# check the input parm
+CSV_VERSION=$1
+if [[ $CSV_VERSION == "" ]]
+then
+   echo "Missing parm. Need CSV version"
+   exit 1
+fi
 
 if [ -d "./bundle" ] 
 then
@@ -28,11 +42,13 @@ else
     mkdir bundle
 fi
 
-VERSION=3.6.0
 cp -p deploy/olm-catalog/ibm-metering-operator/ibm-metering-operator.package.yaml bundle/
-cp -p deploy/olm-catalog/ibm-metering-operator/$VERSION/*yaml bundle/
+cp -p deploy/olm-catalog/ibm-metering-operator/$CSV_VERSION/*yaml bundle/
 # need certificate-crd.yaml in the bundle so that the operator can be started during the RH scan
 cp -p scripts/rh-scan/certificate-crd.yaml bundle/
+
+echo Add certmanager info to CSV for scan
+scripts/rh-scan/add-certman-info.sh $CSV_VERSION
 
 cd bundle || exit
 zip ibm-metering-metadata ./*.yaml

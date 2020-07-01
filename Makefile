@@ -251,10 +251,14 @@ bundle:
 	@echo --- Updating the bundle directory with latest yamls from olm-catalog ---
 	-mkdir bundle
 	rm -rf bundle/*
-	cp -r deploy/olm-catalog/ibm-metering-operator/${CSV_VERSION}/* bundle/
-	cp deploy/olm-catalog/ibm-metering-operator/ibm-metering-operator.package.yaml bundle/
+	cp -r -p deploy/olm-catalog/ibm-metering-operator/$(CSV_VERSION)/* bundle/
+	cp -p deploy/olm-catalog/ibm-metering-operator/ibm-metering-operator.package.yaml bundle/
+	# if old CSVs are listed in other channels in ibm-metering-operator.package.yaml, need to copy them
+	#cp -p deploy/olm-catalog/ibm-metering-operator/3.6.2/ibm-metering-operator.v3.6.2.clusterserviceversion.yaml bundle/
 	# need certificate-crd.yaml in the bundle so that the operator can be started during the RH scan
 	cp scripts/rh-scan/certificate-crd.yaml bundle/
+	@echo Add certmanager info to CSV for scan
+	@scripts/rh-scan/add-certman-info.sh $(CSV_VERSION)
 	cd bundle && zip ibm-metering-metadata ./*.yaml && cd ..
 
 .PHONY: install-operator-courier

@@ -112,12 +112,12 @@ OPER_FILE=deploy/operator.yaml
 #     - name: IMAGE_SHA_OR_TAG_DM
 #       value: sha256:10a844ffaf7733176e927e6c4faa04c2bc4410cf4d4ef61b9ae5240aa62d1456
 
-$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" $OPER_FILE
+$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" "$OPER_FILE"
 
 # insert the new SHA lines
 LINE1="\            - name: IMAGE_SHA_OR_TAG_$TYPE"
 LINE2="\              value: $SHA"
-$SED -i "/env:/a $LINE1\n$LINE2" $OPER_FILE
+$SED -i "/env:/a $LINE1\n$LINE2" "$OPER_FILE"
 
 #---------------------------------------------------------
 # update the CSV
