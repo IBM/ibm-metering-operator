@@ -50,10 +50,10 @@ const WatchNamespaceV350 = "ibm-common-services"
 // run scripts/get-image-sha.sh to update operator.yaml with the SHA values.
 // a SHA value looks like this: "sha256:nnnnnnnn"
 // a tag value looks like this: "3.5.0".
-const DefaultDmImageTag = "3.5.1"
-const DefaultReportImageTag = "3.5.1"
-const DefaultUIImageTag = "3.5.1"
-const DefaultMcmUIImageTag = "3.5.2"
+const DefaultDmImageTag = "3.6.0"
+const DefaultReportImageTag = "3.6.0"
+const DefaultUIImageTag = "3.6.0"
+const DefaultMcmUIImageTag = "3.6.0"
 
 // define the env vars that contain either the SHA or the tag
 const VarImageSHAforDM = "IMAGE_SHA_OR_TAG_DM"

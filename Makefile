@@ -24,10 +24,10 @@ CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
 OPERAND_REGISTRY ?= $(REGISTRY)
-OPERAND_TAG_DM ?= 3.5.1
-OPERAND_TAG_UI ?= 3.5.1
-OPERAND_TAG_MCMUI ?= 3.5.2
-OPERAND_TAG_REPORT ?= 3.5.1
+OPERAND_TAG_DM ?= 3.6.0
+OPERAND_TAG_UI ?= 3.6.0
+OPERAND_TAG_MCMUI ?= 3.6.0
+OPERAND_TAG_REPORT ?= 3.6.0
 
 # Github host to use for checking the source tree;
 # Override this variable ue with your own value if you're working on forked repo.
