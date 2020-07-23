@@ -115,6 +115,10 @@ echo -e "\n[INFO] Updating 'dev' channel in ${PACKAGE_YAML}"
 NEW_VERSION=$(yq r "${NEW_CSV_FILE}" "metadata.name")
 yq w -i "${PACKAGE_YAML}" "channels.(name==dev).currentCSV" "${NEW_VERSION}" 
 
+# remove the leading spaces added by "yq"
+$SED -e "s|  - currentCSV:|- currentCSV:|g" -i "${PACKAGE_YAML}"
+$SED -e "s|    name:|  name:|g" -i "${PACKAGE_YAML}"
+
 #---------------------------------------------------------
 # update operator.yaml
 #---------------------------------------------------------
