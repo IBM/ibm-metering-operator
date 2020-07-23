@@ -253,6 +253,12 @@ spec:
         - description: Registry where image is stored
           displayName: ImageRegistry
           path: imageRegistry
+        - description: The desired number of Metering report server replicas
+          displayName: Replicas
+          path: replicas
+        - description: Configuration information for Metering report server
+          displayName: ReportServer
+          path: reportServer
       statusDescriptors:
         - description: The list of Pods for the Metering report service
           displayName: Pod Status
@@ -282,6 +288,12 @@ spec:
         - description: Registry where image is stored
           displayName: ImageRegistry
           path: imageRegistry
+        - description: Configuration information for Metering data manager
+          displayName: DataManager
+          path: dataManager
+        - description: Configuration information for Metering reader
+          displayName: Reader
+          path: reader
         - description: Connection information for MongoDB
           displayName: MongoDB
           path: mongodb
@@ -329,6 +341,9 @@ spec:
         - description: Registry where image is stored
           displayName: ImageRegistry
           path: imageRegistry
+        - description: The desired number of Metering multicloud sender replicas
+          displayName: Replicas
+          path: replicas
         - description: Connection information for MongoDB
           displayName: MongoDB
           path: mongodb
