@@ -700,6 +700,44 @@ func BuildInitContainer(deploymentName, imageName string, envVars []corev1.EnvVa
 	return initContainer
 }
 
+// returns a ResourceRequirements object.
+// if any value in requestedResources is not zero, use that value
+// to override the corresponding value in defaultResources.
+func BuildResourceRequirements(requestedResources, defaultResources corev1.ResourceRequirements) corev1.ResourceRequirements {
+	var resourceRequirements = corev1.ResourceRequirements{
+		Limits:   defaultResources.Limits.DeepCopy(),
+		Requests: defaultResources.Requests.DeepCopy(),
+	}
+
+	if requestedResources.Limits != nil {
+		// check CPU limits
+		cpuLimit := requestedResources.Limits.Cpu()
+		if !cpuLimit.IsZero() {
+			resourceRequirements.Limits[corev1.ResourceCPU] = *cpuLimit
+		}
+		// check Memory limits
+		memoryLimit := requestedResources.Limits.Memory()
+		if !memoryLimit.IsZero() {
+			resourceRequirements.Limits[corev1.ResourceMemory] = *memoryLimit
+		}
+	}
+
+	if requestedResources.Requests != nil {
+		// check CPU requests
+		cpuRequest := requestedResources.Requests.Cpu()
+		if !cpuRequest.IsZero() {
+			resourceRequirements.Requests[corev1.ResourceCPU] = *cpuRequest
+		}
+		// check Memory requests
+		memoryRequest := requestedResources.Requests.Memory()
+		if !memoryRequest.IsZero() {
+			resourceRequirements.Requests[corev1.ResourceMemory] = *memoryRequest
+		}
+	}
+
+	return resourceRequirements
+}
+
 // returns the labels associated with the resource being created
 func LabelsForMetadata(deploymentName string) map[string]string {
 	return map[string]string{"app.kubernetes.io/name": deploymentName, "app.kubernetes.io/component": MeteringComponentName,

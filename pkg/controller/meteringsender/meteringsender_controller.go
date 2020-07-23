@@ -221,6 +221,7 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
 	reqLogger.Info("senderImage=" + senderImage)
 
+	// setup the init containers
 	senderSecretCheckContainer := res.BuildSecretCheckContainer(res.SenderDeploymentName, senderImage,
 		res.SenderSecretCheckCmd, instance.Spec.MongoDB, nil)
 	hubEnvVar := corev1.EnvVar{
@@ -239,16 +240,30 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
 	senderInitContainer := res.BuildInitContainer(res.SenderDeploymentName, senderImage, initEnvVars)
 
+	// setup the main container
 	senderMainContainer := res.SenderMainContainer
 	senderMainContainer.Image = senderImage
 	senderMainContainer.Name = res.SenderDeploymentName
+	// setup environment vars
 	senderMainContainer.Env = append(senderMainContainer.Env, clusterEnvVars...)
 	senderMainContainer.Env = append(senderMainContainer.Env, res.CommonEnvVars...)
 	senderMainContainer.Env = append(senderMainContainer.Env, mongoDBEnvVars...)
-	senderMainContainer.VolumeMounts = append(senderMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
+	// setup volumes and volume mounts
+	senderMainContainer.VolumeMounts = append(senderMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 	senderVolumes := commonVolumes
 
+	// setup the resource requirements
+	senderMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.Sender.Resources,
+		res.SenderResourceRequirements)
+
+	// "replicas" should be set in the CR. if it isn't found, use the default value.
+	replicas := res.Replica1
+	if instance.Spec.Replicas > 0 {
+		replicas = instance.Spec.Replicas
+	}
+
+	// setup the deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      res.SenderDeploymentName,
@@ -256,7 +271,7 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 			Labels:    metaLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &res.Replica1,
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},

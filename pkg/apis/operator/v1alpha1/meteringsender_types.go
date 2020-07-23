@@ -17,6 +17,7 @@
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,15 +32,17 @@ type MeteringSenderSpec struct {
 	Version         string                   `json:"version"`
 	ImageRegistry   string                   `json:"imageRegistry,omitempty"`
 	ImageTagPostfix string                   `json:"imageTagPostfix,omitempty"`
+	Replicas        int32                    `json:"replicas,omitempty"`
 	Sender          MeteringSenderSpecSender `json:"sender,omitempty"`
 	MongoDB         MeteringSpecMongoDB      `json:"mongodb"`
 }
 
 // MeteringSenderSpecSender defines the metering-sender configuration in the MeteringSender spec
 type MeteringSenderSpecSender struct {
-	ClusterName         string `json:"clusterName,omitempty"`
-	ClusterNamespace    string `json:"clusterNamespace"`
-	HubKubeConfigSecret string `json:"hubKubeConfigSecret"`
+	ClusterName         string                      `json:"clusterName,omitempty"`
+	ClusterNamespace    string                      `json:"clusterNamespace"`
+	HubKubeConfigSecret string                      `json:"hubKubeConfigSecret"`
+	Resources           corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

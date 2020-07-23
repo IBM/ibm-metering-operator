@@ -301,6 +301,8 @@ func IsAPIServiceEqual(oldAPIService, newAPIService *apiregistrationv1.APIServic
 // Check labels, pod template labels, service account names, volumes,
 // containers, init containers, image name, volume mounts, env vars, liveness, readiness.
 // If there are any differences, return false. Otherwise, return true.
+// oldDaemonSet is the daemon set that is currently running.
+// newDaemonSet is what we expect the daemon set to look like.
 func IsDaemonSetEqual(oldDaemonSet, newDaemonSet *appsv1.DaemonSet) bool {
 	logger := log.WithValues("func", "IsDaemonSetEqual")
 
@@ -391,9 +393,11 @@ func isPodTemplateEqual(oldPodTemplate, newPodTemplate corev1.PodTemplateSpec) b
 }
 
 // Use DeepEqual to determine if 2 container lists are equal.
-// Check count, name, image name, image pull policy, env vars, volume mounts.
+// Check count, name, image name, image pull policy, env vars, volume mounts, resources.
 // If there are any differences, return false. Otherwise, return true.
 // Set isInitContainer to true when checking init containers.
+// oldContainers are the containers that are currently running.
+// newContainers is what we expect the containers to look like.
 func isContainerEqual(oldContainers, newContainers []corev1.Container, isInitContainer bool) bool {
 	logger := log.WithValues("func", "isContainerEqual")
 
@@ -423,6 +427,33 @@ func isContainerEqual(oldContainers, newContainers []corev1.Container, isInitCon
 				if !reflect.DeepEqual(oldContainer.ImagePullPolicy, newContainer.ImagePullPolicy) {
 					logger.Info(containerType+" image pull policies not equal", "container num", i,
 						"old", oldContainer.ImagePullPolicy, "new", newContainer.ImagePullPolicy)
+					return false
+				}
+
+				// I tried using DeepEqual(oldContainer.Resources, newContainer.Resources)
+				// but it always returned false even though the resources looked the same
+				// when I printed them out. After investigating, I found that the Limits
+				// were fine and Requests.Cpu was fine. For some unknown reason,
+				// DeepEqual always returned false for Requests.Memory even though they
+				// had the same value. So I used Quantity.Equal() which works.
+				if !oldContainer.Resources.Limits.Cpu().Equal(*newContainer.Resources.Limits.Cpu()) {
+					logger.Info(containerType+" resource CPU limits not equal", "container num", i,
+						"old", oldContainer.Resources.Limits, "new", newContainer.Resources.Limits)
+					return false
+				}
+				if !oldContainer.Resources.Limits.Memory().Equal(*newContainer.Resources.Limits.Memory()) {
+					logger.Info(containerType+" resource Memory limits not equal", "container num", i,
+						"old", oldContainer.Resources.Limits, "new", newContainer.Resources.Limits)
+					return false
+				}
+				if !oldContainer.Resources.Requests.Cpu().Equal(*newContainer.Resources.Requests.Cpu()) {
+					logger.Info(containerType+" resource CPU requests not equal", "container num", i,
+						"old", oldContainer.Resources.Requests, "new", newContainer.Resources.Requests)
+					return false
+				}
+				if !oldContainer.Resources.Requests.Memory().Equal(*newContainer.Resources.Requests.Memory()) {
+					logger.Info(containerType+" resource Memory requests not equal", "container num", i,
+						"old", oldContainer.Resources.Requests, "new", newContainer.Resources.Requests)
 					return false
 				}
 
@@ -542,6 +573,8 @@ func isProbeEqual(oldProbe, newProbe *corev1.Probe, probeType string) bool {
 // Use DeepEqual to determine if 2 services are equal.
 // Check ObjectMeta, Ports and Selector.
 // If there are any differences, return false. Otherwise, return true.
+// oldService is the service that is currently running.
+// newService is what we expect the service to look like.
 func IsServiceEqual(oldService, newService *corev1.Service) bool {
 	logger := log.WithValues("func", "IsServiceEqual")
 

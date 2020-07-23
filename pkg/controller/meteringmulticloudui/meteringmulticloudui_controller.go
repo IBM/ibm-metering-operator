@@ -309,6 +309,7 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 	// add the volume mount for the MCM UI cert
 	additionalInfo.VolumeMounts = append(additionalInfo.VolumeMounts, res.McmUICertVolumeMountForSecretCheck)
 
+	// setup the init containers
 	mcmSecretCheckContainer := res.BuildSecretCheckContainer(res.McmDeploymentName, initImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
@@ -317,14 +318,18 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
 	mcmInitContainer := res.BuildInitContainer(res.McmDeploymentName, initImage, initEnvVars)
 
+	// setup the main container
 	mcmMainContainer := res.McmUIMainContainer
 	mcmMainContainer.Image = mcmImage
 	mcmMainContainer.Name = res.McmDeploymentName
+	// setup environment vars
 	mcmMainContainer.Env = append(mcmMainContainer.Env, res.IAMEnvVars...)
 	mcmMainContainer.Env = append(mcmMainContainer.Env, res.UIEnvVars...)
 	mcmMainContainer.Env = append(mcmMainContainer.Env, clusterEnvVars...)
 	mcmMainContainer.Env = append(mcmMainContainer.Env, res.CommonEnvVars...)
 	mcmMainContainer.Env = append(mcmMainContainer.Env, mongoDBEnvVars...)
+
+	// setup volumes and volume mounts
 	mcmMainContainer.VolumeMounts = append(mcmMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 	mcmMainContainer.VolumeMounts = append(mcmMainContainer.VolumeMounts, res.McmUICertVolumeMountForMain)
 
@@ -332,6 +337,17 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 	mcmVolumes := append(commonVolumes, res.McmUICertVolume)
 	mcmVolumes = append(mcmVolumes, secretVolumes...)
 
+	// setup the resource requirements
+	mcmMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.UI.Resources,
+		res.McmUIResourceRequirements)
+
+	// "replicas" should be set in the CR. if it isn't found, use the default value.
+	replicas := res.Replica1
+	if instance.Spec.Replicas > 0 {
+		replicas = instance.Spec.Replicas
+	}
+
+	// setup the deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      res.McmDeploymentName,
@@ -339,7 +355,7 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 			Labels:    metaLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &instance.Spec.Replicas,
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},
