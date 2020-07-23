@@ -401,6 +401,7 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 		additionalInfoPtr = nil
 	}
 
+	// setup the init containers
 	dmSecretCheckContainer := res.BuildSecretCheckContainer(res.DmDeploymentName, dmImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, additionalInfoPtr)
 
@@ -414,16 +415,19 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
 	dmInitContainer := res.BuildInitContainer(res.DmDeploymentName, dmImage, initEnvVars)
 
+	// setup the main container
 	receiverEnvVars := res.BuildReceiverEnvVars(instance.Spec.MultiCloudReceiverEnabled)
 	dmMainContainer := res.DmMainContainer
 	dmMainContainer.Image = dmImage
 	dmMainContainer.Name = res.DmDeploymentName
+	// setup environment vars
 	dmMainContainer.Env = append(dmMainContainer.Env, receiverEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, res.IAMEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, clusterEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, res.CommonEnvVars...)
 	dmMainContainer.Env = append(dmMainContainer.Env, mongoDBEnvVars...)
 
+	// setup volumes and volume mounts
 	dmVolumes := commonVolumes
 	if instance.Spec.MultiCloudReceiverEnabled {
 		dmMainContainer.VolumeMounts = append(dmMainContainer.VolumeMounts, res.ReceiverCertVolumeMountForMain)
@@ -431,6 +435,11 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	}
 	dmMainContainer.VolumeMounts = append(dmMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
+	// setup the resource requirements
+	dmMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.DataManagerResources.Resources,
+		res.DmResourceRequirements)
+
+	// setup the deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      res.DmDeploymentName,
@@ -645,6 +654,7 @@ func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Meter
 	// add the volume mount for the API cert
 	additionalInfo.VolumeMounts = []corev1.VolumeMount{res.APICertVolumeMount}
 
+	// setup the init containers
 	rdrSecretCheckContainer := res.BuildSecretCheckContainer(res.ReaderDeploymentName, rdrImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
@@ -653,17 +663,25 @@ func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Meter
 	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
 	rdrInitContainer := res.BuildInitContainer(res.ReaderDeploymentName, rdrImage, initEnvVars)
 
+	// setup the main container
 	rdrMainContainer := res.RdrMainContainer
 	rdrMainContainer.Image = rdrImage
 	rdrMainContainer.Name = res.ReaderDeploymentName
+	// setup environment vars
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.IAMEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, clusterEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.CommonEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, mongoDBEnvVars...)
-	rdrMainContainer.VolumeMounts = append(rdrMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
+	// setup volumes and volume mounts
+	rdrMainContainer.VolumeMounts = append(rdrMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 	rdrVolumes := append(commonVolumes, res.APICertVolume)
 
+	// setup the resource requirements
+	rdrMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.ReaderResources.Resources,
+		res.RdrResourceRequirements)
+
+	// setup the deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      res.ReaderDeploymentName,

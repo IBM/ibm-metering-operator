@@ -28,13 +28,15 @@ type MeteringSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Version                   string              `json:"version"`
-	ImageRegistry             string              `json:"imageRegistry,omitempty"`
-	ImageTagPostfix           string              `json:"imageTagPostfix,omitempty"`
-	IAMnamespace              string              `json:"iamNamespace,omitempty"`
-	ClusterIssuer             string              `json:"clusterIssuer,omitempty"`
-	MultiCloudReceiverEnabled bool                `json:"multiCloudReceiverEnabled,omitempty"`
-	MongoDB                   MeteringSpecMongoDB `json:"mongodb"`
+	Version                   string                `json:"version"`
+	ImageRegistry             string                `json:"imageRegistry,omitempty"`
+	ImageTagPostfix           string                `json:"imageTagPostfix,omitempty"`
+	IAMnamespace              string                `json:"iamNamespace,omitempty"`
+	ClusterIssuer             string                `json:"clusterIssuer,omitempty"`
+	MultiCloudReceiverEnabled bool                  `json:"multiCloudReceiverEnabled,omitempty"`
+	DataManagerResources      MeteringSpecResources `json:"dataManager,omitempty"`
+	ReaderResources           MeteringSpecResources `json:"reader,omitempty"`
+	MongoDB                   MeteringSpecMongoDB   `json:"mongodb"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

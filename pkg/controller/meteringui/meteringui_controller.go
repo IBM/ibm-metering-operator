@@ -303,6 +303,7 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	// add the cert secret which is only used by the UI today
 	additionalInfo.VolumeMounts = append(additionalInfo.VolumeMounts, res.UICertVolumeMountForSecretCheck)
 
+	// setup the init containers
 	uiSecretCheckContainer := res.BuildSecretCheckContainer(res.UIDeploymentName, initImage,
 		res.SecretCheckCmd, instance.Spec.MongoDB, &additionalInfo)
 
@@ -311,19 +312,33 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 	initEnvVars = append(initEnvVars, mongoDBEnvVars...)
 	uiInitContainer := res.BuildInitContainer(res.UIDeploymentName, initImage, initEnvVars)
 
+	// setup the main container
 	uiMainContainer := res.UIMainContainer
 	uiMainContainer.Image = uiImage
 	uiMainContainer.Name = res.UIDeploymentName
+	// setup environment vars
 	uiMainContainer.Env = append(uiMainContainer.Env, res.IAMEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, res.UIEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, clusterEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, res.CommonEnvVars...)
 	uiMainContainer.Env = append(uiMainContainer.Env, mongoDBEnvVars...)
+
+	// setup volumes and volume mounts
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 	uiMainContainer.VolumeMounts = append(uiMainContainer.VolumeMounts, res.UICertVolumeMountForMain)
-
 	uiVolumes := append(commonVolumes, res.UICertVolume)
 
+	// setup the resource requirements
+	uiMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.UI.Resources,
+		res.UIResourceRequirements)
+
+	// "replicas" should be set in the CR. if it isn't found, use the default value.
+	replicas := res.Replica1
+	if instance.Spec.Replicas > 0 {
+		replicas = instance.Spec.Replicas
+	}
+
+	// setup the deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      res.UIDeploymentName,
@@ -331,7 +346,7 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 			Labels:    metaLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &instance.Spec.Replicas,
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},

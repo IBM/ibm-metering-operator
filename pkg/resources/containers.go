@@ -252,7 +252,9 @@ var ReceiverSslEnvVars = []corev1.EnvVar{
 	},
 }
 
+//***************************************************************
 // Common definitions
+//***************************************************************
 var commonInitVolumeMounts = []corev1.VolumeMount{
 	{
 		Name:      "mongodb-ca-cert",
@@ -314,8 +316,17 @@ var TempDirVolume = corev1.Volume{
 }
 
 //***************************************************************
-// Container definitions
+// DataManager container definition
 //***************************************************************
+
+var DmResourceRequirements = corev1.ResourceRequirements{
+	Limits: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu1000,
+		corev1.ResourceMemory: *memory2560},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu100,
+		corev1.ResourceMemory: *memory256},
+}
 
 var DmMainContainer = corev1.Container{
 	Image:           "metering-data-manager",
@@ -404,15 +415,21 @@ var DmMainContainer = corev1.Container{
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	},
-	Resources: corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu1000,
-			corev1.ResourceMemory: *memory2560},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu100,
-			corev1.ResourceMemory: *memory256},
-	},
+	Resources:       corev1.ResourceRequirements{},
 	SecurityContext: &commonSecurityContext,
+}
+
+//***************************************************************
+// Report Server container definition
+//***************************************************************
+
+var ReportResourceRequirements = corev1.ResourceRequirements{
+	Limits: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu500,
+		corev1.ResourceMemory: *memory512},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu100,
+		corev1.ResourceMemory: *memory128},
 }
 
 var ReportContainer = corev1.Container{
@@ -427,7 +444,6 @@ var ReportContainer = corev1.Container{
 		"--secure-port=7443",
 		"--disable-admission-plugins=NamespaceLifecycle,MutatingAdmissionWebhook,ValidatingAdmissionWebhook",
 	},
-	// CommonMainVolumeMounts will be added by the controller
 	VolumeMounts: []corev1.VolumeMount{
 		{
 			Name:      "tmp-dir",
@@ -473,6 +489,20 @@ var ReportContainer = corev1.Container{
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	},
+	Resources: corev1.ResourceRequirements{},
+}
+
+//***************************************************************
+// Reader container definition
+//***************************************************************
+
+var RdrResourceRequirements = corev1.ResourceRequirements{
+	Limits: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu500,
+		corev1.ResourceMemory: *memory512},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu100,
+		corev1.ResourceMemory: *memory128},
 }
 
 var RdrMainContainer = corev1.Container{
@@ -602,15 +632,21 @@ var RdrMainContainer = corev1.Container{
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	},
-	Resources: corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu500,
-			corev1.ResourceMemory: *memory512},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu100,
-			corev1.ResourceMemory: *memory128},
-	},
+	Resources:       corev1.ResourceRequirements{},
 	SecurityContext: &commonSecurityContext,
+}
+
+//***************************************************************
+// Sender container definition
+//***************************************************************
+
+var SenderResourceRequirements = corev1.ResourceRequirements{
+	Limits: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu500,
+		corev1.ResourceMemory: *memory512},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu100,
+		corev1.ResourceMemory: *memory128},
 }
 
 var SenderMainContainer = corev1.Container{
@@ -698,14 +734,7 @@ var SenderMainContainer = corev1.Container{
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	},
-	Resources: corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu500,
-			corev1.ResourceMemory: *memory512},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu100,
-			corev1.ResourceMemory: *memory128},
-	},
+	Resources:       corev1.ResourceRequirements{},
 	SecurityContext: &commonSecurityContext,
 }
 
@@ -726,6 +755,19 @@ var UIEnvVars = []corev1.EnvVar{
 		Name:  "DEFAULT_PLATFORM_HEADER_SERVICE_PORT",
 		Value: "3000",
 	},
+}
+
+//***************************************************************
+// UI container definition
+//***************************************************************
+
+var UIResourceRequirements = corev1.ResourceRequirements{
+	Limits: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu500,
+		corev1.ResourceMemory: *memory512},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu100,
+		corev1.ResourceMemory: *memory128},
 }
 
 var UIMainContainer = corev1.Container{
@@ -804,15 +846,21 @@ var UIMainContainer = corev1.Container{
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	},
-	Resources: corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu500,
-			corev1.ResourceMemory: *memory512},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu100,
-			corev1.ResourceMemory: *memory128},
-	},
+	Resources:       corev1.ResourceRequirements{},
 	SecurityContext: &commonSecurityContext,
+}
+
+//***************************************************************
+// MCM UI container definition
+//***************************************************************
+
+var McmUIResourceRequirements = corev1.ResourceRequirements{
+	Limits: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu500,
+		corev1.ResourceMemory: *memory256},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu100,
+		corev1.ResourceMemory: *memory128},
 }
 
 var McmUIMainContainer = corev1.Container{
@@ -887,13 +935,6 @@ var McmUIMainContainer = corev1.Container{
 		SuccessThreshold:    1,
 		FailureThreshold:    3,
 	},
-	Resources: corev1.ResourceRequirements{
-		Limits: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu500,
-			corev1.ResourceMemory: *memory256},
-		Requests: map[corev1.ResourceName]resource.Quantity{
-			corev1.ResourceCPU:    *cpu100,
-			corev1.ResourceMemory: *memory128},
-	},
+	Resources:       corev1.ResourceRequirements{},
 	SecurityContext: &commonSecurityContext,
 }

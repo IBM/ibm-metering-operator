@@ -248,11 +248,24 @@ func (r *ReconcileMeteringReportServer) deploymentForReport(instance *operatorv1
 		res.DefaultImageRegistry, res.DefaultReportImageName, res.VarImageSHAforReport, res.DefaultReportImageTag)
 	reqLogger.Info("reportImage=" + reportImage)
 
+	// setup the container
 	reportContainer := res.ReportContainer
 	reportContainer.Image = reportImage
 
+	// setup volumes
 	reportVolumes := []corev1.Volume{res.TempDirVolume, res.APICertVolume}
 
+	// setup the resource requirements
+	reportContainer.Resources = res.BuildResourceRequirements(instance.Spec.ReportServerResources.Resources,
+		res.ReportResourceRequirements)
+
+	// "replicas" should be set in the CR. if it isn't found, use the default value.
+	replicas := res.Replica1
+	if instance.Spec.Replicas > 0 {
+		replicas = instance.Spec.Replicas
+	}
+
+	// setup the deployment
 	deployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      res.ReportDeploymentName,
@@ -260,7 +273,7 @@ func (r *ReconcileMeteringReportServer) deploymentForReport(instance *operatorv1
 			Labels:    metaLabels,
 		},
 		Spec: appsv1.DeploymentSpec{
-			Replicas: &res.Replica1,
+			Replicas: &replicas,
 			Selector: &metav1.LabelSelector{
 				MatchLabels: selectorLabels,
 			},

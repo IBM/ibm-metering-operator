@@ -16,6 +16,10 @@
 
 package v1alpha1
 
+import (
+	corev1 "k8s.io/api/core/v1"
+)
+
 // MeteringSpecMongoDB defines the MongoDB configuration in all the Metering specs
 type MeteringSpecMongoDB struct {
 	Host               string `json:"host"`
@@ -28,13 +32,19 @@ type MeteringSpecMongoDB struct {
 	ClientCertsSecret  string `json:"clientcertssecret"`
 }
 
+// MeteringSpecResources defines the resource requirements for the Metering containers
+type MeteringSpecResources struct {
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
 // MeteringSpecUI defines the UI configuration in the MeteringUI and MeteringMultiCloudUI specs
 type MeteringSpecUI struct {
-	IAMnamespace          string `json:"iamNamespace,omitempty"`
-	IngressNamespace      string `json:"ingressNamespace,omitempty"`
-	CommonHeaderNamespace string `json:"commonHeaderNamespace,omitempty"`
-	APIkeySecret          string `json:"apikeySecret,omitempty"`
-	PlatformOidcSecret    string `json:"platformOidcSecret,omitempty"`
+	IAMnamespace          string                      `json:"iamNamespace,omitempty"`
+	IngressNamespace      string                      `json:"ingressNamespace,omitempty"`
+	CommonHeaderNamespace string                      `json:"commonHeaderNamespace,omitempty"`
+	APIkeySecret          string                      `json:"apikeySecret,omitempty"`
+	PlatformOidcSecret    string                      `json:"platformOidcSecret,omitempty"`
+	Resources             corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // MeteringStatus defines the observed state of each Metering service

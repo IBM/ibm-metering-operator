@@ -28,9 +28,11 @@ type MeteringReportServerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
-	Version         string `json:"version"`
-	ImageRegistry   string `json:"imageRegistry,omitempty"`
-	ImageTagPostfix string `json:"imageTagPostfix,omitempty"`
+	Version               string                `json:"version"`
+	ImageRegistry         string                `json:"imageRegistry,omitempty"`
+	ImageTagPostfix       string                `json:"imageTagPostfix,omitempty"`
+	Replicas              int32                 `json:"replicas,omitempty"`
+	ReportServerResources MeteringSpecResources `json:"reportServer,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
