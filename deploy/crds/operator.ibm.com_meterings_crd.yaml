@@ -38,26 +38,32 @@ spec:
             clusterIssuer:
               type: string
             dataManager:
-              description: MeteringSpecResources defines the resource requirements
-                for the Metering containers
+              description: MeteringSpecDM defines the DataManager configuration in
+                the Metering spec
               properties:
-                resources:
-                  description: ResourceRequirements describes the compute resource
-                    requirements.
+                dm:
+                  description: MeteringSpecResources defines the resource requirements
+                    for the Metering containers
                   properties:
-                    limits:
-                      additionalProperties:
-                        type: string
-                      description: 'Limits describes the maximum amount of compute
-                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                      type: object
-                    requests:
-                      additionalProperties:
-                        type: string
-                      description: 'Requests describes the minimum amount of compute
-                        resources required. If Requests is omitted for a container,
-                        it defaults to Limits if that is explicitly specified, otherwise
-                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    resources:
+                      description: ResourceRequirements describes the compute resource
+                        requirements.
+                      properties:
+                        limits:
+                          additionalProperties:
+                            type: string
+                          description: 'Limits describes the maximum amount of compute
+                            resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                          type: object
+                        requests:
+                          additionalProperties:
+                            type: string
+                          description: 'Requests describes the minimum amount of compute
+                            resources required. If Requests is omitted for a container,
+                            it defaults to Limits if that is explicitly specified,
+                            otherwise to an implementation-defined value. More info:
+                            https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                          type: object
                       type: object
                   type: object
               type: object
@@ -100,26 +106,32 @@ spec:
             multiCloudReceiverEnabled:
               type: boolean
             reader:
-              description: MeteringSpecResources defines the resource requirements
-                for the Metering containers
+              description: MeteringSpecRdr defines the Reader configuration in the
+                Metering spec
               properties:
-                resources:
-                  description: ResourceRequirements describes the compute resource
-                    requirements.
+                rdr:
+                  description: MeteringSpecResources defines the resource requirements
+                    for the Metering containers
                   properties:
-                    limits:
-                      additionalProperties:
-                        type: string
-                      description: 'Limits describes the maximum amount of compute
-                        resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                      type: object
-                    requests:
-                      additionalProperties:
-                        type: string
-                      description: 'Requests describes the minimum amount of compute
-                        resources required. If Requests is omitted for a container,
-                        it defaults to Limits if that is explicitly specified, otherwise
-                        to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                    resources:
+                      description: ResourceRequirements describes the compute resource
+                        requirements.
+                      properties:
+                        limits:
+                          additionalProperties:
+                            type: string
+                          description: 'Limits describes the maximum amount of compute
+                            resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                          type: object
+                        requests:
+                          additionalProperties:
+                            type: string
+                          description: 'Requests describes the minimum amount of compute
+                            resources required. If Requests is omitted for a container,
+                            it defaults to Limits if that is explicitly specified,
+                            otherwise to an implementation-defined value. More info:
+                            https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
+                          type: object
                       type: object
                   type: object
               type: object
