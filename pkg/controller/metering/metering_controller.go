@@ -436,7 +436,7 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	dmMainContainer.VolumeMounts = append(dmMainContainer.VolumeMounts, res.CommonMainVolumeMounts...)
 
 	// setup the resource requirements
-	dmMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.DataManagerResources.Resources,
+	dmMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.DataManager.DataManagerResources.Resources,
 		res.DmResourceRequirements)
 
 	// setup the deployment
@@ -678,7 +678,7 @@ func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Meter
 	rdrVolumes := append(commonVolumes, res.APICertVolume)
 
 	// setup the resource requirements
-	rdrMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.ReaderResources.Resources,
+	rdrMainContainer.Resources = res.BuildResourceRequirements(instance.Spec.Reader.ReaderResources.Resources,
 		res.RdrResourceRequirements)
 
 	// setup the deployment
