@@ -50,7 +50,8 @@ TESTARGS_DEFAULT := "-v"
 export TESTARGS ?= $(TESTARGS_DEFAULT)
 DEST := $(GOPATH)/src/$(GIT_HOST)/$(BASE_DIR)
 #Pushing with release tag after moving to artifactory
-VERSION ?= $(shell cat version/version.go | grep "Version =" | awk '{ print $3}' | tr -d '"')
+#VERSION ?= $(shell cat version/version.go | grep "Version =" | awk '{ print $3}' | tr -d '"')
+VERSION ?= "3.7.0"
 #VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 #                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
