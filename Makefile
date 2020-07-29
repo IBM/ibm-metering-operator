@@ -50,6 +50,7 @@ TESTARGS_DEFAULT := "-v"
 export TESTARGS ?= $(TESTARGS_DEFAULT)
 DEST := $(GOPATH)/src/$(GIT_HOST)/$(BASE_DIR)
 #Pushing with release tag after moving to artifactory
+VERSION ?= $(shell cat version/version.go | grep "Version =" | awk '{ print $3}' | tr -d '"')
 #VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 #                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
@@ -150,7 +151,7 @@ coverage:
 # install operator sdk section
 ############################################################
 
-install-operator-sdk: 
+install-operator-sdk:
 	@operator-sdk version 2> /dev/null ; if [ $$? -ne 0 ]; then ./common/scripts/install-operator-sdk.sh; fi
 
 ############################################################
@@ -228,7 +229,7 @@ csv: ## Push CSV package to the catalog
 .PHONY: get-all-image-sha
 get-all-image-sha: get-report-image-sha get-mcmui-image-sha get-ui-image-sha get-dm-image-sha
 	@echo Got SHAs for all operand images
-	
+
 .PHONY: get-dm-image-sha
 get-dm-image-sha:
 	@echo Get SHA for metering-data-manager:$(OPERAND_TAG_DM)
