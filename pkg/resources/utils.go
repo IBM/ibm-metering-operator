@@ -321,9 +321,16 @@ func BuildCommonClusterEnvVars(instanceNamespace, instanceIAMnamespace string) [
 		iamNamespace = instanceNamespace
 	}
 
+	// CS_IAM_NAMSPACE was added for the security middleware package, if metering and IAM happen
+	// to be installed in different namespaces (unlikely), this will allow the security middleware
+	// calls to continue to work
 	clusterEnvVars := []corev1.EnvVar{
 		{
 			Name:  "IAM_NAMESPACE",
+			Value: iamNamespace,
+		},
+		{
+			Name:  "CS_IAM_NAMESPACE",
 			Value: iamNamespace,
 		},
 	}
