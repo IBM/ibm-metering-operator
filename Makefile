@@ -24,9 +24,7 @@ UBI_IMAGE_SHA_390=cc1a7031050564fe76969d249a6d89aadbd5ea7a8969b21718c09ceb77d577
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overriding the IMG and REGISTRY environment variable.
 IMG ?= ibm-metering-operator
-ifeq ($(BUILD_LOCALLY),0)
 REGISTRY ?= "hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom"
-endif
 CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
