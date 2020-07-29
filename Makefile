@@ -16,6 +16,11 @@
 # Override this variable in CI env.
 BUILD_LOCALLY ?= 1
 
+# set these variables to the tag or SHA for the ubi image used in the Dockerfile
+UBI_IMAGE_TAG_AMD=8.2-345
+UBI_IMAGE_SHA_PPC=d397c81371b235816967b1140ace8cb0b621f1872b8a1c1131658e7aac5fb95c
+UBI_IMAGE_SHA_390=cc1a7031050564fe76969d249a6d89aadbd5ea7a8969b21718c09ceb77d57715
+
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overriding the IMG and REGISTRY environment variable.
 IMG ?= ibm-metering-operator
@@ -86,7 +91,7 @@ $(eval GIT_COMMIT := $(shell git rev-parse --short HEAD))
 $(eval VCS_REF := $(GIT_COMMIT))
 IMAGE_RELEASE=$(VCS_REF)
 GIT_REMOTE_URL = $(shell git config --get remote.origin.url)
-$(eval DOCKER_BUILD_OPTS := --build-arg "IMAGE_NAME=$(IMAGE_NAME)" --build-arg "IMAGE_DISPLAY_NAME=$(IMAGE_DISPLAY_NAME)" --build-arg "IMAGE_MAINTAINER=$(IMAGE_MAINTAINER)" --build-arg "IMAGE_VENDOR=$(IMAGE_VENDOR)" --build-arg "IMAGE_VERSION=$(IMAGE_VERSION)" --build-arg "IMAGE_RELEASE=$(IMAGE_RELEASE)" --build-arg "IMAGE_DESCRIPTION=$(IMAGE_DESCRIPTION)" --build-arg "IMAGE_SUMMARY=$(IMAGE_SUMMARY)" --build-arg "IMAGE_OPENSHIFT_TAGS=$(IMAGE_OPENSHIFT_TAGS)" --build-arg "VCS_REF=$(VCS_REF)" --build-arg "VCS_URL=$(GIT_REMOTE_URL)" --build-arg "SELF_METER_IMAGE_TAG=$(SELF_METER_IMAGE_TAG)")
+DOCKER_BUILD_OPTS := --build-arg "IMAGE_NAME=$(IMAGE_NAME)" --build-arg "IMAGE_DISPLAY_NAME=$(IMAGE_DISPLAY_NAME)" --build-arg "IMAGE_MAINTAINER=$(IMAGE_MAINTAINER)" --build-arg "IMAGE_VENDOR=$(IMAGE_VENDOR)" --build-arg "IMAGE_VERSION=$(IMAGE_VERSION)" --build-arg "IMAGE_RELEASE=$(IMAGE_RELEASE)" --build-arg "IMAGE_DESCRIPTION=$(IMAGE_DESCRIPTION)" --build-arg "IMAGE_SUMMARY=$(IMAGE_SUMMARY)" --build-arg "IMAGE_OPENSHIFT_TAGS=$(IMAGE_OPENSHIFT_TAGS)" --build-arg "VCS_REF=$(VCS_REF)" --build-arg "VCS_URL=$(GIT_REMOTE_URL)" --build-arg "SELF_METER_IMAGE_TAG=$(SELF_METER_IMAGE_TAG)"
 
 
 all: fmt check test coverage build images
@@ -179,15 +184,15 @@ endif
 
 
 build-image-amd64: build-amd64
-	@docker build -t $(REGISTRY)/$(IMG)-amd64:$(VERSION) $(DOCKER_BUILD_OPTS) --build-arg "IMAGE_NAME_ARCH=$(IMAGE_NAME)-amd64" -f build/Dockerfile .
+	@docker build -t $(REGISTRY)/$(IMG)-amd64:$(VERSION) $(DOCKER_BUILD_OPTS) --build-arg "IMAGE_NAME_ARCH=$(IMAGE_NAME)-amd64" --build-arg "UBI_IMAGE_TAG_AMD=$(UBI_IMAGE_TAG_AMD)" -f build/Dockerfile .
 
 build-image-ppc64le: build-ppc64le
 	@docker run --rm --privileged multiarch/qemu-user-static:register --reset
-	@docker build -t $(REGISTRY)/$(IMG)-ppc64le:$(VERSION) $(DOCKER_BUILD_OPTS) --build-arg "IMAGE_NAME_ARCH=$(IMAGE_NAME)-ppc64le" -f build/Dockerfile.ppc64le .
+	@docker build -t $(REGISTRY)/$(IMG)-ppc64le:$(VERSION) $(DOCKER_BUILD_OPTS) --build-arg "IMAGE_NAME_ARCH=$(IMAGE_NAME)-ppc64le" --build-arg "UBI_IMAGE_SHA_PPC=$(UBI_IMAGE_SHA_PPC)" -f build/Dockerfile.ppc64le .
 
 build-image-s390x: build-s390x
 	@docker run --rm --privileged multiarch/qemu-user-static:register --reset
-	@docker build -t $(REGISTRY)/$(IMG)-s390x:$(VERSION) $(DOCKER_BUILD_OPTS) --build-arg "IMAGE_NAME_ARCH=$(IMAGE_NAME)-s390x" -f build/Dockerfile.s390x .
+	@docker build -t $(REGISTRY)/$(IMG)-s390x:$(VERSION) $(DOCKER_BUILD_OPTS) --build-arg "IMAGE_NAME_ARCH=$(IMAGE_NAME)-s390x" --build-arg "UBI_IMAGE_SHA_390=$(UBI_IMAGE_SHA_390)" -f build/Dockerfile.s390x .
 
 push-image-amd64: $(CONFIG_DOCKER_TARGET) build-image-amd64
 	@docker push $(REGISTRY)/$(IMG)-amd64:$(VERSION)

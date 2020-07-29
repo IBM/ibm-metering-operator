@@ -14,7 +14,8 @@
 # limitations under the License.
 #
 
-FROM registry.access.redhat.com/ubi8/ubi-minimal:8.2-267
+ARG UBI_IMAGE_TAG_AMD
+FROM registry.access.redhat.com/ubi8/ubi-minimal:$UBI_IMAGE_TAG_AMD
 
 ARG IMAGE_NAME
 ARG IMAGE_DISPLAY_NAME
