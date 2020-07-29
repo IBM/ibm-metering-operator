@@ -24,7 +24,7 @@ UBI_IMAGE_SHA_390=cc1a7031050564fe76969d249a6d89aadbd5ea7a8969b21718c09ceb77d577
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overriding the IMG and REGISTRY environment variable.
 IMG ?= ibm-metering-operator
-REGISTRY ?= quay.io/opencloudio
+REGISTRY ?= "hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom"
 CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
@@ -49,8 +49,9 @@ export GOBIN ?= $(GOBIN_DEFAULT)
 TESTARGS_DEFAULT := "-v"
 export TESTARGS ?= $(TESTARGS_DEFAULT)
 DEST := $(GOPATH)/src/$(GIT_HOST)/$(BASE_DIR)
-VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
-                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
+#Pushing with release tag after moving to artifactory
+#VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
+#                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
 LOCAL_OS := $(shell uname)
 ifeq ($(LOCAL_OS),Linux)
