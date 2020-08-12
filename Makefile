@@ -32,7 +32,7 @@ endif
 CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
-OPERAND_REGISTRY ?= $(REGISTRY)
+OPERAND_REGISTRY ?= "hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom"
 OPERAND_TAG_DM ?= 3.6.0
 OPERAND_TAG_UI ?= 3.6.0
 OPERAND_TAG_MCMUI ?= 3.6.0
