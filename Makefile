@@ -55,7 +55,6 @@ export TESTARGS ?= $(TESTARGS_DEFAULT)
 DEST := $(GOPATH)/src/$(GIT_HOST)/$(BASE_DIR)
 #Pushing with release tag after moving to artifactory
 VERSION ?= $(shell cat ./version/version.go | grep "Version =" | awk '{ print $$3}' | tr -d '"')
-#VERSION ?= "3.7.0"
 #VERSION ?= $(shell git describe --exact-match 2> /dev/null || \
 #                 git describe --match=$(git rev-parse --short=8 HEAD) --always --dirty --abbrev=8)
 
@@ -232,8 +231,13 @@ csv: ## Push CSV package to the catalog
 # SHA section
 ############################################################
 .PHONY: get-all-image-sha
-get-all-image-sha: get-report-image-sha get-mcmui-image-sha get-ui-image-sha get-dm-image-sha
-	@echo Got SHAs for all operand images
+get-all-image-sha: get-report-image-sha get-mcmui-image-sha get-ui-image-sha get-dm-image-sha get-oper-image-sha
+	@echo Got SHAs for all operand images and operator images
+
+.PHONY: get-oper-image-sha
+get-oper-image-sha:
+	@echo Get SHA for ibm-metering-operator:$(VERSION)
+	@scripts/get-image-sha.sh OPER $(OPERAND_REGISTRY)/ibm-metering-operator $(VERSION)
 
 .PHONY: get-dm-image-sha
 get-dm-image-sha:

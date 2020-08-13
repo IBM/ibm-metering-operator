@@ -564,7 +564,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator@sha256:dbe4d66f290a581dee0b4e65d11cc648485416e6702d655a5e95e7d592df0474
+                image: quay.io/opencloudio/ibm-metering-operator@sha256:80d800efe2cae3943783743a182cae2a801e0d65faf79a8851c938bea181c5c6
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
