@@ -1,6 +1,6 @@
 module github.com/ibm/ibm-metering-operator
 
-go 1.13
+go 1.14
 
 require (
 	github.com/jetstack/cert-manager v0.10.1
