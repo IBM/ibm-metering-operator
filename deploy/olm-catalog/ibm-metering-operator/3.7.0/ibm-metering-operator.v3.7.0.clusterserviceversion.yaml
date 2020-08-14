@@ -549,7 +549,7 @@ spec:
                 - name: IMAGE_SHA_OR_TAG_MCMUI
                   value: sha256:d36750214f71fa6f3ac82ddabe3b0e51bad3c2bf46e3512218e9fb05b771d1c8
                 - name: IMAGE_SHA_OR_TAG_REPORT
-                  value: sha256:94b859a973d4043e6f61e26c0e4270f1a436ab527c6a32cd4b77519f53d297de
+                  value: sha256:81fb3b8a6fa665e023d58ac02a177dcfe7a52ba4b71f1094a66dc5b1db4004a6
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -564,7 +564,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator@sha256:80d800efe2cae3943783743a182cae2a801e0d65faf79a8851c938bea181c5c6
+                image: quay.io/opencloudio/ibm-metering-operator@sha256:7039d649a06f5bc34e7a1ea5590a6daae9ca7b5540c3bdcc01550f6b06738ffe
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
