@@ -386,7 +386,26 @@ func (r *ReconcileMeteringMultiCloudUI) deploymentForMCMUI(instance *operatorv1a
 								},
 							},
 						},
+						PodAntiAffinity: &corev1.PodAntiAffinity{
+							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+								{
+									LabelSelector: &metav1.LabelSelector{
+										MatchExpressions: []metav1.LabelSelectorRequirement{
+											{
+												Key:      "app.kubernetes.io/name",
+												Operator: metav1.LabelSelectorOpIn,
+												Values: []string{
+													"metering-mcmui",
+												},
+											},
+										},
+									},
+									TopologyKey: "kubernetes.io/hostname",
+								},
+							},
+						},
 					},
+
 					Tolerations: []corev1.Toleration{
 						{
 							Key:      "dedicated",
