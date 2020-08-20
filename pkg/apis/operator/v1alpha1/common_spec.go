@@ -47,11 +47,16 @@ type MeteringSpecUI struct {
 	Resources             corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
+type StatusVersion struct {
+	Reconciled string `json:"reconciled"`
+}
+
 // MeteringStatus defines the observed state of each Metering service
 type MeteringStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "operator-sdk generate k8s" to regenerate code after modifying this file
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	// PodNames are the names of the metering pods
-	PodNames []string `json:"podNames"`
+	PodNames []string      `json:"podNames"`
+	Versions StatusVersion `json:"versions"`
 }

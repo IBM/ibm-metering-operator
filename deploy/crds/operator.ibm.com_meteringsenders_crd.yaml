@@ -128,8 +128,16 @@ spec:
               items:
                 type: string
               type: array
+            versions:
+              properties:
+                reconciled:
+                  type: string
+              required:
+              - reconciled
+              type: object
           required:
           - podNames
+          - versions
           type: object
       type: object
   version: v1alpha1
