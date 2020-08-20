@@ -23,6 +23,7 @@ import (
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	res "github.com/ibm/ibm-metering-operator/pkg/resources"
+	mversion "github.com/ibm/ibm-metering-operator/version"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -138,6 +139,7 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 	// set a default Status value
 	if len(instance.Status.PodNames) == 0 {
 		instance.Status.PodNames = res.DefaultStatusForCR
+		instance.Status.Versions.Reconciled = mversion.Version
 		err = r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to set MeteringSender default status")
@@ -194,8 +196,9 @@ func (r *ReconcileMeteringSender) Reconcile(request reconcile.Request) (reconcil
 	}
 
 	// Update status.PodNames if needed
-	if !reflect.DeepEqual(podNames, instance.Status.PodNames) {
+	if !reflect.DeepEqual(podNames, instance.Status.PodNames) || (mversion.Version != instance.Status.Versions.Reconciled) {
 		instance.Status.PodNames = podNames
+		instance.Status.Versions.Reconciled = mversion.Version
 		err := r.client.Status().Update(context.TODO(), instance)
 		if err != nil {
 			reqLogger.Error(err, "Failed to update MeteringSender status")
