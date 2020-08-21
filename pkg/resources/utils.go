@@ -17,6 +17,7 @@
 package resources
 
 import (
+	"context"
 	"strconv"
 	"strings"
 
@@ -28,7 +29,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -65,6 +70,7 @@ const McmDeploymentName = "metering-mcmui"
 const McmServiceName = "metering-mcmui"
 const SenderDeploymentName = "metering-sender"
 const ReceiverServiceName = "metering-receiver"
+const ReceiverRouteName = "metering-receiver-route"
 const MeteringDependencies = "ibm-common-services.auth-idp, mongodb, cert-manager"
 const apiIngressPort int32 = 4000
 
@@ -839,4 +845,23 @@ func GetImageID(instanceImageRegistry, instanceImageTagPostfix, defaultImageRegi
 	}
 
 	return imageID
+}
+
+//CheckRhacm checks if RHACM exists
+func CheckRhacm(client client.Client) error {
+
+	multiClusterHubType := &unstructured.Unstructured{}
+	multiClusterHubType.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "operator.open-cluster-management.io",
+		Kind:    "MultiClusterHub",
+		Version: "v1",
+	})
+
+	rhacmErr := client.Get(context.Background(), types.NamespacedName{
+		Namespace: "open-cluster-management",
+		Name:      "multiclusterhub",
+	}, multiClusterHubType)
+
+	return rhacmErr
+
 }

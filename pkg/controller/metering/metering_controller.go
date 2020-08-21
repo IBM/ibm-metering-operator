@@ -27,6 +27,8 @@ import (
 	mversion "github.com/ibm/ibm-metering-operator/version"
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
+	ocpoperatorv1 "github.com/openshift/api/operator/v1"
+	ocproutev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/extensions/v1beta1"
@@ -59,6 +61,9 @@ var ingressList = []res.IngressData{
 }
 
 var log = logf.Log.WithName("controller_metering")
+
+var isRACMHub = false
+var routeHost = ""
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -158,6 +163,26 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
+
+	// get appDomain
+	ing := &ocpoperatorv1.IngressController{}
+	namespace := types.NamespacedName{Name: "default", Namespace: "openshift-ingress-operator"}
+	if err := r.client.Get(context.TODO(), namespace, ing); err != nil {
+		reqLogger.Error(err, "Failed to get IngressController")
+	}
+	if ing != nil {
+		appDomain := ing.Status.Domain
+		if len(appDomain) > 0 {
+			routeHost = appDomain
+		}
+	}
+
+	//Check RHACM
+	rhacmErr := res.CheckRhacm(r.client)
+	if rhacmErr == nil {
+		// multiclusterhub found, this means RHACM exists
+		isRACMHub = true
+	}
 
 	// Fetch the Metering CR instance
 	instance := &operatorv1alpha1.Metering{}
@@ -321,6 +346,18 @@ func (r *ReconcileMetering) reconcileAllServices(instance *operatorv1alpha1.Mete
 		if err != nil {
 			return err
 		}
+		if isRACMHub {
+			reqLogger.Info("Checking Receiver Route", "Route.Name", res.ReceiverRouteName)
+			// Check if the Receiver Route already exists, if not create a new one
+			newReceiverRoute, err := r.routeForReceiver(instance)
+			if err != nil {
+				return err
+			}
+			err = res.ReconcileRoute(r.client, instance.Namespace, res.ReceiverRouteName, "Route", newReceiverRoute, needToRequeue)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -341,6 +378,8 @@ func (r *ReconcileMetering) reconcileAllCertificates(instance *operatorv1alpha1.
 	for _, certData := range certificateList {
 		reqLogger.Info("Checking Certificate", "Certificate.Name", certData.Name)
 		newCertificate := res.BuildCertificate(instance.Namespace, instance.Spec.ClusterIssuer, certData)
+		// add a new dnsname for certificate, this will be used for sender
+		newCertificate.Spec.DNSNames = append(newCertificate.Spec.DNSNames, "metering-receiver."+routeHost)
 		// Set Metering instance as the owner and controller of the Certificate
 		err := controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
 		if err != nil {
@@ -635,6 +674,48 @@ func (r *ReconcileMetering) serviceForReceiver(instance *operatorv1alpha1.Meteri
 		return nil, err
 	}
 	return service, nil
+}
+
+// routeForReceiver returns a Receiver Route object
+func (r *ReconcileMetering) routeForReceiver(instance *operatorv1alpha1.Metering) (*ocproutev1.Route, error) {
+	reqLogger := log.WithValues("func", "routeForReceiver", "instance.Name", instance.Name)
+	metaLabels := res.LabelsForMetadata(res.ReceiverRouteName)
+	weight := int32(100)
+
+	route := &ocproutev1.Route{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      res.ReceiverRouteName,
+			Namespace: instance.Namespace,
+			Labels:    metaLabels,
+		},
+		Spec: ocproutev1.RouteSpec{
+			Host: "metering-receiver." + routeHost,
+			Port: &ocproutev1.RoutePort{
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "metering-receiver",
+				},
+			},
+			TLS: &ocproutev1.TLSConfig{
+				InsecureEdgeTerminationPolicy: "Redirect",
+				Termination:                   "passthrough",
+			},
+			To: ocproutev1.RouteTargetReference{
+				Kind:   "Service",
+				Name:   "metering-receiver",
+				Weight: &weight,
+			},
+			WildcardPolicy: "None",
+		},
+	}
+
+	// Set Metering instance as the owner and controller of the Route
+	err := controllerutil.SetControllerReference(instance, route, r.scheme)
+	if err != nil {
+		reqLogger.Error(err, "Failed to set owner for Receiver Route")
+		return nil, err
+	}
+	return route, nil
 }
 
 // deploymentForReader returns a Reader Deployment object

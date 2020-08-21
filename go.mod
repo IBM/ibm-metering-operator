@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/jetstack/cert-manager v0.10.1
+	github.com/openshift/api v3.9.1-0.20190924102528-32369d4db2ad+incompatible
 	github.com/operator-framework/operator-sdk v0.13.0
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550 // indirect
