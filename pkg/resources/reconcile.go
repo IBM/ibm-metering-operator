@@ -23,6 +23,7 @@ import (
 
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
+	ocproutev1 "github.com/openshift/api/route/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/extensions/v1beta1"
@@ -71,6 +72,52 @@ func ReconcileService(client client.Client, instanceNamespace, serviceName, serv
 			if err != nil {
 				logger.Error(err, "Failed to update "+serviceType+" Service",
 					"Service.Namespace", currentService.Namespace, "Service.Name", currentService.Name)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Check if a Route already exists. If not, create a new one.
+func ReconcileRoute(client client.Client, instanceNamespace, routeName, routeType string,
+	newRoute *ocproutev1.Route, needToRequeue *bool) error {
+	logger := log.WithValues("func", "ReconcileRoute")
+
+	currentRoute := &ocproutev1.Route{}
+	err := client.Get(context.TODO(), types.NamespacedName{Name: routeName, Namespace: instanceNamespace}, currentRoute)
+	if err != nil && errors.IsNotFound(err) {
+		// Create a new Route
+		logger.Info("Creating a new "+routeType+" Route", "Route.Namespace", newRoute.Namespace, "Route.Name", newRoute.Name)
+		err = client.Create(context.TODO(), newRoute)
+		if err != nil && errors.IsAlreadyExists(err) {
+			// Already exists from previous reconcile, requeue
+			logger.Info(routeType + " Route already exists")
+			*needToRequeue = true
+		} else if err != nil {
+			logger.Error(err, "Failed to create new "+routeType+" Route", "Route.Namespace", newRoute.Namespace, "Route.Name", newRoute.Name)
+			return err
+		} else {
+			// Route created successfully - return and requeue
+			*needToRequeue = true
+		}
+	} else if err != nil {
+		logger.Error(err, "Failed to get "+routeType+" Route", "Route.Name", routeName)
+		return err
+	} else {
+		// Found route, so determine if the resource has changed
+		logger.Info("Comparing " + routeType + " Routes")
+		if !IsRouteEqual(currentRoute, newRoute) {
+			logger.Info("Updating "+routeType+" Route", "Route.Name", currentRoute.Name)
+			currentRoute.ObjectMeta.Name = newRoute.ObjectMeta.Name
+			currentRoute.ObjectMeta.Labels = newRoute.ObjectMeta.Labels
+			currentRoute.Spec.Port = newRoute.Spec.Port
+			currentRoute.Spec.Host = newRoute.Spec.Host
+			currentRoute.Spec.To = newRoute.Spec.To
+			err = client.Update(context.TODO(), currentRoute)
+			if err != nil {
+				logger.Error(err, "Failed to update "+routeType+" Route",
+					"Route.Namespace", currentRoute.Namespace, "Route.Name", currentRoute.Name)
 				return err
 			}
 		}
@@ -606,6 +653,52 @@ func IsServiceEqual(oldService, newService *corev1.Service) bool {
 	}
 
 	logger.Info("Services are equal", "Service.Name", oldService.ObjectMeta.Name)
+
+	return true
+}
+
+// Use DeepEqual to determine if 2 routes are equal.
+// Check ObjectMeta, Port, Host and To.
+// If there are any differences, return false. Otherwise, return true.
+// oldRoute is the route that is currently running.
+// newRoute is what we expect the route to look like.
+func IsRouteEqual(oldRoute, newRoute *ocproutev1.Route) bool {
+	logger := log.WithValues("func", "IsRouteEqual")
+
+	if !reflect.DeepEqual(oldRoute.ObjectMeta.Name, newRoute.ObjectMeta.Name) {
+		logger.Info("Names not equal", "old", oldRoute.ObjectMeta.Name, "new", newRoute.ObjectMeta.Name)
+		return false
+	}
+
+	if !reflect.DeepEqual(oldRoute.ObjectMeta.Labels, newRoute.ObjectMeta.Labels) {
+		logger.Info("Labels not equal",
+			"old", fmt.Sprintf("%v", oldRoute.ObjectMeta.Labels),
+			"new", fmt.Sprintf("%v", newRoute.ObjectMeta.Labels))
+		return false
+	}
+
+	if !reflect.DeepEqual(oldRoute.Spec.Port.TargetPort, newRoute.Spec.Port.TargetPort) {
+		logger.Info("Port not equal",
+			"old", fmt.Sprintf("%v", oldRoute.Spec.Port.TargetPort),
+			"new", fmt.Sprintf("%v", newRoute.Spec.Port.TargetPort))
+		return false
+	}
+
+	if !reflect.DeepEqual(oldRoute.Spec.Host, newRoute.Spec.Host) {
+		logger.Info("Host not equal",
+			"old", fmt.Sprintf("%v", oldRoute.Spec.Host),
+			"new", fmt.Sprintf("%v", newRoute.Spec.Host))
+		return false
+	}
+
+	if !reflect.DeepEqual(oldRoute.Spec.To.Name, newRoute.Spec.To.Name) {
+		logger.Info("To not equal",
+			"old", fmt.Sprintf("%v", oldRoute.Spec.To.Name),
+			"new", fmt.Sprintf("%v", newRoute.Spec.To.Name))
+		return false
+	}
+
+	logger.Info("Routes are equal", "Route.Name", oldRoute.ObjectMeta.Name)
 
 	return true
 }

@@ -129,6 +129,16 @@ rules:
   - clusterissuers
   verbs:
   - use
+# required by operator to get appDomain in IngressController
+- apiGroups:
+  - "operator.openshift.io"
+  resources:
+  - dnses
+  - ingresscontrollers
+  verbs:
+  - get
+  - list
+  - watch
 # required by meteringreportserver to create APIService
 - apiGroups:
   - authorization.k8s.io
