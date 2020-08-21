@@ -19,6 +19,7 @@ package metering
 import (
 	"context"
 	"reflect"
+	"strconv"
 	"time"
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
@@ -671,6 +672,11 @@ func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Meter
 	rdrMainContainer.Image = rdrImage
 	rdrMainContainer.Name = res.ReaderDeploymentName
 	// setup environment vars
+	excludeNamespacesEnvVar := corev1.EnvVar{
+		Name:  "HC_EXCLUDE_SYSTEM_NAMESPACES",
+		Value: strconv.FormatBool(instance.Spec.ExcludeSystemNamespaces),
+	}
+	rdrMainContainer.Env = append(rdrMainContainer.Env, excludeNamespacesEnvVar)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.IAMEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, clusterEnvVars...)
 	rdrMainContainer.Env = append(rdrMainContainer.Env, res.CommonEnvVars...)

@@ -34,6 +34,7 @@ type MeteringSpec struct {
 	IAMnamespace              string              `json:"iamNamespace,omitempty"`
 	ClusterIssuer             string              `json:"clusterIssuer,omitempty"`
 	MultiCloudReceiverEnabled bool                `json:"multiCloudReceiverEnabled,omitempty"`
+	ExcludeSystemNamespaces   bool                `json:"excludeSystemNamespaces,omitempty"`
 	DataManager               MeteringSpecDM      `json:"dataManager,omitempty"`
 	Reader                    MeteringSpecRdr     `json:"reader,omitempty"`
 	MongoDB                   MeteringSpecMongoDB `json:"mongodb"`

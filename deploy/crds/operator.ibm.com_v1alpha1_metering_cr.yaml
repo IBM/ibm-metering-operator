@@ -11,6 +11,7 @@ spec:
   imageRegistry: quay.io/opencloudio
   iamNamespace: ibm-common-services
   multiCloudReceiverEnabled: false
+  excludeSystemNamespaces: true
   mongodb:
     host: mongodb
     port: 27017
