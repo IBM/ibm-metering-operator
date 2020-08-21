@@ -17,6 +17,7 @@ metadata:
             "name": "metering"
           },
           "spec": {
+            "excludeSystemNamespaces": true,
             "iamNamespace": "ibm-common-services",
             "imageRegistry": "quay.io/opencloudio",
             "mongodb": {
@@ -564,7 +565,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator@sha256:799730698c089fbf74298666e47ea778cd15e79160032c6e9fbaa300ee6e5b00
+                image: quay.io/opencloudio/ibm-metering-operator@sha256:7e83296fe4b64a8366240728a5ce24139a1dba9f1fb84f7d8886c1eca09f3a16
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
