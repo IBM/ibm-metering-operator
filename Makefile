@@ -102,8 +102,11 @@ DOCKER_BUILD_OPTS := --build-arg "IMAGE_NAME=$(IMAGE_NAME)" --build-arg "IMAGE_D
 
 all: fmt check test coverage build images
 
+# don't require the DEST dir structure when building locally
+ifeq ($(BUILD_LOCALLY),0)
 ifneq ("$(realpath $(DEST))", "$(realpath $(PWD))")
     $(error Please run 'make' from $(DEST). Current directory is $(PWD))
+endif
 endif
 
 include common/Makefile.common.mk
