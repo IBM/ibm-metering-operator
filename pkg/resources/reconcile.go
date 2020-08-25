@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
@@ -32,6 +33,8 @@ import (
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const CertmanagerLabelPrefix = "certmanager"
 
 // Check if a Service already exists. If not, create a new one.
 func ReconcileService(client client.Client, instanceNamespace, serviceName, serviceType string,
@@ -281,8 +284,15 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 		return false
 	}
 
+	// Certmanager adds some labels that we need to preserve.
+	// Copy those labels from the old deployment to the new deployment before doing DeepEqual.
+	for key, oldValue := range oldDeployment.ObjectMeta.Labels {
+		if strings.HasPrefix(key, CertmanagerLabelPrefix) {
+			newDeployment.ObjectMeta.Labels[key] = oldValue
+		}
+	}
 	if !reflect.DeepEqual(oldDeployment.ObjectMeta.Labels, newDeployment.ObjectMeta.Labels) {
-		logger.Info("Labels not equal",
+		logger.Info("Deployment Labels not equal",
 			"old", fmt.Sprintf("%v", oldDeployment.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newDeployment.ObjectMeta.Labels))
 		return false
@@ -319,7 +329,7 @@ func IsAPIServiceEqual(oldAPIService, newAPIService *apiregistrationv1.APIServic
 	}
 
 	if !reflect.DeepEqual(oldAPIService.ObjectMeta.Labels, newAPIService.ObjectMeta.Labels) {
-		logger.Info("Labels not equal",
+		logger.Info("APIService Labels not equal",
 			"old", fmt.Sprintf("%v", oldAPIService.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newAPIService.ObjectMeta.Labels))
 		return false
@@ -359,7 +369,7 @@ func IsDaemonSetEqual(oldDaemonSet, newDaemonSet *appsv1.DaemonSet) bool {
 	}
 
 	if !reflect.DeepEqual(oldDaemonSet.ObjectMeta.Labels, newDaemonSet.ObjectMeta.Labels) {
-		logger.Info("Labels not equal",
+		logger.Info("DaemonSet Labels not equal",
 			"old", fmt.Sprintf("%v", oldDaemonSet.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newDaemonSet.ObjectMeta.Labels))
 		return false
@@ -384,7 +394,7 @@ func isPodTemplateEqual(oldPodTemplate, newPodTemplate corev1.PodTemplateSpec) b
 	logger := log.WithValues("func", "isPodTemplateEqual")
 
 	if !reflect.DeepEqual(oldPodTemplate.ObjectMeta.Labels, newPodTemplate.ObjectMeta.Labels) {
-		logger.Info("Pod labels not equal",
+		logger.Info("Pod Labels not equal",
 			"old", fmt.Sprintf("%v", oldPodTemplate.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newPodTemplate.ObjectMeta.Labels))
 		return false
@@ -631,7 +641,7 @@ func IsServiceEqual(oldService, newService *corev1.Service) bool {
 	}
 
 	if !reflect.DeepEqual(oldService.ObjectMeta.Labels, newService.ObjectMeta.Labels) {
-		logger.Info("Labels not equal",
+		logger.Info("Service Labels not equal",
 			"old", fmt.Sprintf("%v", oldService.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newService.ObjectMeta.Labels))
 		return false
@@ -671,7 +681,7 @@ func IsRouteEqual(oldRoute, newRoute *ocproutev1.Route) bool {
 	}
 
 	if !reflect.DeepEqual(oldRoute.ObjectMeta.Labels, newRoute.ObjectMeta.Labels) {
-		logger.Info("Labels not equal",
+		logger.Info("Route Labels not equal",
 			"old", fmt.Sprintf("%v", oldRoute.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newRoute.ObjectMeta.Labels))
 		return false
@@ -714,8 +724,15 @@ func IsCertificateEqual(oldCertificate, newCertificate *certmgr.Certificate) boo
 		return false
 	}
 
+	// Certmanager adds some labels that we need to preserve.
+	// Copy those labels from the old certificate to the new certificate before doing DeepEqual.
+	for key, oldValue := range oldCertificate.ObjectMeta.Labels {
+		if strings.HasPrefix(key, CertmanagerLabelPrefix) {
+			newCertificate.ObjectMeta.Labels[key] = oldValue
+		}
+	}
 	if !reflect.DeepEqual(oldCertificate.ObjectMeta.Labels, newCertificate.ObjectMeta.Labels) {
-		logger.Info("Labels not equal",
+		logger.Info("Certificate Labels not equal",
 			"old", fmt.Sprintf("%v", oldCertificate.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newCertificate.ObjectMeta.Labels))
 		return false
@@ -745,7 +762,7 @@ func IsIngressEqual(oldIngress, newIngress *netv1.Ingress) bool {
 	}
 
 	if !reflect.DeepEqual(oldIngress.ObjectMeta.Labels, newIngress.ObjectMeta.Labels) {
-		logger.Info("Labels not equal",
+		logger.Info("Ingress Labels not equal",
 			"old", fmt.Sprintf("%v", oldIngress.ObjectMeta.Labels),
 			"new", fmt.Sprintf("%v", newIngress.ObjectMeta.Labels))
 		return false
