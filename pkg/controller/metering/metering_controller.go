@@ -167,10 +167,10 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	// get appDomain
 	ing := &ocpoperatorv1.IngressController{}
 	namespace := types.NamespacedName{Name: "default", Namespace: "openshift-ingress-operator"}
-	if err := r.client.Get(context.TODO(), namespace, ing); err != nil {
+	err := r.client.Get(context.TODO(), namespace, ing)
+	if err != nil {
 		reqLogger.Error(err, "Failed to get IngressController")
-	}
-	if ing != nil {
+	} else {
 		appDomain := ing.Status.Domain
 		if len(appDomain) > 0 {
 			routeHost = appDomain
@@ -186,7 +186,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// Fetch the Metering CR instance
 	instance := &operatorv1alpha1.Metering{}
-	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.

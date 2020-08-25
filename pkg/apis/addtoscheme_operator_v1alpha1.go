@@ -18,11 +18,13 @@ package apis
 
 import (
 	"github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
+	ocpoperatorv1 "github.com/openshift/api/operator/v1"
 	ocproutev1 "github.com/openshift/api/route/v1"
 	apiregistrationv1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1"
 )
 
 func init() {
 	// Register the types with the Scheme so the components can map objects to GroupVersionKinds and back
-	AddToSchemes = append(AddToSchemes, v1alpha1.SchemeBuilder.AddToScheme, apiregistrationv1.AddToScheme, ocproutev1.AddToScheme)
+	AddToSchemes = append(AddToSchemes, v1alpha1.SchemeBuilder.AddToScheme, apiregistrationv1.AddToScheme,
+		ocproutev1.AddToScheme, ocpoperatorv1.AddToScheme)
 }
