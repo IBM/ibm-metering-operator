@@ -35,9 +35,11 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -64,6 +66,9 @@ var log = logf.Log.WithName("controller_metering")
 
 var isRACMHub = false
 var routeHost = ""
+var ingressClient client.Client
+var scheme = runtime.NewScheme()
+var OperatorSchemeGroupVersion = schema.GroupVersion{Group: "operator.openshift.io", Version: "v1"}
 
 /**
 * USER ACTION REQUIRED: This is a scaffold file intended for the user to modify with their own Controller
@@ -73,12 +78,32 @@ var routeHost = ""
 // Add creates a new Metering Controller and adds it to the Manager. The Manager will set fields on the Controller
 // and Start it when the Manager is Started.
 func Add(mgr manager.Manager) error {
+	logger := log.WithValues("func", "Add")
+	// In order to get the IngressController, which is not in the Watch namespace,
+	// we need a client that can perform operations across namespaces.
+	cfg, err := config.GetConfig()
+	if err != nil {
+		logger.Error(err, "Failed to get config")
+		return err
+	}
+	scheme.AddKnownTypes(OperatorSchemeGroupVersion,
+		&ocpoperatorv1.IngressController{}, &ocpoperatorv1.IngressControllerList{})
+	ingressClient, err = client.New(cfg, client.Options{Scheme: scheme})
+	if err != nil {
+		logger.Error(err, "Failed to create ingressClient")
+		return err
+	}
+
 	return add(mgr, newReconciler(mgr))
 }
 
 // newReconciler returns a new reconcile.Reconciler
 func newReconciler(mgr manager.Manager) reconcile.Reconciler {
-	return &ReconcileMetering{client: mgr.GetClient(), scheme: mgr.GetScheme()}
+	return &ReconcileMetering{
+		client:        mgr.GetClient(),
+		clusterClient: ingressClient,
+		scheme:        mgr.GetScheme(),
+	}
 }
 
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
@@ -145,9 +170,14 @@ var _ reconcile.Reconciler = &ReconcileMetering{}
 // ReconcileMetering reconciles a Metering object
 type ReconcileMetering struct {
 	// This client, initialized using mgr.Client() above, is a split client
-	// that reads objects from the cache and writes to the apiserver
+	// that reads objects from the cache and writes to the kube API server.
+	// It is associated with the Watch namespace.
 	client client.Client
-	scheme *runtime.Scheme
+	// This client, initialized using Add() above,
+	// reads and writes directly to the kube API server.
+	// It can perform operations across namespaces.
+	clusterClient client.Client
+	scheme        *runtime.Scheme
 }
 
 // Reconcile reads that state of the cluster for a Metering object and makes changes based on the state read
@@ -202,7 +232,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	if instance.Spec.MultiCloudReceiverEnabled {
 		ing := &ocpoperatorv1.IngressController{}
 		namespace := types.NamespacedName{Name: "default", Namespace: "openshift-ingress-operator"}
-		err := r.client.Get(context.TODO(), namespace, ing)
+		err := r.clusterClient.Get(context.TODO(), namespace, ing)
 		if err != nil {
 			reqLogger.Error(err, "Failed to get IngressController")
 		} else {
@@ -210,6 +240,7 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 			if len(appDomain) > 0 {
 				routeHost = appDomain
 			}
+			reqLogger.Info("got IngressController, routeHost=" + routeHost)
 		}
 
 		//Check RHACM
