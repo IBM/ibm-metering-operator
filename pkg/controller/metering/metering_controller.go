@@ -164,29 +164,9 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 	// if we need to create several resources, set a flag so we just requeue one time instead of after each create.
 	needToRequeue := false
 
-	// get appDomain
-	ing := &ocpoperatorv1.IngressController{}
-	namespace := types.NamespacedName{Name: "default", Namespace: "openshift-ingress-operator"}
-	err := r.client.Get(context.TODO(), namespace, ing)
-	if err != nil {
-		reqLogger.Error(err, "Failed to get IngressController")
-	} else {
-		appDomain := ing.Status.Domain
-		if len(appDomain) > 0 {
-			routeHost = appDomain
-		}
-	}
-
-	//Check RHACM
-	rhacmErr := res.CheckRhacm(r.client)
-	if rhacmErr == nil {
-		// multiclusterhub found, this means RHACM exists
-		isRACMHub = true
-	}
-
 	// Fetch the Metering CR instance
 	instance := &operatorv1alpha1.Metering{}
-	err = r.client.Get(context.TODO(), request.NamespacedName, instance)
+	err := r.client.Get(context.TODO(), request.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -211,6 +191,32 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		if err != nil {
 			reqLogger.Error(err, "Failed to set Metering default status")
 			return reconcile.Result{}, err
+		}
+	}
+
+	//If the metering receiver is enabled then find the app domain used for route and certificate generation
+	//and determine if this is a RACM hub
+	// get appDomain
+	isRACMHub = false
+	routeHost = ""
+	if instance.Spec.MultiCloudReceiverEnabled {
+		ing := &ocpoperatorv1.IngressController{}
+		namespace := types.NamespacedName{Name: "default", Namespace: "openshift-ingress-operator"}
+		err := r.client.Get(context.TODO(), namespace, ing)
+		if err != nil {
+			reqLogger.Error(err, "Failed to get IngressController")
+		} else {
+			appDomain := ing.Status.Domain
+			if len(appDomain) > 0 {
+				routeHost = appDomain
+			}
+		}
+
+		//Check RHACM
+		rhacmErr := res.CheckRhacm(r.client)
+		if rhacmErr == nil {
+			// multiclusterhub found, this means RHACM exists
+			isRACMHub = true
 		}
 	}
 
@@ -358,6 +364,38 @@ func (r *ReconcileMetering) reconcileAllServices(instance *operatorv1alpha1.Mete
 				return err
 			}
 		}
+	} else {
+		//If the multicloud receiver is disabled then make sure the service and route to it are deleted
+		receiverService := &corev1.Service{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReceiverServiceName, Namespace: instance.Namespace}, receiverService)
+		if err == nil {
+			//found the service, it should be removed
+			err := r.client.Delete(context.TODO(), receiverService)
+			if err != nil {
+				reqLogger.Error(err, "Failed to delete receiver Service after the receiver was disabled")
+			} else {
+				reqLogger.Info("Deleted receiver Service after the receiver was disabled")
+			}
+		} else if !errors.IsNotFound(err) {
+			//Report error if not found
+			reqLogger.Error(err, "Failed to delete the receiver Service")
+		}
+
+		//If the multicloud receiver is disabled then make sure the route has also been deleted
+		receiverRoute := &ocproutev1.Route{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReceiverRouteName, Namespace: instance.Namespace}, receiverRoute)
+		if err == nil {
+			//found route that should be deleted since the multicloud receiver is disabled
+			err := r.client.Delete(context.TODO(), receiverRoute)
+			if err != nil {
+				reqLogger.Error(err, "Failed to delete receiver Route after the receiver was disabled")
+			} else {
+				reqLogger.Info("Deleted receiver Route after the receiver was disabled")
+			}
+		} else if !errors.IsNotFound(err) {
+			//Report error if not found
+			reqLogger.Error(err, "Failed to delete the receiver Route")
+		}
 	}
 
 	return nil
@@ -378,8 +416,16 @@ func (r *ReconcileMetering) reconcileAllCertificates(instance *operatorv1alpha1.
 	for _, certData := range certificateList {
 		reqLogger.Info("Checking Certificate", "Certificate.Name", certData.Name)
 		newCertificate := res.BuildCertificate(instance.Namespace, instance.Spec.ClusterIssuer, certData)
+
 		// add a new dnsname for certificate, this will be used for sender
-		newCertificate.Spec.DNSNames = append(newCertificate.Spec.DNSNames, "metering-receiver."+routeHost)
+		if newCertificate.Name == res.ReceiverCertName {
+			if len(routeHost) > 0 {
+				newCertificate.Spec.DNSNames = append(newCertificate.Spec.DNSNames, "metering-receiver."+routeHost)
+			} else {
+				reqLogger.Info("WARNING: Hub route host for metering receiver certificate is not set - data delivery to the hub will not be possible")
+			}
+		}
+
 		// Set Metering instance as the owner and controller of the Certificate
 		err := controllerutil.SetControllerReference(instance, newCertificate, r.scheme)
 		if err != nil {
@@ -392,6 +438,42 @@ func (r *ReconcileMetering) reconcileAllCertificates(instance *operatorv1alpha1.
 			return err
 		}
 	}
+
+	//If the multicloud receiver is disabled, ensure that receiver certificate is gone
+	if !instance.Spec.MultiCloudReceiverEnabled {
+		receiverCert := &certmgr.Certificate{}
+		err := r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReceiverCertificateData.Name, Namespace: instance.Namespace}, receiverCert)
+		if err == nil {
+			//found the cert, it should be removed
+			err := r.client.Delete(context.TODO(), receiverCert)
+			if err != nil {
+				reqLogger.Error(err, "Failed to delete receiver Certificate after the receiver was disabled")
+			} else {
+				reqLogger.Info("Deleted receiver Certificate after the receiver was disabled")
+			}
+		} else if !errors.IsNotFound(err) {
+			//Report error if not found
+			reqLogger.Error(err, "Failed to delete the receiver Certificate")
+		}
+
+		//also delete the secret
+		receiverCertSecret := &corev1.Secret{}
+		err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReceiverCertificateData.Secret, Namespace: instance.Namespace}, receiverCertSecret)
+		if err == nil {
+			//found the cert secret, it should be removed
+			err := r.client.Delete(context.TODO(), receiverCertSecret)
+			if err != nil {
+				reqLogger.Error(err, "Failed to delete receiver Certificate Secret after the receiver was disabled")
+			} else {
+				reqLogger.Info("Deleted receiver Certificate Secret after the receiver was disabled")
+			}
+		} else if !errors.IsNotFound(err) {
+			//Report error if not found
+			reqLogger.Error(err, "Failed to delete the receiver Certificate Secret")
+		}
+
+	}
+
 	return nil
 }
 
@@ -679,6 +761,12 @@ func (r *ReconcileMetering) serviceForReceiver(instance *operatorv1alpha1.Meteri
 // routeForReceiver returns a Receiver Route object
 func (r *ReconcileMetering) routeForReceiver(instance *operatorv1alpha1.Metering) (*ocproutev1.Route, error) {
 	reqLogger := log.WithValues("func", "routeForReceiver", "instance.Name", instance.Name)
+
+	if len(routeHost) == 0 {
+		err := errors.NewBadRequest("Hub routeHost is not set so receiver route cannot be created")
+		return nil, err
+	}
+
 	metaLabels := res.LabelsForMetadata(res.ReceiverRouteName)
 	weight := int32(100)
 
