@@ -553,7 +553,7 @@ spec:
                 - ibm-metering-operator
                 env:
                 - name: IMAGE_SHA_OR_TAG_DM
-                  value: sha256:9f1928a52342e59c39265d2256da19ae1541fea3b51d44dd8ee3f9316d19e4cb
+                  value: sha256:9739cc64a359b6f59d5970f3f90829116ba4715e5e152ec4e64f7dcdce2979e4
                 - name: IMAGE_SHA_OR_TAG_UI
                   value: sha256:9e7488fa8161a16a62a0cbf10928c78d9687dd20fedcc61c023278bcb127abeb
                 - name: IMAGE_SHA_OR_TAG_MCMUI
@@ -574,7 +574,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator@sha256:e6e017c37e6d174cc819207a6b4b1354e33c6f806e9467dbae304c70ee2a7298
+                image: quay.io/opencloudio/ibm-metering-operator@sha256:85d3eb6b2ecfe222eafb2f565e61d30a45d20ebf3edb7fd226fc358d5a1c8abc
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
@@ -691,6 +691,19 @@ spec:
           resources:
           - '*'
           - ingresses
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - route.openshift.io
+          resources:
+          - routes
+          - routes/custom-host
           verbs:
           - create
           - delete
