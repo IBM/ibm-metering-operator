@@ -58,5 +58,5 @@ type MeteringStatus struct {
 	// Add custom validation using kubebuilder tags: https://book-v1.book.kubebuilder.io/beyond_basics/generating_crd.html
 	// PodNames are the names of the metering pods
 	PodNames []string      `json:"podNames"`
-	Versions StatusVersion `json:"versions"`
+	Versions StatusVersion `json:"versions,omitempty"`
 }
