@@ -383,6 +383,7 @@ func (r *ReconcileMetering) reconcileAllServices(instance *operatorv1alpha1.Mete
 		if err != nil {
 			return err
 		}
+		reqLogger.Info("Checking isRACMHub", "value", isRACMHub)
 		if isRACMHub {
 			reqLogger.Info("Checking Receiver Route", "Route.Name", res.ReceiverRouteName)
 			// Check if the Receiver Route already exists, if not create a new one
@@ -390,7 +391,7 @@ func (r *ReconcileMetering) reconcileAllServices(instance *operatorv1alpha1.Mete
 			if err != nil {
 				return err
 			}
-			err = res.ReconcileRoute(r.client, instance.Namespace, res.ReceiverRouteName, "Route", newReceiverRoute, needToRequeue)
+			err = res.ReconcileRoute(r.client, instance.Namespace, res.ReceiverRouteName, "Receiver", newReceiverRoute, needToRequeue)
 			if err != nil {
 				return err
 			}

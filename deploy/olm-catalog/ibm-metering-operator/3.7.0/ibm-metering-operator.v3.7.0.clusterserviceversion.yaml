@@ -228,6 +228,9 @@ spec:
         - description: The list of Pods for the Metering multicloud UI service
           displayName: Pod Status
           path: podNames
+        - description: Reconciled versions
+          displayName: Versions
+          path: versions
       resources:
         - kind: Service
           name: ''
@@ -264,6 +267,9 @@ spec:
         - description: The list of Pods for the Metering report service
           displayName: Pod Status
           path: podNames
+        - description: Reconciled versions
+          displayName: Versions
+          path: versions
       resources:
         - kind: Service
           name: ''
@@ -307,10 +313,16 @@ spec:
         - description: Boolean to enable MultiCloudReceiver
           displayName: MultiCloudReceiverEnabled
           path: multiCloudReceiverEnabled
+        - description: Boolean to control metering of system namespaces
+          displayName: ExcludeSystemNamespaces
+          path: excludeSystemNamespaces
       statusDescriptors:
         - description: The list of Pods for the Metering service
           displayName: Pod Status
           path: podNames
+        - description: Reconciled versions
+          displayName: Versions
+          path: versions
       resources:
         - kind: Service
           name: ''
@@ -355,6 +367,9 @@ spec:
         - description: The list of Pods for the Metering multicloud sender service
           displayName: Pod Status
           path: podNames
+        - description: Reconciled versions
+          displayName: Versions
+          path: versions
       resources:
         - kind: Deployment
           name: ''
@@ -390,6 +405,9 @@ spec:
         - description: The list of Pods for the Metering UI service
           displayName: Pod Status
           path: podNames
+        - description: Reconciled versions
+          displayName: Versions
+          path: versions
       resources:
         - kind: Service
           name: ''
@@ -574,7 +592,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator@sha256:85d3eb6b2ecfe222eafb2f565e61d30a45d20ebf3edb7fd226fc358d5a1c8abc
+                image: quay.io/opencloudio/ibm-metering-operator@sha256:7e7bcbe05b3afbf61ad973316c3f7855b38a020be1096442ec099c0c8ec768b7
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
