@@ -41,7 +41,7 @@ spec:
       containers:
         - name: ibm-metering-operator
           # Replace this with the built image name
-          image: quay.io/opencloudio/ibm-metering-operator@sha256:85d3eb6b2ecfe222eafb2f565e61d30a45d20ebf3edb7fd226fc358d5a1c8abc
+          image: quay.io/opencloudio/ibm-metering-operator@sha256:fc9fe704a88226a83c5aade9090277c7a0d1e0259daa207665aef4e8cedd0173
           command:
           - ibm-metering-operator
           imagePullPolicy: Always
