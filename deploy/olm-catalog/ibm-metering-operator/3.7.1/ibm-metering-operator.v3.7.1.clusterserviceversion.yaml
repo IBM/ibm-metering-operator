@@ -196,6 +196,11 @@ metadata:
       deploy and upgrade the Metering services.
     repository: https://github.com/IBM/ibm-metering-operator
     support: IBM
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.ppc64le: supported
+    operatorframework.io/arch.s390x: supported
+    operatorframework.io/os.linux: supported
   name: ibm-metering-operator.v3.7.1
   namespace: ibm-common-services
 spec:
@@ -574,7 +579,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator@sha256:85d3eb6b2ecfe222eafb2f565e61d30a45d20ebf3edb7fd226fc358d5a1c8abc
+                image: quay.io/opencloudio/ibm-metering-operator@sha256:fc9fe704a88226a83c5aade9090277c7a0d1e0259daa207665aef4e8cedd0173
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
