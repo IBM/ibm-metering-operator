@@ -192,27 +192,35 @@ func addMetrics(ctx context.Context, cfg *rest.Config, namespace string) {
 // serveCRMetrics gets the Operator/CustomResource GVKs and generates metrics based on those types.
 // It serves those metrics on "http://metricsHost:operatorMetricsPort".
 func serveCRMetrics(cfg *rest.Config) error {
-	// Below function returns filtered operator/CustomResource specific GVKs.
-	// For more control override the below GVK list with your own custom logic.
+	// The function below returns a list of filtered operator/CR specific GVKs. For more control,
+	// override the GVK list below with your own custom logic. Note that if you are adding third party API schemas,
+	// probably you will need to customize this implementation to avoid permissions issues.
 	filteredGVK, err := k8sutil.GetGVKsFromAddToScheme(apis.AddToScheme)
 	if err != nil {
 		return err
 	}
-	// since the operator is namespace-scoped, the ServiceMonitor cannot
+	// Since the operator is namespace-scoped, the ServiceMonitor cannot
 	// collect metrics for cluster-scoped resources.
 	// APIService and MeteringReportServer are cluster-scoped resources.
-	// remove those resources from the GVK list.
-	myGVK := filteredGVK
-	resourceList := []string{"APIService", "MeteringReportServer"}
-	for _, resource := range resourceList {
-		for i := range myGVK {
-			if myGVK[i].Kind == resource {
-				log.Info("removing " + resource + " from the GVK list")
-				myGVK = removeGVK(myGVK, i)
-				break
+	// There may be other cluster-scoped resources.
+	// So, remove everything except our resources from the GVK list.
+	var myGVK []schema.GroupVersionKind
+	for _, gvk := range filteredGVK {
+		if gvk.Group == "operator.ibm.com" {
+			// found one of our resources, so check for MeteringReportServer
+			if gvk.Kind == "MeteringReportServer" {
+				log.Info("removing " + gvk.Kind + " from the GVK list")
+			} else {
+				// leave our resources in GVK list
+				log.Info("adding " + gvk.Kind + " to the GVK list")
+				myGVK = append(myGVK, gvk)
 			}
+		} else {
+			// not one of our resources, so remove it
+			log.Info("removing group=" + gvk.Group + ", ver=" + gvk.Version + ", kind=" + gvk.Kind + " from the GVK list")
 		}
 	}
+
 	// Get the namespace the operator is currently deployed in.
 	operatorNs, err := k8sutil.GetOperatorNamespace()
 	if err != nil {
@@ -226,12 +234,4 @@ func serveCRMetrics(cfg *rest.Config) error {
 		return err
 	}
 	return nil
-}
-
-// remove cluster-scoped resources from the GVK list
-func removeGVK(gvkList []schema.GroupVersionKind, i int) []schema.GroupVersionKind {
-	// copy last element to index i
-	gvkList[i] = gvkList[len(gvkList)-1]
-	// truncate and return the slice
-	return gvkList[:len(gvkList)-1]
 }
