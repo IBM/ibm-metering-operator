@@ -17,7 +17,6 @@
 package resources
 
 import (
-	"context"
 	"strconv"
 	"strings"
 
@@ -29,11 +28,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	netv1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -848,20 +846,21 @@ func GetImageID(instanceImageRegistry, instanceImageTagPostfix, defaultImageRegi
 }
 
 //CheckRhacm checks if RHACM exists
-func CheckRhacm(client client.Client) error {
+func CheckRhacm(cfg *rest.Config) error {
+	reqLogger := log.WithValues("func", "CheckRhacm")
+	rhr := &schema.GroupVersionResource{
+		Resource: "multiclusterhubs",
+		Group:    "operator.open-cluster-management.io",
+		Version:  "v1",
+	}
 
-	multiClusterHubType := &unstructured.Unstructured{}
-	multiClusterHubType.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   "operator.open-cluster-management.io",
-		Kind:    "MultiClusterHub",
-		Version: "v1",
-	})
+	di := dynamic.NewForConfigOrDie(cfg)
 
-	rhacmErr := client.Get(context.Background(), types.NamespacedName{
-		Namespace: "open-cluster-management",
-		Name:      "multiclusterhub",
-	}, multiClusterHubType)
+	_, err := di.Resource(*rhr).List(metav1.ListOptions{})
+	if err == nil {
+		reqLogger.Info("Found racm hub:", rhr)
+	}
 
-	return rhacmErr
+	return err
 
 }

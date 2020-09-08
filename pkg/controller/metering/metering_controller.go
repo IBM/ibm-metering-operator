@@ -244,7 +244,12 @@ func (r *ReconcileMetering) Reconcile(request reconcile.Request) (reconcile.Resu
 		}
 
 		//Check RHACM
-		rhacmErr := res.CheckRhacm(r.client)
+		cfg, err := config.GetConfig()
+		if err != nil {
+			reqLogger.Error(err, "Failed to get config")
+			return reconcile.Result{}, err
+		}
+		rhacmErr := res.CheckRhacm(cfg)
 		if rhacmErr == nil {
 			// multiclusterhub found, this means RHACM exists
 			isRACMHub = true
