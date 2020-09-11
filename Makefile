@@ -16,10 +16,11 @@
 # Override this variable in CI env.
 BUILD_LOCALLY ?= 1
 
-# set these variables to the tag or SHA for the ubi image used in the Dockerfile
-UBI_IMAGE_TAG_AMD=8.2-345
-UBI_IMAGE_SHA_PPC=d397c81371b235816967b1140ace8cb0b621f1872b8a1c1131658e7aac5fb95c
-UBI_IMAGE_SHA_390=cc1a7031050564fe76969d249a6d89aadbd5ea7a8969b21718c09ceb77d57715
+# set these variables to the tag or SHA for the ubi image used in the Dockerfile.
+# use 'docker manifest inspect registry.access.redhat.com/ubi8/ubi-minimal:<tag>' to get the SHA values
+UBI_IMAGE_TAG_AMD=8.2-349
+UBI_IMAGE_SHA_PPC=2507309a69f786388f4aad70cfd27a4582f3bd2df19a4608166845a1ba4d6f36
+UBI_IMAGE_SHA_390=8782de8892bd10bbfa0220442fc71d45e660f0e8a811000f0f5d729ebffff645
 
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overriding the IMG and REGISTRY environment variable.
@@ -33,10 +34,10 @@ CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
 OPERAND_REGISTRY ?= "hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom"
-OPERAND_TAG_DM ?= 3.6.0
-OPERAND_TAG_UI ?= 3.6.0
-OPERAND_TAG_MCMUI ?= 3.6.0
-OPERAND_TAG_REPORT ?= 3.6.0
+OPERAND_TAG_DM ?= 3.6.1
+OPERAND_TAG_UI ?= 3.6.1
+OPERAND_TAG_MCMUI ?= 3.6.1
+OPERAND_TAG_REPORT ?= 3.6.1
 
 # Github host to use for checking the source tree;
 # Override this variable ue with your own value if you're working on forked repo.
