@@ -16,37 +16,48 @@
 #
 # Use this script to upload images for Red Hat certification
 #
-# ./push-images-rh.sh [image-name]:[tag] <Registry Key from RH cert> <Tag sample cmd from RH cert> <-scan>
+# ./push-images-rh.sh <image-name> <tag> <arch> <Registry Key from RH cert> <RH PID> <-scan>
 #
-# goto Upload Your Image -> View Registry Key and copy the Registry Key
-# goto Upload Your Image -> Tag Your Container and copy the "docker tag" cmd
+# Go to the "images" URL (https://connect.redhat.com/project/4450911/images)
+# - under Container Images -> PID, copy the ospid value for <RH PID>
+# - select "Push Image Manually", goto View Registry Key and copy the Registry Key for <Registry Key from RH cert>
+# OLD: go to the "view" URL (https://connect.redhat.com/project/4450911/images)
+# - goto Upload Your Image -> View Registry Key and copy the Registry Key
+# - goto Upload Your Image -> Tag Your Container and copy the ospid value from the "docker tag" cmd
 #
 # registry-key: <a very very long string, over 1000 chars>
-# tag-cmd:      docker tag [image-id] scan.connect.redhat.com/ospid-b05fd075-5d9a-421f-bab6-033a443b2d35/[image-name]:[tag]
+# tag-cmd:      docker tag [image-id] scan.connect.redhat.com/<ospid value>/[image-name]:[tag]
 #
-# use the "-scan" parm the first time to upload the image with a temp tag so you can verify the image will pass the scan
+# Use the "-scan" parm the first time to upload the image with a temp tag so you can verify the image will pass the scan.
+# To make the command line parameters easier to manage, put the registry-key in an env var like REG_KEY
+#   ./push-images-rh.sh <image-name> <tag> <arch> $REG_KEY <RH PID> <-scan>
 #
 
-IMAGE=$(echo "$1" | cut -d ':' -f1)
-TAG=$(echo "$1" | cut -d ':' -f2)
-PASSWORD=$2
-REPO=$(echo "$6" | cut -d '/' -f2)
-TEST=$7
+IMAGE_NAME=$1
+TAG=$2
+ARCH=$3
+PASSWORD=$4
+RH_PID=$5
+TEST=$6
 
-QUAY=quay.io/opencloudio/$IMAGE:$TAG
-REDHAT=scan.connect.redhat.com/$REPO/$IMAGE:$TAG$TEST
 
-echo "### This is going to pull your image from quay"
-echo docker pull "$QUAY"
+# OLD: QUAY=quay.io/opencloudio/$IMAGE:$TAG
+# LOCAL_IMAGE example: hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom/metering-data-manager-ppc64le:3.6.0
+# SCAN_IMAGE example: 
+LOCAL_IMAGE=hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom/$IMAGE_NAME-$ARCH:$TAG
+SCAN_IMAGE=scan.connect.redhat.com/$RH_PID/$IMAGE_NAME:$TAG-$ARCH$TEST
+
+echo "### This is going to pull your image from the repo"
+echo docker pull "$LOCAL_IMAGE"
 echo
 echo "### This will log you into your RH project for THIS image"
 echo docker login -u unused -p "$PASSWORD" scan.connect.redhat.com
 echo
-echo "### This will tag the quay image for redhat scan"
-echo docker tag "$QUAY" "$REDHAT"
+echo "### This will tag the image for RH scan"
+echo docker tag "$LOCAL_IMAGE" "$SCAN_IMAGE"
 echo
-echo "### This will push to redhat...if this is the first scan there MUST be something appended to the end."
-echo docker push "$REDHAT"
+echo "### This will push to Red Hat... if this is the first scan there MUST be something appended to the end."
+echo docker push "$SCAN_IMAGE"
 
 echo
 echo
@@ -58,7 +69,7 @@ then
   exit 1
 fi
 
-docker pull "$QUAY"
+docker pull "$LOCAL_IMAGE"
 docker login -u unused -p "$PASSWORD" scan.connect.redhat.com
-docker tag "$QUAY" "$REDHAT"
-docker push "$REDHAT"
+docker tag "$LOCAL_IMAGE" "$SCAN_IMAGE"
+docker push "$SCAN_IMAGE"

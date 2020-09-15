@@ -235,8 +235,8 @@ csv: ## Push CSV package to the catalog
 # SHA section
 ############################################################
 .PHONY: get-all-image-sha
-get-all-image-sha: get-report-image-sha get-mcmui-image-sha get-ui-image-sha get-dm-image-sha get-oper-image-sha
-	@echo Got SHAs for all operand images and operator images
+get-all-image-sha: get-report-image-sha get-mcmui-image-sha get-ui-image-sha get-dm-image-sha
+	@echo Got SHAs for all operand images
 
 .PHONY: get-oper-image-sha
 get-oper-image-sha:
