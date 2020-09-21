@@ -578,9 +578,9 @@ spec:
                 - name: IMAGE_SHA_OR_TAG_DM
                   value: sha256:bd9a1f36a3554268e575f62f088d2faaf2f0a8f81a22f63fb1f5f3f04802f98d
                 - name: IMAGE_SHA_OR_TAG_UI
-                  value: sha256:61d225ce48c2ce30a43faab5d366cf1395e55c15cc3d27d9b0520a18518c516b
+                  value: sha256:a95baa26b86d04acaddc1417e72fede9a611bff28cff123d406dea2233ac1c51
                 - name: IMAGE_SHA_OR_TAG_MCMUI
-                  value: sha256:433140cbce4d48d98b0a1287bb836a79770fb204a06dbe0ec9a70859a0bdbf85
+                  value: sha256:741029550b32d53d758c9b8809d72c1e6a4af15e5edd08b4477aafd32dcf2eea
                 - name: IMAGE_SHA_OR_TAG_REPORT
                   value: sha256:40736d6cccf5705b2512455e9f4376acc655452ff2ae5acda30d1e7f4c8b7889
                 - name: WATCH_NAMESPACE
