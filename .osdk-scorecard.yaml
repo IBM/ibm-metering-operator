@@ -18,4 +18,4 @@ scorecard:
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringsender_cr.yaml"
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringui_cr.yaml"
           - "deploy/crds/operator.ibm.com_v1alpha1_meteringreportserver_cr.yaml"
-        csv-path: "deploy/olm-catalog/ibm-metering-operator/3.7.1/ibm-metering-operator.v3.7.1.clusterserviceversion.yaml"
+        csv-path: "deploy/olm-catalog/ibm-metering-operator/3.7.2/ibm-metering-operator.v3.7.2.clusterserviceversion.yaml"
