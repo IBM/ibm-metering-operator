@@ -90,8 +90,8 @@ CURR_TIME=$(TZ=":UTC" date  +'%FT%R:00Z')
 #---------------------------------------------------------
 $SED -e "s|name: ${OPERATOR_NAME}\(.*\)${LAST_CSV_VERSION}|name: ${OPERATOR_NAME}\1${NEW_CSV_VERSION}|" -i "${NEW_CSV_FILE}"
 $SED -e "s|olm.skipRange: \(.*\)${LAST_CSV_VERSION}\(.*\)|olm.skipRange: \1${NEW_CSV_VERSION}\2|" -i "${NEW_CSV_FILE}"
-$SED -e "s|image: \(.*\)${OPERATOR_NAME}\(.*\)|image: \1${OPERATOR_NAME}:latest|" -i "${NEW_CSV_FILE}"
-$SED -e "s|containerImage: \(.*\)${OPERATOR_NAME}\(.*\)|containerImage: \1${OPERATOR_NAME}:latest|" -i "${NEW_CSV_FILE}"
+$SED -e "s|image: \(.*\)${OPERATOR_NAME}\(.*\)|image: \1${OPERATOR_NAME}:${NEW_CSV_VERSION}|" -i "${NEW_CSV_FILE}"
+$SED -e "s|containerImage: \(.*\)${OPERATOR_NAME}\(.*\)|containerImage: \1${OPERATOR_NAME}:${NEW_CSV_VERSION}|" -i "${NEW_CSV_FILE}"
 $SED -e "s|replaces: ${OPERATOR_NAME}\(.*\)${PREVIOUS_CSV_VERSION}|replaces: ${REPLACES_VERSION}|" -i "${NEW_CSV_FILE}"
 # update the operator version - version: 3.6.2
 $SED -e "s|version: ${LAST_CSV_VERSION}|version: ${NEW_CSV_VERSION}|" -i "${NEW_CSV_FILE}"
@@ -128,7 +128,7 @@ if ! [ -f "${OPERATOR_YAML}" ]; then
     exit 1
 fi
 echo -e "\n[INFO] Updating 'image tag' in ${OPERATOR_YAML}"
-$SED -e "s|image: \(.*\)${OPERATOR_NAME}\(.*\)|image: \1${OPERATOR_NAME}:latest|" -i "${OPERATOR_YAML}"
+$SED -e "s|image: \(.*\)${OPERATOR_NAME}\(.*\)|image: \1${OPERATOR_NAME}:${NEW_CSV_VERSION}|" -i "${OPERATOR_YAML}"
 
 #---------------------------------------------------------
 # update the CR yaml files
