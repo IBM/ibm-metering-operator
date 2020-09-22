@@ -488,25 +488,26 @@ func (r *ReconcileMetering) reconcileAllCertificates(instance *operatorv1alpha1.
 			} else {
 				reqLogger.Info("Deleted receiver Certificate after the receiver was disabled")
 			}
+
+			//also delete the secret
+			receiverCertSecret := &corev1.Secret{}
+			err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReceiverCertificateData.Secret, Namespace: instance.Namespace}, receiverCertSecret)
+			if err == nil {
+				//found the cert secret, it should be removed
+				err := r.client.Delete(context.TODO(), receiverCertSecret)
+				if err != nil {
+					reqLogger.Error(err, "Failed to delete receiver Certificate Secret after the receiver was disabled")
+				} else {
+					reqLogger.Info("Deleted receiver Certificate Secret after the receiver was disabled")
+				}
+			} else if !errors.IsNotFound(err) {
+				//Report error if not found
+				reqLogger.Error(err, "Failed to delete the receiver Certificate Secret")
+			}
+
 		} else if !errors.IsNotFound(err) {
 			//Report error if not found
 			reqLogger.Error(err, "Failed to delete the receiver Certificate")
-		}
-
-		//also delete the secret
-		receiverCertSecret := &corev1.Secret{}
-		err = r.client.Get(context.TODO(), types.NamespacedName{Name: res.ReceiverCertificateData.Secret, Namespace: instance.Namespace}, receiverCertSecret)
-		if err == nil {
-			//found the cert secret, it should be removed
-			err := r.client.Delete(context.TODO(), receiverCertSecret)
-			if err != nil {
-				reqLogger.Error(err, "Failed to delete receiver Certificate Secret after the receiver was disabled")
-			} else {
-				reqLogger.Info("Deleted receiver Certificate Secret after the receiver was disabled")
-			}
-		} else if !errors.IsNotFound(err) {
-			//Report error if not found
-			reqLogger.Error(err, "Failed to delete the receiver Certificate Secret")
 		}
 
 	}
