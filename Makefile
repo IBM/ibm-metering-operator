@@ -34,10 +34,10 @@ CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
 OPERAND_REGISTRY ?= "hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom"
-OPERAND_TAG_DM ?= 3.6.1
-OPERAND_TAG_UI ?= 3.6.2
-OPERAND_TAG_MCMUI ?= 3.6.2
-OPERAND_TAG_REPORT ?= 3.6.1
+OPERAND_TAG_DM ?= 3.7.0
+OPERAND_TAG_UI ?= 3.7.0
+OPERAND_TAG_MCMUI ?= 3.7.0
+OPERAND_TAG_REPORT ?= 3.7.0
 
 # Github host to use for checking the source tree;
 # Override this variable ue with your own value if you're working on forked repo.
@@ -323,6 +323,8 @@ install: ## Install all resources (CR/CRD's, RBCA and Operator)
 	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_metering_cr.yaml -n ${NAMESPACE}
 	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_meteringui_cr.yaml -n ${NAMESPACE}
 	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_meteringreportserver_cr.yaml -n ${NAMESPACE}
+#	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_meteringsender_cr.yaml -n ${NAMESPACE}
+#	- kubectl apply -f deploy/crds/operator.ibm.com_v1alpha1_meteringmulticloudui_cr.yaml -n ${NAMESPACE}
 
 uninstall: ## Uninstall all resources created in the $ make install
 	@echo ....... Uninstalling .......
@@ -330,6 +332,8 @@ uninstall: ## Uninstall all resources created in the $ make install
 	- kubectl delete -f deploy/crds/operator.ibm.com_v1alpha1_metering_cr.yaml -n ${NAMESPACE}
 	- kubectl delete -f deploy/crds/operator.ibm.com_v1alpha1_meteringui_cr.yaml -n ${NAMESPACE}
 	- kubectl delete -f deploy/crds/operator.ibm.com_v1alpha1_meteringreportserver_cr.yaml -n ${NAMESPACE}
+#	- kubectl delete -f deploy/crds/operator.ibm.com_v1alpha1_meteringsender_cr.yaml -n ${NAMESPACE}
+#	- kubectl delete -f deploy/crds/operator.ibm.com_v1alpha1_meteringmulticloudui_cr.yaml -n ${NAMESPACE}
 	@echo ....... Deleting Operator .......
 	- kubectl delete -f deploy/olm-catalog/${BASE_DIR}/${CSV_VERSION}/${BASE_DIR}.v${CSV_VERSION}.clusterserviceversion.yaml -n ${NAMESPACE}
 	@echo ....... Deleting CRDs.......

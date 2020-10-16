@@ -1,9 +1,9 @@
 channels:
-- currentCSV: ibm-metering-operator.v3.7.1
+- currentCSV: ibm-metering-operator.v3.8.0
   name: beta
-- currentCSV: ibm-metering-operator.v3.7.2
+- currentCSV: ibm-metering-operator.v3.8.0
   name: dev
-- currentCSV: ibm-metering-operator.v3.7.1
+- currentCSV: ibm-metering-operator.v3.7.2
   name: stable-v1
 defaultChannel: stable-v1
 packageName: ibm-metering-operator-app
