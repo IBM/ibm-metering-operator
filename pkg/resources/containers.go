@@ -50,10 +50,10 @@ const WatchNamespaceV350 = "ibm-common-services"
 // run scripts/get-image-sha.sh to update operator.yaml with the SHA values.
 // a SHA value looks like this: "sha256:nnnnnnnn"
 // a tag value looks like this: "3.5.0".
-const DefaultDmImageTag = "3.6.1"
-const DefaultReportImageTag = "3.6.1"
-const DefaultUIImageTag = "3.6.2"
-const DefaultMcmUIImageTag = "3.6.2"
+const DefaultDmImageTag = "3.7.0"
+const DefaultReportImageTag = "3.7.0"
+const DefaultUIImageTag = "3.7.0"
+const DefaultMcmUIImageTag = "3.7.0"
 
 // define the env vars that contain either the SHA or the tag
 const VarImageSHAforDM = "IMAGE_SHA_OR_TAG_DM"
@@ -70,9 +70,12 @@ var FalseVar = false
 var Replica1 int32 = 1
 var Seconds60 int64 = 60
 
+var cpu50 = resource.NewMilliQuantity(50, resource.DecimalSI)            // 50m
 var cpu100 = resource.NewMilliQuantity(100, resource.DecimalSI)          // 100m
 var cpu500 = resource.NewMilliQuantity(500, resource.DecimalSI)          // 500m
 var cpu1000 = resource.NewMilliQuantity(1000, resource.DecimalSI)        // 1000m
+var memory65 = resource.NewQuantity(65*1024*1024, resource.BinarySI)     // 65Mi
+var memory90 = resource.NewQuantity(90*1024*1024, resource.BinarySI)     // 90Mi
 var memory100 = resource.NewQuantity(100*1024*1024, resource.BinarySI)   // 100Mi
 var memory128 = resource.NewQuantity(128*1024*1024, resource.BinarySI)   // 128Mi
 var memory256 = resource.NewQuantity(256*1024*1024, resource.BinarySI)   // 256Mi
@@ -425,11 +428,11 @@ var DmMainContainer = corev1.Container{
 
 var ReportResourceRequirements = corev1.ResourceRequirements{
 	Limits: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu500,
-		corev1.ResourceMemory: *memory512},
-	Requests: map[corev1.ResourceName]resource.Quantity{
 		corev1.ResourceCPU:    *cpu100,
-		corev1.ResourceMemory: *memory128},
+		corev1.ResourceMemory: *memory90},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu50,
+		corev1.ResourceMemory: *memory65},
 }
 
 var ReportContainer = corev1.Container{
