@@ -70,17 +70,21 @@ var FalseVar = false
 var Replica1 int32 = 1
 var Seconds60 int64 = 60
 
-var cpu50 = resource.NewMilliQuantity(50, resource.DecimalSI)            // 50m
-var cpu100 = resource.NewMilliQuantity(100, resource.DecimalSI)          // 100m
-var cpu500 = resource.NewMilliQuantity(500, resource.DecimalSI)          // 500m
-var cpu1000 = resource.NewMilliQuantity(1000, resource.DecimalSI)        // 1000m
-var memory65 = resource.NewQuantity(65*1024*1024, resource.BinarySI)     // 65Mi
-var memory90 = resource.NewQuantity(90*1024*1024, resource.BinarySI)     // 90Mi
-var memory100 = resource.NewQuantity(100*1024*1024, resource.BinarySI)   // 100Mi
-var memory128 = resource.NewQuantity(128*1024*1024, resource.BinarySI)   // 128Mi
-var memory256 = resource.NewQuantity(256*1024*1024, resource.BinarySI)   // 256Mi
-var memory512 = resource.NewQuantity(512*1024*1024, resource.BinarySI)   // 512Mi
-var memory2560 = resource.NewQuantity(2560*1024*1024, resource.BinarySI) // 2560Mi
+// set cpu/memory limits and requests based on the Large profile
+var cpu50 = resource.NewMilliQuantity(50, resource.DecimalSI)          // 50m
+var cpu60 = resource.NewMilliQuantity(60, resource.DecimalSI)          // 60m
+var cpu100 = resource.NewMilliQuantity(100, resource.DecimalSI)        // 100m
+var cpu200 = resource.NewMilliQuantity(200, resource.DecimalSI)        // 200m
+var cpu450 = resource.NewMilliQuantity(450, resource.DecimalSI)        // 450m
+var memory65 = resource.NewQuantity(65*1024*1024, resource.BinarySI)   // 65Mi
+var memory90 = resource.NewQuantity(90*1024*1024, resource.BinarySI)   // 90Mi
+var memory100 = resource.NewQuantity(100*1024*1024, resource.BinarySI) // 100Mi
+var memory230 = resource.NewQuantity(230*1024*1024, resource.BinarySI) // 230Mi
+var memory240 = resource.NewQuantity(240*1024*1024, resource.BinarySI) // 240Mi
+var memory320 = resource.NewQuantity(320*1024*1024, resource.BinarySI) // 320Mi
+var memory370 = resource.NewQuantity(370*1024*1024, resource.BinarySI) // 370Mi
+var memory375 = resource.NewQuantity(375*1024*1024, resource.BinarySI) // 375Mi
+var memory850 = resource.NewQuantity(850*1024*1024, resource.BinarySI) // 850Mi
 
 const DefaultClusterName = "mycluster"
 
@@ -324,11 +328,11 @@ var TempDirVolume = corev1.Volume{
 
 var DmResourceRequirements = corev1.ResourceRequirements{
 	Limits: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu1000,
-		corev1.ResourceMemory: *memory2560},
+		corev1.ResourceCPU:    *cpu450,
+		corev1.ResourceMemory: *memory850},
 	Requests: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu100,
-		corev1.ResourceMemory: *memory256},
+		corev1.ResourceCPU:    *cpu200,
+		corev1.ResourceMemory: *memory230},
 }
 
 var DmMainContainer = corev1.Container{
@@ -501,11 +505,11 @@ var ReportContainer = corev1.Container{
 
 var RdrResourceRequirements = corev1.ResourceRequirements{
 	Limits: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu500,
-		corev1.ResourceMemory: *memory512},
+		corev1.ResourceCPU:    *cpu60,
+		corev1.ResourceMemory: *memory320},
 	Requests: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu100,
-		corev1.ResourceMemory: *memory128},
+		corev1.ResourceCPU:    *cpu50,
+		corev1.ResourceMemory: *memory240},
 }
 
 var RdrMainContainer = corev1.Container{
@@ -645,11 +649,11 @@ var RdrMainContainer = corev1.Container{
 
 var SenderResourceRequirements = corev1.ResourceRequirements{
 	Limits: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu500,
-		corev1.ResourceMemory: *memory512},
+		corev1.ResourceCPU:    *cpu60,
+		corev1.ResourceMemory: *memory320},
 	Requests: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu100,
-		corev1.ResourceMemory: *memory128},
+		corev1.ResourceCPU:    *cpu50,
+		corev1.ResourceMemory: *memory240},
 }
 
 var SenderMainContainer = corev1.Container{
@@ -766,11 +770,11 @@ var UIEnvVars = []corev1.EnvVar{
 
 var UIResourceRequirements = corev1.ResourceRequirements{
 	Limits: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu500,
-		corev1.ResourceMemory: *memory512},
-	Requests: map[corev1.ResourceName]resource.Quantity{
 		corev1.ResourceCPU:    *cpu100,
-		corev1.ResourceMemory: *memory128},
+		corev1.ResourceMemory: *memory375},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu50,
+		corev1.ResourceMemory: *memory370},
 }
 
 var UIMainContainer = corev1.Container{
@@ -859,11 +863,11 @@ var UIMainContainer = corev1.Container{
 
 var McmUIResourceRequirements = corev1.ResourceRequirements{
 	Limits: map[corev1.ResourceName]resource.Quantity{
-		corev1.ResourceCPU:    *cpu500,
-		corev1.ResourceMemory: *memory256},
-	Requests: map[corev1.ResourceName]resource.Quantity{
 		corev1.ResourceCPU:    *cpu100,
-		corev1.ResourceMemory: *memory128},
+		corev1.ResourceMemory: *memory375},
+	Requests: map[corev1.ResourceName]resource.Quantity{
+		corev1.ResourceCPU:    *cpu50,
+		corev1.ResourceMemory: *memory370},
 }
 
 var McmUIMainContainer = corev1.Container{
