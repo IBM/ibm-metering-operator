@@ -146,12 +146,9 @@ rules:
 - apiGroups:
   - "operator.openshift.io"
   resources:
-  - dnses
   - ingresscontrollers
   verbs:
   - get
-  - list
-  - watch
 # required by meteringreportserver to create APIService
 - apiGroups:
   - authorization.k8s.io
@@ -159,10 +156,6 @@ rules:
   - subjectaccessreviews
   verbs:
   - create
-  - delete
-  - get
-  - list
-  - update
 # required by meteringreportserver to create APIService
 - apiGroups:
   - apiregistration.k8s.io
@@ -170,29 +163,10 @@ rules:
   - apiservices
   verbs:
   - create
-  - delete
-  - get
-  - list
-  - update
-  - watch
 # required by meteringreportserver
-- apiGroups: 
-  - admissionregistration.k8s.io
-  resources:
-  - mutatingwebhookconfigurations
-  - validatingwebhookconfigurations
-  verbs:
-  - create
-  - get
-  - list
-  - watch
-  - patch
-  - update
-  - delete
 - apiGroups:
   - ""
   resources:
-  - namespaces
   - configmaps
   verbs:
   - watch
@@ -210,18 +184,32 @@ rules:
   - list
   - update
   - watch
-#required by reader to meter pods, clusters, pvcs (configmaps for mcmreader)
-#- apiGroups: [""]
-#  resources: ["namespaces", "pods", "nodes", "nodes/proxy", "configmaps", "persistentvolumes", "persistentvolumeclaims"]
-#  verbs: ["get", "list"]
-#required by mcmreader to list clusters
-#- apiGroups: ["mcm.ibm.com"]
-#  resources: ["clusterstatuses",]
-#  verbs: ["get", "list"]
-# The read permissions were expanded to all objects because of metering
-# support to read metering annotations from the meta data of Custom Resource
-# objects.  Since we cannot know all Kinds the role was expanded for all
-# apiGroups and resources
-- apiGroups: ["*"]
-  resources: ["*"]
-  verbs: ["get", "list"]
+# required by reader to meter pods, clusters, pvcs (configmaps for mcmreader)
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  - pods
+  - nodes
+  - nodes/proxy
+  - configmaps
+  - persistentvolumes
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+# required by sender to get MCM hub kube config
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+# required by mcmreader to list clusters
+- apiGroups:
+  - mcm.ibm.com
+  resources:
+  - clusterstatuses
+  verbs:
+  - get
+  - list
