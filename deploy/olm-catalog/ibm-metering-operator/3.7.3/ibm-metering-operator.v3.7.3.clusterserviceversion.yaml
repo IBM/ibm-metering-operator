@@ -2,7 +2,7 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    olm.skipRange: '>=3.5.0 <3.8.0'
+    olm.skipRange: '>=3.5.0 <3.7.3'
     alm-examples: |-
       [
         {
@@ -31,7 +31,7 @@ metadata:
               "usernameSecret": "icp-mongodb-admin"
             },
             "multiCloudReceiverEnabled": false,
-            "version": "3.8.0"
+            "version": "3.7.3"
           }
         },
         {
@@ -63,7 +63,7 @@ metadata:
               "iamNamespace": "ibm-common-services",
               "ingressNamespace": "ibm-common-services"
             },
-            "version": "3.8.0"
+            "version": "3.7.3"
           }
         },
         {
@@ -79,7 +79,7 @@ metadata:
           },
           "spec": {
             "imageRegistry": "quay.io/opencloudio",
-            "version": "3.8.0"
+            "version": "3.7.3"
           }
         },
         {
@@ -110,7 +110,7 @@ metadata:
               "clusterNamespace": "ibm-common-services",
               "hubKubeConfigSecret": "multicluster-endpoint/endpoint-connmgr-hub-kubeconfig"
             },
-            "version": "3.8.0"
+            "version": "3.7.3"
           }
         },
         {
@@ -143,7 +143,7 @@ metadata:
               "iamNamespace": "ibm-common-services",
               "ingressNamespace": "ibm-common-services"
             },
-            "version": "3.8.0"
+            "version": "3.7.3"
           }
         },
         {
@@ -189,8 +189,8 @@ metadata:
     capabilities: Basic Install
     categories: Monitoring
     certified: "false"
-    containerImage: quay.io/opencloudio/ibm-metering-operator:3.8.0
-    createdAt: "2020-10-16T18:49:00Z"
+    containerImage: quay.io/opencloudio/ibm-metering-operator:3.7.3
+    createdAt: "2020-10-20T17:54:00Z"
     description: The IBM Metering operator provides a Kubernetes CRD-Based API to
       manage the lifecycle of Metering services. With this operator, you can simply
       deploy and upgrade the Metering services.
@@ -201,7 +201,7 @@ metadata:
     operatorframework.io/arch.ppc64le: supported
     operatorframework.io/arch.s390x: supported
     operatorframework.io/os.linux: supported
-  name: ibm-metering-operator.v3.8.0
+  name: ibm-metering-operator.v3.7.3
   namespace: ibm-common-services
 spec:
   apiservicedefinitions: {}
@@ -576,13 +576,13 @@ spec:
                 - ibm-metering-operator
                 env:
                 - name: IMAGE_SHA_OR_TAG_DM
-                  value: sha256:d518d0fa7542ff57a086e93caed5d1b0e3d60412de7832a581f355b4144d37f3
+                  value: sha256:bd9a1f36a3554268e575f62f088d2faaf2f0a8f81a22f63fb1f5f3f04802f98d
                 - name: IMAGE_SHA_OR_TAG_UI
-                  value: sha256:74175aba67ee4197998c56c5ab164e7378e66f2ec0414064b73da3027cd3ac97
+                  value: sha256:a95baa26b86d04acaddc1417e72fede9a611bff28cff123d406dea2233ac1c51
                 - name: IMAGE_SHA_OR_TAG_MCMUI
-                  value: sha256:0dea65279838213cc8285bbcf2186d12876cabc3a3ff3d64443f661c415852c0
+                  value: sha256:741029550b32d53d758c9b8809d72c1e6a4af15e5edd08b4477aafd32dcf2eea
                 - name: IMAGE_SHA_OR_TAG_REPORT
-                  value: sha256:fffb18c53fc3a2d0cf97806561251a5b5db79b7b828ad9f6f0ebb84daa861857
+                  value: sha256:40736d6cccf5705b2512455e9f4376acc655452ff2ae5acda30d1e7f4c8b7889
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
@@ -597,7 +597,7 @@ spec:
                   valueFrom:
                     fieldRef:
                       fieldPath: spec.serviceAccountName
-                image: quay.io/opencloudio/ibm-metering-operator:3.8.0
+                image: quay.io/opencloudio/ibm-metering-operator:3.7.3
                 imagePullPolicy: Always
                 name: ibm-metering-operator
                 resources:
@@ -760,4 +760,4 @@ spec:
   provider:
     name: IBM
   replaces: ibm-metering-operator.v3.7.2
-  version: 3.8.0
+  version: 3.7.3

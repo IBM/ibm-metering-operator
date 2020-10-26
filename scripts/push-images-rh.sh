@@ -40,6 +40,18 @@ PASSWORD=$4
 RH_PID=$5
 TEST=$6
 
+if [[ $RH_PID == "" ]]; then
+   echo "Missing parm. Need <image-name> <image-tag> <arch> <Registry Key from RH cert> <Red Hat project PID>"
+   echo "Example:"
+   echo "   push-images-rh.sh metering-data-manager 3.6.1 amd64 REG_KEY RH_PID"
+   exit 1
+fi
+
+# check the ARCH value
+if [[ $ARCH != "amd64" && $ARCH != "ppc64le" && $ARCH != "s390x" ]]; then
+   echo "$ARCH is not valid. ARCH must be amd64, ppc64le, or s390x"
+   exit 1
+fi
 
 # OLD: QUAY=quay.io/opencloudio/$IMAGE:$TAG
 # LOCAL_IMAGE example: hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom/metering-data-manager-ppc64le:3.6.0
