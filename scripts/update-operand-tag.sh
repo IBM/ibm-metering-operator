@@ -16,7 +16,7 @@
 #
 # Update the required files with the new image tag for an operand.
 #
-# Run this script from the parent dir by typing "scripts/update-operand-tags.sh".
+# Run this script from the parent dir by typing "scripts/update-operand-tag.sh".
 # Run this script for each of the operands.
 #
 
@@ -79,34 +79,34 @@ then
   exit 1
 fi
 
-#---------------------------------------------------------
-# update operator.yaml and CSV file
-#---------------------------------------------------------
-OPERATOR_YAML=deploy/operator.yaml
-if ! [ -f "${OPERATOR_YAML}" ]; then
-    echo "[WARN] ${OPERATOR_YAML} does not exist."
-    exit 1
-fi
+#----------------------------------------------------------------------------------------
+# update operator.yaml and CSV file. *** SKIP THIS STARTING WITH COMMON SERVICES 3.5 ***
+#----------------------------------------------------------------------------------------
+#OPERATOR_YAML=deploy/operator.yaml
+#if ! [ -f "${OPERATOR_YAML}" ]; then
+#    echo "[WARN] ${OPERATOR_YAML} does not exist."
+#    exit 1
+#fi
 
 # delete the "name" and "value" lines for the old tag
 # for example:
 #     - name: IMAGE_SHA_OR_TAG_DM
 #       value: 3.5.1
-$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" "$OPERATOR_YAML"
-$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" "$CSV_FILE"
+#$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" "$OPERATOR_YAML"
+#$SED -i "/name: IMAGE_SHA_OR_TAG_$TYPE/{N;d;}" "$CSV_FILE"
 
 # insert the new tag lines in operator.yaml 
-echo -e "\n[INFO] Updating image tag for $TYPE in operator.yaml"
-LINE1="\            - name: IMAGE_SHA_OR_TAG_$TYPE"
-LINE2="\              value: $IMAGE_TAG"
-$SED -i "/env:/a $LINE1\n$LINE2" "$OPERATOR_YAML"
+#echo -e "\n[INFO] Updating image tag for $TYPE in operator.yaml"
+#LINE1="\            - name: IMAGE_SHA_OR_TAG_$TYPE"
+#LINE2="\              value: $IMAGE_TAG"
+#$SED -i "/env:/a $LINE1\n$LINE2" "$OPERATOR_YAML"
 
 # insert the new tag lines in the CSV file
 # need 4 more leading spaces compared to operator.yaml
-echo -e "\n[INFO] Updating image tag for $TYPE in CSV file"
-LINE3="\                - name: IMAGE_SHA_OR_TAG_$TYPE"
-LINE4="\                  value: $IMAGE_TAG"
-$SED -i "/env:/a $LINE3\n$LINE4" "$CSV_FILE"
+#echo -e "\n[INFO] Updating image tag for $TYPE in CSV file"
+#LINE3="\                - name: IMAGE_SHA_OR_TAG_$TYPE"
+#LINE4="\                  value: $IMAGE_TAG"
+#$SED -i "/env:/a $LINE3\n$LINE4" "$CSV_FILE"
 
 #---------------------------------------------------------
 # update containers.go
