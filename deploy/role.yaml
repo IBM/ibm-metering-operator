@@ -135,13 +135,6 @@ metadata:
     app.kubernetes.io/managed-by: "ibm-metering-operator"
     app.kubernetes.io/name: "ibm-metering"
 rules:
-#required by operator to create certificates
-- apiGroups:
-  - certmanager.k8s.io
-  resources:
-  - clusterissuers
-  verbs:
-  - use
 # required by operator to get appDomain in IngressController
 - apiGroups:
   - "operator.openshift.io"
