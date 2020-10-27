@@ -177,17 +177,17 @@ var log = logf.Log.WithName("resource_utils")
 // BuildCertificate returns a Certificate object.
 // Call controllerutil.SetControllerReference to set the owner and controller
 // for the Certificate object created by this function.
-func BuildCertificate(instanceNamespace, instanceClusterIssuer string, certData CertificateData) *certmgr.Certificate {
+func BuildCertificate(instanceNamespace, instanceIssuer string, certData CertificateData) *certmgr.Certificate {
 	reqLogger := log.WithValues("func", "BuildCertificate")
 
 	metaLabels := labelsForCertificateMeta(certData.App, certData.Component)
-	var clusterIssuer string
-	if instanceClusterIssuer != "" {
-		reqLogger.Info("clusterIssuer=" + instanceClusterIssuer)
-		clusterIssuer = instanceClusterIssuer
+	var caIssuer string
+	if instanceIssuer != "" {
+		reqLogger.Info("caIssuer=" + instanceIssuer)
+		caIssuer = instanceIssuer
 	} else {
-		reqLogger.Info("clusterIssuer is blank, default=" + DefaultClusterIssuer)
-		clusterIssuer = DefaultClusterIssuer
+		reqLogger.Info("caIssuer is blank, default=" + DefaultCaIssuer)
+		caIssuer = DefaultCaIssuer
 	}
 
 	certificate := &certmgr.Certificate{
@@ -207,8 +207,8 @@ func BuildCertificate(instanceNamespace, instanceClusterIssuer string, certData 
 			},
 			Organization: []string{"IBM"},
 			IssuerRef: certmgr.ObjectReference{
-				Name: clusterIssuer,
-				Kind: certmgr.ClusterIssuerKind,
+				Name: caIssuer,
+				Kind: certmgr.IssuerKind,
 			},
 		},
 	}
