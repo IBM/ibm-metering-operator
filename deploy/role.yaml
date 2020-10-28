@@ -203,6 +203,29 @@ rules:
   - mcm.ibm.com
   resources:
   - clusterstatuses
+  - leadervotes
+  verbs:
+  - get
+  - list
+# required by mcmreader to check RACM hub
+- apiGroups:
+  - operator.open-cluster-management.io
+  resources:
+  - multiclusterhubs
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - cluster.open-cluster-management.io
+  resources:
+  - managedclusters
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - internal.open-cluster-management.io
+  resources:
+  - namespaces
   verbs:
   - get
   - list
