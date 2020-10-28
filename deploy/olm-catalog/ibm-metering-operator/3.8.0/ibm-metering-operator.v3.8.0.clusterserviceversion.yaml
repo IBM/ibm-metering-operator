@@ -464,58 +464,26 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - certmanager.k8s.io
-          resources:
-          - clusterissuers
-          verbs:
-          - use
-        - apiGroups:
           - operator.openshift.io
           resources:
-          - dnses
           - ingresscontrollers
           verbs:
           - get
-          - list
-          - watch
         - apiGroups:
           - authorization.k8s.io
           resources:
           - subjectaccessreviews
           verbs:
           - create
-          - delete
-          - get
-          - list
-          - update
         - apiGroups:
           - apiregistration.k8s.io
           resources:
           - apiservices
           verbs:
           - create
-          - delete
-          - get
-          - list
-          - update
-          - watch
-        - apiGroups:
-          - admissionregistration.k8s.io
-          resources:
-          - mutatingwebhookconfigurations
-          - validatingwebhookconfigurations
-          verbs:
-          - create
-          - get
-          - list
-          - watch
-          - patch
-          - update
-          - delete
         - apiGroups:
           - ""
           resources:
-          - namespaces
           - configmaps
           verbs:
           - watch
@@ -533,9 +501,50 @@ spec:
           - update
           - watch
         - apiGroups:
-          - '*'
+          - ""
           resources:
-          - '*'
+          - namespaces
+          - pods
+          - nodes
+          - nodes/proxy
+          - configmaps
+          - persistentvolumes
+          - persistentvolumeclaims
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - get
+        - apiGroups:
+          - mcm.ibm.com
+          resources:
+          - clusterstatuses
+          - leadervotes
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - operator.open-cluster-management.io
+          resources:
+          - multiclusterhubs
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - cluster.open-cluster-management.io
+          resources:
+          - managedclusters
+          verbs:
+          - get
+          - list
+        - apiGroups:
+          - internal.open-cluster-management.io
+          resources:
+          - namespaces
           verbs:
           - get
           - list
