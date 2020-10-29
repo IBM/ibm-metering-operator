@@ -47,7 +47,7 @@ spec:
           imagePullPolicy: Always
           env:
             - name: IMAGE_SHA_OR_TAG_DM
-              value: sha256:e44ad0019c54047e6cd0e387c7a6aecf0ee4a5ea103fa0af0bfa07c6e53381ab
+              value: sha256:08909298255b53f2d4f7bcc3229ffefaf21e7a12196110bbb8e3e65f0632a178
             - name: IMAGE_SHA_OR_TAG_UI
               value: sha256:74175aba67ee4197998c56c5ab164e7378e66f2ec0414064b73da3027cd3ac97
             - name: IMAGE_SHA_OR_TAG_MCMUI
