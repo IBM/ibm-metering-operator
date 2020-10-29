@@ -585,7 +585,7 @@ spec:
                 - ibm-metering-operator
                 env:
                 - name: IMAGE_SHA_OR_TAG_DM
-                  value: sha256:d518d0fa7542ff57a086e93caed5d1b0e3d60412de7832a581f355b4144d37f3
+                  value: sha256:e44ad0019c54047e6cd0e387c7a6aecf0ee4a5ea103fa0af0bfa07c6e53381ab
                 - name: IMAGE_SHA_OR_TAG_UI
                   value: sha256:74175aba67ee4197998c56c5ab164e7378e66f2ec0414064b73da3027cd3ac97
                 - name: IMAGE_SHA_OR_TAG_MCMUI
