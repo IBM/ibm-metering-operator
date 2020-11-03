@@ -156,6 +156,8 @@ rules:
   - apiservices
   verbs:
   - create
+  - list
+  - watch
 # required by meteringreportserver
 - apiGroups:
   - ""
@@ -225,7 +227,7 @@ rules:
 - apiGroups:
   - internal.open-cluster-management.io
   resources:
-  - namespaces
+  - managedclusterinfos
   verbs:
   - get
   - list
