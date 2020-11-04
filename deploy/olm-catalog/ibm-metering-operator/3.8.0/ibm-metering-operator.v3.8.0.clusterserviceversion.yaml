@@ -481,6 +481,8 @@ spec:
           - apiservices
           verbs:
           - create
+          - list
+          - watch
         - apiGroups:
           - ""
           resources:
@@ -544,10 +546,17 @@ spec:
         - apiGroups:
           - internal.open-cluster-management.io
           resources:
-          - namespaces
+          - managedclusterinfos
           verbs:
           - get
           - list
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - get
+          - list          
         serviceAccountName: ibm-metering-operator
       deployments:
       - name: ibm-metering-operator
