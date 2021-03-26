@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright 2020 IBM Corporation
+# Copyright 2021 IBM Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 # Create a new version of the operator and update the required files with the new version number.
 #
 # Run this script from the parent dir by typing "scripts/bump-up-csv.sh"
+#
+# Must use version 3 of yq: https://github.com/mikefarah/yq/releases/tag/3.4.1
 #
 
 SED="sed"
