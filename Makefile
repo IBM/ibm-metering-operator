@@ -301,9 +301,9 @@ redhat-certify-ready: bundle verify-bundle
 clean:
 	rm -rf build/_output
 
-############################################################
+#############################################################
 # application section
-############################################################
+#############################################################
 
 install: ## Install all resources (CR/CRD's, RBCA and Operator)
 	@echo ....... Set environment variables ......
