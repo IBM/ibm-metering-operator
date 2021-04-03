@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This repo is build locally for dev/test by default;
+# This repo is built locally for dev/test by default;
 # Override this variable in CI env.
 BUILD_LOCALLY ?= 1
 
@@ -220,7 +220,7 @@ push-image-s390x: $(CONFIG_DOCKER_TARGET) build-image-s390x
 images: push-image-amd64 push-image-ppc64le push-image-s390x multiarch-image
 
 multiarch-image:
-	@curl -L -o /tmp/manifest-tool https://github.com/estesp/manifest-tool/releases/download/v1.0.0/manifest-tool-linux-amd64
+	@curl -L -o /tmp/manifest-tool https://github.com/estesp/manifest-tool/releases/download/v1.0.3/manifest-tool-linux-amd64
 	@chmod +x /tmp/manifest-tool
 	/tmp/manifest-tool push from-args --platforms linux/amd64,linux/ppc64le,linux/s390x --template $(REGISTRY)/$(IMG)-ARCH:$(VERSION) --target $(REGISTRY)/$(IMG) --ignore-missing
 	/tmp/manifest-tool push from-args --platforms linux/amd64,linux/ppc64le,linux/s390x --template $(REGISTRY)/$(IMG)-ARCH:$(VERSION) --target $(REGISTRY)/$(IMG):$(VERSION) --ignore-missing
@@ -301,9 +301,9 @@ redhat-certify-ready: bundle verify-bundle
 clean:
 	rm -rf build/_output
 
-############################################################
+#############################################################
 # application section
-############################################################
+#############################################################
 
 install: ## Install all resources (CR/CRD's, RBCA and Operator)
 	@echo ....... Set environment variables ......

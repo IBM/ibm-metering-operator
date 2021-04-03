@@ -600,7 +600,7 @@ spec:
                 - name: IMAGE_SHA_OR_TAG_MCMUI
                   value: sha256:9c33cbd26da0ac0d448b91da03f7d4827a7a29c9d32d607aa153f41b1068820f
                 - name: IMAGE_SHA_OR_TAG_REPORT
-                  value: sha256:4fe8ace67f0bc24ed43bbda1b0b56807f91aaea5bbd706eead91584bfcc49229
+                  value: sha256:1f56ee423b6810328a0c3b523edc10495ae0b1420d7b56ff4dc0b6ddb645bc35
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:
