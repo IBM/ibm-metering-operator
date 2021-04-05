@@ -1,5 +1,5 @@
 //
-// Copyright 2020 IBM Corporation
+// Copyright 2021 IBM Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -862,5 +862,96 @@ func CheckRhacm(cfg *rest.Config) error {
 	}
 
 	return err
+}
 
+// GetAffinity returns the Affinity definition for a PodSpec.
+// if AntiAffinity is needed, set addAntiAffinity to true and pass the app name.
+func GetAffinity(addAntiAffinity bool, appName string) *corev1.Affinity {
+	nodeAffinity := &corev1.NodeAffinity{
+		RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
+			NodeSelectorTerms: []corev1.NodeSelectorTerm{
+				{
+					MatchExpressions: []corev1.NodeSelectorRequirement{
+						{
+							Key:      "kubernetes.io/arch",
+							Operator: corev1.NodeSelectorOpIn,
+							Values:   ArchitectureList,
+						},
+					},
+				},
+			},
+		},
+	}
+	affinity := &corev1.Affinity{}
+	if addAntiAffinity {
+		affinity = &corev1.Affinity{
+			NodeAffinity: nodeAffinity,
+			PodAntiAffinity: &corev1.PodAntiAffinity{
+				RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
+					{
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      "app.kubernetes.io/name",
+									Operator: metav1.LabelSelectorOpIn,
+									Values: []string{
+										appName,
+									},
+								},
+							},
+						},
+						TopologyKey: "kubernetes.io/hostname",
+					},
+				},
+			},
+		}
+	} else {
+		affinity = &corev1.Affinity{
+			NodeAffinity: nodeAffinity,
+		}
+	}
+	return affinity
+}
+
+// GetTolerations returns the Tolerations definition for a PodSpec.
+func GetTolerations() []corev1.Toleration {
+	tolerations := []corev1.Toleration{
+		{
+			Key:      "dedicated",
+			Operator: corev1.TolerationOpExists,
+			Effect:   corev1.TaintEffectNoSchedule,
+		},
+		{
+			Key:      "CriticalAddonsOnly",
+			Operator: corev1.TolerationOpExists,
+		},
+	}
+	return tolerations
+}
+
+// GetTopologySpreadConstraints returns the TopologySpreadConstraints definition for a PodSpec.
+func GetTopologySpreadConstraints(appName string) []corev1.TopologySpreadConstraint {
+	spreadConstraints := []corev1.TopologySpreadConstraint{
+		{
+			MaxSkew:           1,
+			TopologyKey:       "topology.kubernetes.io/zone",
+			WhenUnsatisfiable: corev1.ScheduleAnyway,
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": appName,
+				},
+			},
+		},
+		{
+			MaxSkew:           1,
+			TopologyKey:       "topology.kubernetes.io/region",
+			WhenUnsatisfiable: corev1.ScheduleAnyway,
+			LabelSelector: &metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": appName,
+				},
+			},
+		},
+	}
+	return spreadConstraints
 }

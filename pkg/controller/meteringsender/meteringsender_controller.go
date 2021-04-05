@@ -1,5 +1,5 @@
 //
-// Copyright 2020 IBM Corporation
+// Copyright 2021 IBM Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -289,35 +289,10 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 					HostPID:                       false,
 					HostIPC:                       false,
 					TerminationGracePeriodSeconds: &res.Seconds60,
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									{
-										MatchExpressions: []corev1.NodeSelectorRequirement{
-											{
-												Key:      "beta.kubernetes.io/arch",
-												Operator: corev1.NodeSelectorOpIn,
-												Values:   res.ArchitectureList,
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-					Tolerations: []corev1.Toleration{
-						{
-							Key:      "dedicated",
-							Operator: corev1.TolerationOpExists,
-							Effect:   corev1.TaintEffectNoSchedule,
-						},
-						{
-							Key:      "CriticalAddonsOnly",
-							Operator: corev1.TolerationOpExists,
-						},
-					},
-					Volumes: senderVolumes,
+					Affinity:                      res.GetAffinity(false, ""),
+					Tolerations:                   res.GetTolerations(),
+					TopologySpreadConstraints:     res.GetTopologySpreadConstraints(res.SenderDeploymentName),
+					Volumes:                       senderVolumes,
 					InitContainers: []corev1.Container{
 						senderSecretCheckContainer,
 						senderInitContainer,
