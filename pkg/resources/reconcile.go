@@ -1,5 +1,5 @@
 //
-// Copyright 2020 IBM Corporation
+// Copyright 2021 IBM Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
@@ -34,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const CertmanagerLabelPrefix = "certmanager"
+const certmanagerLabel = "certmanager.k8s.io/time-restarted"
 
 // Check if a Service already exists. If not, create a new one.
 func ReconcileService(client client.Client, instanceNamespace, serviceName, serviceType string,
@@ -284,12 +283,15 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 		return false
 	}
 
-	// Certmanager adds some labels that we need to preserve.
-	// Copy those labels from the old deployment to the new deployment before doing DeepEqual.
-	for key, oldValue := range oldDeployment.ObjectMeta.Labels {
-		if strings.HasPrefix(key, CertmanagerLabelPrefix) {
-			newDeployment.ObjectMeta.Labels[key] = oldValue
-		}
+	// Certmanager adds a label that we need to preserve.
+	// Copy the label from the old deployment metadata to the new deployment metadata before doing DeepEqual.
+	if val, ok := oldDeployment.ObjectMeta.Labels[certmanagerLabel]; ok {
+		newDeployment.ObjectMeta.Labels[certmanagerLabel] = val
+	}
+	// Copy the label from the old deployment template metadata
+	// to the new deployment template metadata before doing DeepEqual.
+	if val, ok := oldDeployment.Spec.Template.ObjectMeta.Labels[certmanagerLabel]; ok {
+		newDeployment.Spec.Template.ObjectMeta.Labels[certmanagerLabel] = val
 	}
 	if !reflect.DeepEqual(oldDeployment.ObjectMeta.Labels, newDeployment.ObjectMeta.Labels) {
 		logger.Info("Deployment Labels not equal",
@@ -724,12 +726,10 @@ func IsCertificateEqual(oldCertificate, newCertificate *certmgr.Certificate) boo
 		return false
 	}
 
-	// Certmanager adds some labels that we need to preserve.
-	// Copy those labels from the old certificate to the new certificate before doing DeepEqual.
-	for key, oldValue := range oldCertificate.ObjectMeta.Labels {
-		if strings.HasPrefix(key, CertmanagerLabelPrefix) {
-			newCertificate.ObjectMeta.Labels[key] = oldValue
-		}
+	// Certmanager adds a label that we need to preserve.
+	// Copy the label from the old certificate metadata to the new certificate metadata before doing DeepEqual.
+	if val, ok := oldCertificate.ObjectMeta.Labels[certmanagerLabel]; ok {
+		newCertificate.ObjectMeta.Labels[certmanagerLabel] = val
 	}
 	if !reflect.DeepEqual(oldCertificate.ObjectMeta.Labels, newCertificate.ObjectMeta.Labels) {
 		logger.Info("Certificate Labels not equal",
