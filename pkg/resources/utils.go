@@ -127,12 +127,12 @@ var apiSwaggerIngressAnnotations = map[string]string{
 	"icp.management.ibm.com/secure-backends":   "true",
 }
 var uiIngressAnnotations = map[string]string{
-	"icp.management.ibm.com/auth-type":       "id-token",
+	"icp.management.ibm.com/auth-type":       "access-token",
 	"icp.management.ibm.com/rewrite-target":  "/",
 	"icp.management.ibm.com/secure-backends": "true",
 }
 var mcmIngressAnnotations = map[string]string{
-	"icp.management.ibm.com/auth-type":       "id-token",
+	"icp.management.ibm.com/auth-type":       "access-token",
 	"icp.management.ibm.com/secure-backends": "true",
 }
 
