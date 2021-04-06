@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
@@ -293,6 +294,34 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 	if val, ok := oldDeployment.Spec.Template.ObjectMeta.Labels[certmanagerLabel]; ok {
 		newDeployment.Spec.Template.ObjectMeta.Labels[certmanagerLabel] = val
 	}
+
+	// Preserve the NODE_HEAP_SIZE env var if it exists.
+	// Copy the var from the old deployment container to the new deployment container
+	// before doing DeepEqual.
+	if len(oldDeployment.Spec.Template.Spec.Containers) > 0 {
+		// sort the old env vars to make comparison easier
+		sort.Slice(oldDeployment.Spec.Template.Spec.Containers[0].Env, func(i, j int) bool {
+			return oldDeployment.Spec.Template.Spec.Containers[0].Env[i].Name <= oldDeployment.Spec.Template.Spec.Containers[0].Env[j].Name
+		})
+		// the NODE_HEAP_SIZE env var might have been manually added to the
+		// current deployment by the customer to improve the performance of metering-dm.
+		// if that var exists, add it to the new deployment before doing any comparison.
+		index := sort.Search(len(oldDeployment.Spec.Template.Spec.Containers[0].Env), func(i int) bool {
+			return string(oldDeployment.Spec.Template.Spec.Containers[0].Env[i].Name) >= DmNodeHeapSizeVar
+		})
+		if index < len(oldDeployment.Spec.Template.Spec.Containers[0].Env) &&
+			oldDeployment.Spec.Template.Spec.Containers[0].Env[index].Name == DmNodeHeapSizeVar {
+			logger.Info("Found extra env var", "name", DmNodeHeapSizeVar)
+			newDeployment.Spec.Template.Spec.Containers[0].Env = append(newDeployment.Spec.Template.Spec.Containers[0].Env,
+				oldDeployment.Spec.Template.Spec.Containers[0].Env[index])
+		}
+		// sort the new env vars to make comparison easier
+		sort.Slice(newDeployment.Spec.Template.Spec.Containers[0].Env, func(i, j int) bool {
+			return newDeployment.Spec.Template.Spec.Containers[0].Env[i].Name <= newDeployment.Spec.Template.Spec.Containers[0].Env[j].Name
+		})
+	}
+
+	// check the labels
 	if !reflect.DeepEqual(oldDeployment.ObjectMeta.Labels, newDeployment.ObjectMeta.Labels) {
 		logger.Info("Deployment Labels not equal",
 			"old", fmt.Sprintf("%v", oldDeployment.ObjectMeta.Labels),
@@ -519,7 +548,8 @@ func isContainerEqual(oldContainers, newContainers []corev1.Container, isInitCon
 				oldEnvVars := oldContainer.Env
 				newEnvVars := newContainer.Env
 				if len(oldEnvVars) != len(newEnvVars) {
-					logger.Info("Env var length not equal", "container num", i)
+					logger.Info("Env vars length not equal", "container num", i,
+						"old", len(oldEnvVars), "new", len(newEnvVars))
 					return false
 				} else if len(oldEnvVars) > 0 {
 					for j := range oldEnvVars {
