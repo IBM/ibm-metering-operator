@@ -1,5 +1,5 @@
 //
-// Copyright 2020 IBM Corporation
+// Copyright 2021 IBM Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
+	"sort"
 
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
 
@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const CertmanagerLabelPrefix = "certmanager"
+const certmanagerLabel = "certmanager.k8s.io/time-restarted"
 
 // Check if a Service already exists. If not, create a new one.
 func ReconcileService(client client.Client, instanceNamespace, serviceName, serviceType string,
@@ -284,13 +284,44 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 		return false
 	}
 
-	// Certmanager adds some labels that we need to preserve.
-	// Copy those labels from the old deployment to the new deployment before doing DeepEqual.
-	for key, oldValue := range oldDeployment.ObjectMeta.Labels {
-		if strings.HasPrefix(key, CertmanagerLabelPrefix) {
-			newDeployment.ObjectMeta.Labels[key] = oldValue
-		}
+	// Certmanager adds a label that we need to preserve.
+	// Copy the label from the old deployment metadata to the new deployment metadata before doing DeepEqual.
+	if val, ok := oldDeployment.ObjectMeta.Labels[certmanagerLabel]; ok {
+		newDeployment.ObjectMeta.Labels[certmanagerLabel] = val
 	}
+	// Copy the label from the old deployment template metadata
+	// to the new deployment template metadata before doing DeepEqual.
+	if val, ok := oldDeployment.Spec.Template.ObjectMeta.Labels[certmanagerLabel]; ok {
+		newDeployment.Spec.Template.ObjectMeta.Labels[certmanagerLabel] = val
+	}
+
+	// Preserve the NODE_HEAP_SIZE env var if it exists.
+	// Copy the var from the old deployment container to the new deployment container
+	// before doing DeepEqual.
+	if len(oldDeployment.Spec.Template.Spec.Containers) > 0 {
+		// sort the old env vars to make comparison easier
+		sort.Slice(oldDeployment.Spec.Template.Spec.Containers[0].Env, func(i, j int) bool {
+			return oldDeployment.Spec.Template.Spec.Containers[0].Env[i].Name <= oldDeployment.Spec.Template.Spec.Containers[0].Env[j].Name
+		})
+		// the NODE_HEAP_SIZE env var might have been manually added to the
+		// current deployment by the customer to improve the performance of metering-dm.
+		// if that var exists, add it to the new deployment before doing any comparison.
+		index := sort.Search(len(oldDeployment.Spec.Template.Spec.Containers[0].Env), func(i int) bool {
+			return oldDeployment.Spec.Template.Spec.Containers[0].Env[i].Name >= DmNodeHeapSizeVar
+		})
+		if index < len(oldDeployment.Spec.Template.Spec.Containers[0].Env) &&
+			oldDeployment.Spec.Template.Spec.Containers[0].Env[index].Name == DmNodeHeapSizeVar {
+			logger.Info("Found extra env var", "name", DmNodeHeapSizeVar)
+			newDeployment.Spec.Template.Spec.Containers[0].Env = append(newDeployment.Spec.Template.Spec.Containers[0].Env,
+				oldDeployment.Spec.Template.Spec.Containers[0].Env[index])
+		}
+		// sort the new env vars to make comparison easier
+		sort.Slice(newDeployment.Spec.Template.Spec.Containers[0].Env, func(i, j int) bool {
+			return newDeployment.Spec.Template.Spec.Containers[0].Env[i].Name <= newDeployment.Spec.Template.Spec.Containers[0].Env[j].Name
+		})
+	}
+
+	// check the labels
 	if !reflect.DeepEqual(oldDeployment.ObjectMeta.Labels, newDeployment.ObjectMeta.Labels) {
 		logger.Info("Deployment Labels not equal",
 			"old", fmt.Sprintf("%v", oldDeployment.ObjectMeta.Labels),
@@ -517,7 +548,8 @@ func isContainerEqual(oldContainers, newContainers []corev1.Container, isInitCon
 				oldEnvVars := oldContainer.Env
 				newEnvVars := newContainer.Env
 				if len(oldEnvVars) != len(newEnvVars) {
-					logger.Info("Env var length not equal", "container num", i)
+					logger.Info("Env vars length not equal", "container num", i,
+						"old", len(oldEnvVars), "new", len(newEnvVars))
 					return false
 				} else if len(oldEnvVars) > 0 {
 					for j := range oldEnvVars {
@@ -724,12 +756,10 @@ func IsCertificateEqual(oldCertificate, newCertificate *certmgr.Certificate) boo
 		return false
 	}
 
-	// Certmanager adds some labels that we need to preserve.
-	// Copy those labels from the old certificate to the new certificate before doing DeepEqual.
-	for key, oldValue := range oldCertificate.ObjectMeta.Labels {
-		if strings.HasPrefix(key, CertmanagerLabelPrefix) {
-			newCertificate.ObjectMeta.Labels[key] = oldValue
-		}
+	// Certmanager adds a label that we need to preserve.
+	// Copy the label from the old certificate metadata to the new certificate metadata before doing DeepEqual.
+	if val, ok := oldCertificate.ObjectMeta.Labels[certmanagerLabel]; ok {
+		newCertificate.ObjectMeta.Labels[certmanagerLabel] = val
 	}
 	if !reflect.DeepEqual(oldCertificate.ObjectMeta.Labels, newCertificate.ObjectMeta.Labels) {
 		logger.Info("Certificate Labels not equal",

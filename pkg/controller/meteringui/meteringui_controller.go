@@ -1,5 +1,5 @@
 //
-// Copyright 2020 IBM Corporation
+// Copyright 2021 IBM Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -364,53 +364,10 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 					HostPID:                       false,
 					HostIPC:                       false,
 					TerminationGracePeriodSeconds: &res.Seconds60,
-					Affinity: &corev1.Affinity{
-						NodeAffinity: &corev1.NodeAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: &corev1.NodeSelector{
-								NodeSelectorTerms: []corev1.NodeSelectorTerm{
-									{
-										MatchExpressions: []corev1.NodeSelectorRequirement{
-											{
-												Key:      "beta.kubernetes.io/arch",
-												Operator: corev1.NodeSelectorOpIn,
-												Values:   res.ArchitectureList,
-											},
-										},
-									},
-								},
-							},
-						},
-						PodAntiAffinity: &corev1.PodAntiAffinity{
-							RequiredDuringSchedulingIgnoredDuringExecution: []corev1.PodAffinityTerm{
-								{
-									LabelSelector: &metav1.LabelSelector{
-										MatchExpressions: []metav1.LabelSelectorRequirement{
-											{
-												Key:      "app.kubernetes.io/name",
-												Operator: metav1.LabelSelectorOpIn,
-												Values: []string{
-													"metering-ui",
-												},
-											},
-										},
-									},
-									TopologyKey: "kubernetes.io/hostname",
-								},
-							},
-						},
-					},
-					Tolerations: []corev1.Toleration{
-						{
-							Key:      "dedicated",
-							Operator: corev1.TolerationOpExists,
-							Effect:   corev1.TaintEffectNoSchedule,
-						},
-						{
-							Key:      "CriticalAddonsOnly",
-							Operator: corev1.TolerationOpExists,
-						},
-					},
-					Volumes: uiVolumes,
+					Affinity:                      res.GetAffinity(true, res.UIDeploymentName),
+					Tolerations:                   res.GetTolerations(),
+					TopologySpreadConstraints:     res.GetTopologySpreadConstraints(res.UIDeploymentName),
+					Volumes:                       uiVolumes,
 					InitContainers: []corev1.Container{
 						uiSecretCheckContainer,
 						uiInitContainer,

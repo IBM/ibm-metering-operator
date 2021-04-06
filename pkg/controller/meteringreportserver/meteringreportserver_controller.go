@@ -1,5 +1,5 @@
 //
-// Copyright 2020 IBM Corporation
+// Copyright 2021 IBM Corporation
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -286,11 +286,15 @@ func (r *ReconcileMeteringReportServer) deploymentForReport(instance *operatorv1
 					Annotations: res.AnnotationsForPod(),
 				},
 				Spec: corev1.PodSpec{
-					ServiceAccountName: res.GetServiceAccountName(),
-					HostNetwork:        false,
-					HostPID:            false,
-					HostIPC:            false,
-					Volumes:            reportVolumes,
+					ServiceAccountName:            res.GetServiceAccountName(),
+					HostNetwork:                   false,
+					HostPID:                       false,
+					HostIPC:                       false,
+					TerminationGracePeriodSeconds: &res.Seconds60,
+					Affinity:                      res.GetAffinity(false, ""),
+					Tolerations:                   res.GetTolerations(),
+					TopologySpreadConstraints:     res.GetTopologySpreadConstraints(res.ReportDeploymentName),
+					Volumes:                       reportVolumes,
 					Containers: []corev1.Container{
 						reportContainer,
 					},
