@@ -883,7 +883,7 @@ func GetAffinity(addAntiAffinity bool, appName string) *corev1.Affinity {
 			},
 		},
 	}
-	affinity := &corev1.Affinity{}
+	var affinity *corev1.Affinity
 	if addAntiAffinity {
 		affinity = &corev1.Affinity{
 			NodeAffinity: nodeAffinity,

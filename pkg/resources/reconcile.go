@@ -307,7 +307,7 @@ func IsDeploymentEqual(oldDeployment, newDeployment *appsv1.Deployment) bool {
 		// current deployment by the customer to improve the performance of metering-dm.
 		// if that var exists, add it to the new deployment before doing any comparison.
 		index := sort.Search(len(oldDeployment.Spec.Template.Spec.Containers[0].Env), func(i int) bool {
-			return string(oldDeployment.Spec.Template.Spec.Containers[0].Env[i].Name) >= DmNodeHeapSizeVar
+			return oldDeployment.Spec.Template.Spec.Containers[0].Env[i].Name >= DmNodeHeapSizeVar
 		})
 		if index < len(oldDeployment.Spec.Template.Spec.Containers[0].Env) &&
 			oldDeployment.Spec.Template.Spec.Containers[0].Env[index].Name == DmNodeHeapSizeVar {
