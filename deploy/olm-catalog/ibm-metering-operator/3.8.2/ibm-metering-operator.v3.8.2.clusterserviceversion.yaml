@@ -594,13 +594,13 @@ spec:
                 - ibm-metering-operator
                 env:
                 - name: IMAGE_SHA_OR_TAG_DM
-                  value: sha256:110cc5a41be09c2976e710416e1da58f2f695007148fa3c347e18bca2c65ac07
+                  value: sha256:a87f19337295fbc294298be8c362f85202f63d9675e22d8d84890f94c6fb4410
                 - name: IMAGE_SHA_OR_TAG_UI
-                  value: sha256:c01bf859447376b10d7353026e7a714e8351841beb75ed90631f6d1df3d804fe
+                  value: sha256:a17db4f10d0f40cb624299d3ca768ce087da8414b46843f4403767776582ba3d
                 - name: IMAGE_SHA_OR_TAG_MCMUI
-                  value: sha256:9c33cbd26da0ac0d448b91da03f7d4827a7a29c9d32d607aa153f41b1068820f
+                  value: sha256:c2cce954e4d4636ef128ab063ca3488896303ad195e416d36abb5019c8761952
                 - name: IMAGE_SHA_OR_TAG_REPORT
-                  value: sha256:1f56ee423b6810328a0c3b523edc10495ae0b1420d7b56ff4dc0b6ddb645bc35
+                  value: sha256:5c516cc208c23493490a225291b1d7f0a408feea13b08e0b918046143bf15681
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:

@@ -18,9 +18,10 @@ BUILD_LOCALLY ?= 1
 
 # set these variables to the tag or SHA for the ubi image used in the Dockerfile.
 # use 'docker manifest inspect registry.access.redhat.com/ubi8/ubi-minimal:<tag>' to get the SHA values
-UBI_IMAGE_TAG_AMD=8.3-291
-UBI_IMAGE_SHA_PPC=6d2be48e7512b40460fa424cf096638ffe49c87e972fc51a1f2ed7a5ad526f82
-UBI_IMAGE_SHA_390=173d76727cbd68fd39b2399b31f10988eafba28de1cd627998ef81d4e1e84edd
+UBI_IMAGE_TAG_AMD=8.3-298
+UBI_IMAGE_SHA_PPC=7c3f8a353a25b4a3265526b22fb1eca61f1be4fae6b18be9f4263f4a8d5fbebd
+UBI_IMAGE_SHA_390=7e7e3802f4f4bc1082eb859ad08bafed535e5777e3c265319de35caee6ce5176
+
 
 # Image URL to use all building/pushing image targets;
 # Use your own docker registry and image name for dev/test by overriding the IMG and REGISTRY environment variable.
