@@ -35,10 +35,10 @@ CSV_VERSION ?= $(VERSION)
 
 # Set the registry and tags for the operand images
 OPERAND_REGISTRY ?= "hyc-cloud-private-integration-docker-local.artifactory.swg-devops.com/ibmcom"
-OPERAND_TAG_DM ?= 3.7.1
-OPERAND_TAG_UI ?= 3.7.1
-OPERAND_TAG_MCMUI ?= 3.7.1
-OPERAND_TAG_REPORT ?= 3.7.1
+OPERAND_TAG_DM ?= 3.7.2
+OPERAND_TAG_UI ?= 3.7.2
+OPERAND_TAG_MCMUI ?= 3.7.2
+OPERAND_TAG_REPORT ?= 3.7.2
 
 # Github host to use for checking the source tree;
 # Override this variable ue with your own value if you're working on forked repo.

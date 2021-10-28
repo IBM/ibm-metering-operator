@@ -1,7 +1,7 @@
 channels:
 - currentCSV: ibm-metering-operator.v3.8.2
   name: beta
-- currentCSV: ibm-metering-operator.v3.8.2
+- currentCSV: ibm-metering-operator.v3.8.3
   name: dev
 - currentCSV: ibm-metering-operator.v3.8.1
   name: stable-v1
