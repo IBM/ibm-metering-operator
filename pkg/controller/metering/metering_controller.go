@@ -547,7 +547,7 @@ func (r *ReconcileMetering) deploymentForDataMgr(instance *operatorv1alpha1.Mete
 	podLabels := res.LabelsForPodMetadata(res.DmDeploymentName, meteringCrType, instance.Name)
 
 	dmImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
-		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageForDM, res.DefaultDmImageTag)
 	reqLogger.Info("dmImage=" + dmImage)
 
 	var additionalInfo res.SecretCheckData
@@ -828,7 +828,7 @@ func (r *ReconcileMetering) deploymentForReader(instance *operatorv1alpha1.Meter
 
 	// the Reader code is part of the metering-data-manager image
 	rdrImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
-		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageForDM, res.DefaultDmImageTag)
 
 	reqLogger.Info("rdrImage=" + rdrImage)
 

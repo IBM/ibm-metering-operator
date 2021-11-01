@@ -593,14 +593,14 @@ spec:
               - command:
                 - ibm-metering-operator
                 env:
-                - name: IMAGE_SHA_OR_TAG_DM
-                  value: sha256:eba8e84e2e8d210b7be366fa7bd512b1a551f43d28858d0395e93c3a99f9b26b
-                - name: IMAGE_SHA_OR_TAG_UI
-                  value: sha256:3b529c88d7132296bd65e666242bd24b7d082bd18de9aa21ffc8b7c3727a6e7c
-                - name: IMAGE_SHA_OR_TAG_MCMUI
-                  value: sha256:59fc0181cc1f9f868aac26479f615bbdbbb1eab4d156ad2d887ecd7553da1fe1
-                - name: IMAGE_SHA_OR_TAG_REPORT
-                  value: sha256:129dd87715295fab44f255b7f9868cd194d61762972bc9fc62fbf64bd6fc2e1c
+                - name: METERING_DATA_MANAGER_IMAGE
+                  value: quay.io/opencloudio/metering-data-manager:3.7.2
+                - name: METERING_UI_IMAGE
+                  value: quay.io/opencloudio/metering-ui:3.7.2
+                - name: METERING_MCMUI_IMAGE
+                  value: quay.io/opencloudio/metering-mcmui:3.7.2
+                - name: METERING_REPORT_IMAGE
+                  value: quay.io/opencloudio/metering-report:3.7.2
                 - name: WATCH_NAMESPACE
                   valueFrom:
                     fieldRef:

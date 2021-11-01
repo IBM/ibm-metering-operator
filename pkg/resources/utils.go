@@ -18,7 +18,6 @@ package resources
 
 import (
 	"strconv"
-	"strings"
 
 	operatorv1alpha1 "github.com/ibm/ibm-metering-operator/pkg/apis/operator/v1alpha1"
 	certmgr "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha1"
@@ -814,31 +813,23 @@ func GetImageID(instanceImageRegistry, instanceImageTagPostfix, defaultImageRegi
 	imageName, envVarName, defaultImageTag string) string {
 	reqLogger := log.WithValues("func", "GetImageID")
 
-	// determine if the image registry has been overridden by the CR
 	var imageRegistry, imageID string
-	if instanceImageRegistry == "" {
-		imageRegistry = defaultImageRegistry
-		reqLogger.Info("use default imageRegistry=" + imageRegistry)
-	} else {
-		imageRegistry = instanceImageRegistry
-		reqLogger.Info("use instance imageRegistry=" + imageRegistry)
-	}
 
-	// determine if an image SHA or tag has been set in an env var.
-	// if not, use the default tag (mainly used during development).
-	imageTagOrSHA := os.Getenv(envVarName)
-	if len(imageTagOrSHA) > 0 {
-		// use the value from the env var to build the image ID.
-		// a SHA value looks like "sha256:nnnn".
-		// a tag value looks like "3.5.0".
-		if strings.HasPrefix(imageTagOrSHA, "sha256:") {
-			// use the SHA value
-			imageID = imageRegistry + "/" + imageName + "@" + imageTagOrSHA
-		} else {
-			// use the tag value
-			imageID = imageRegistry + "/" + imageName + ":" + imageTagOrSHA + instanceImageTagPostfix
-		}
+	//Check if the env var exists, if yes, use that image id; if no, use the default image version
+	//This is done so CICD can override the image tag with a sha in the CSV
+	imageValue := os.Getenv(envVarName)
+	if len(imageValue) > 0 {
+		imageID = imageValue
 	} else {
+		//Fall back to old processing
+		// determine if the image registry has been overridden by the CR
+		if instanceImageRegistry == "" {
+			imageRegistry = defaultImageRegistry
+			reqLogger.Info("use default imageRegistry=" + imageRegistry)
+		} else {
+			imageRegistry = instanceImageRegistry
+			reqLogger.Info("use instance imageRegistry=" + imageRegistry)
+		}
 		// use the default tag to build the image ID
 		imageID = imageRegistry + "/" + imageName + ":" + defaultImageTag + instanceImageTagPostfix
 	}

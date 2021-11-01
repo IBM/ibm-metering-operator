@@ -248,7 +248,7 @@ func (r *ReconcileMeteringReportServer) deploymentForReport(instance *operatorv1
 	podLabels := res.LabelsForPodMetadata(res.ReportDeploymentName, meteringReportServerCrType, instance.Name)
 
 	reportImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
-		res.DefaultImageRegistry, res.DefaultReportImageName, res.VarImageSHAforReport, res.DefaultReportImageTag)
+		res.DefaultImageRegistry, res.DefaultReportImageName, res.VarImageForReport, res.DefaultReportImageTag)
 	reqLogger.Info("reportImage=" + reportImage)
 
 	// setup the container
