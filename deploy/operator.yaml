@@ -41,19 +41,19 @@ spec:
       containers:
         - name: ibm-metering-operator
           # Replace this with the built image name
-          image: quay.io/opencloudio/ibm-metering-operator:3.8.3
+          image: quay.io/opencloudio/ibm-metering-operator:3.8.4
           command:
           - ibm-metering-operator
           imagePullPolicy: Always
           env:
             - name: METERING_DATA_MANAGER_IMAGE
-              value: quay.io/opencloudio/metering-data-manager:3.7.2
+              value: quay.io/opencloudio/metering-data-manager:3.7.3
             - name: METERING_UI_IMAGE
-              value: quay.io/opencloudio/metering-ui:3.7.2
+              value: quay.io/opencloudio/metering-ui:3.7.3
             - name: METERING_MCMUI_IMAGE
-              value: quay.io/opencloudio/metering-mcmui:3.7.2
+              value: quay.io/opencloudio/metering-mcmui:3.7.3
             - name: METERING_REPORT_IMAGE
-              value: quay.io/opencloudio/metering-report:3.7.2
+              value: quay.io/opencloudio/metering-report:3.7.3
             - name: WATCH_NAMESPACE
               valueFrom:
                 fieldRef:

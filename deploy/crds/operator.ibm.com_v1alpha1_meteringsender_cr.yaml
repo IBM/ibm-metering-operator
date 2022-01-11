@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: "ibm-metering-operator"
     app.kubernetes.io/name: "ibm-metering"
 spec:
-  version: "3.8.3"
+  version: "3.8.4"
   imageRegistry: quay.io/opencloudio
   sender:
     clusterName: mycluster
