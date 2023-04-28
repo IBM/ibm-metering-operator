@@ -29,7 +29,7 @@ spec:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
             - matchExpressions:
-              - key: beta.kubernetes.io/arch
+              - key: kubernetes.io/arch
                 operator: In
                 values:
                 - amd64
@@ -41,19 +41,19 @@ spec:
       containers:
         - name: ibm-metering-operator
           # Replace this with the built image name
-          image: quay.io/opencloudio/ibm-metering-operator:3.8.2
+          image: quay.io/opencloudio/ibm-metering-operator:3.8.3
           command:
           - ibm-metering-operator
           imagePullPolicy: Always
           env:
-            - name: IMAGE_SHA_OR_TAG_DM
-              value: sha256:41fc597fced4f360d63a2a531707665bf670faaa6401e0a5e82b5baae46fdb47
-            - name: IMAGE_SHA_OR_TAG_UI
-              value: sha256:a17db4f10d0f40cb624299d3ca768ce087da8414b46843f4403767776582ba3d
-            - name: IMAGE_SHA_OR_TAG_MCMUI
-              value: sha256:c2cce954e4d4636ef128ab063ca3488896303ad195e416d36abb5019c8761952
-            - name: IMAGE_SHA_OR_TAG_REPORT
-              value: sha256:5c516cc208c23493490a225291b1d7f0a408feea13b08e0b918046143bf15681
+            - name: METERING_DATA_MANAGER_IMAGE
+              value: quay.io/opencloudio/metering-data-manager:3.7.2
+            - name: METERING_UI_IMAGE
+              value: quay.io/opencloudio/metering-ui:3.7.2
+            - name: METERING_MCMUI_IMAGE
+              value: quay.io/opencloudio/metering-mcmui:3.7.2
+            - name: METERING_REPORT_IMAGE
+              value: quay.io/opencloudio/metering-report:3.7.2
             - name: WATCH_NAMESPACE
               valueFrom:
                 fieldRef:

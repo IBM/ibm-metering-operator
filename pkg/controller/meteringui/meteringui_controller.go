@@ -285,10 +285,10 @@ func (r *ReconcileMeteringUI) deploymentForUI(instance *operatorv1alpha1.Meterin
 
 	// the InitContainer code is part of the metering-data-manager image
 	initImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
-		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageForDM, res.DefaultDmImageTag)
 	reqLogger.Info("initImage=" + initImage)
 	uiImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
-		res.DefaultImageRegistry, res.DefaultUIImageName, res.VarImageSHAforUI, res.DefaultUIImageTag)
+		res.DefaultImageRegistry, res.DefaultUIImageName, res.VarImageForUI, res.DefaultUIImageTag)
 	reqLogger.Info("uiImage=" + uiImage)
 
 	// The apikey and OIDC secret names can be set in the CR, but will be ignored

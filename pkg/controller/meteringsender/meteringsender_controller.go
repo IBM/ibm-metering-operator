@@ -221,7 +221,7 @@ func (r *ReconcileMeteringSender) deploymentForSender(instance *operatorv1alpha1
 
 	// the Sender code is part of the metering-data-manager image
 	senderImage := res.GetImageID(instance.Spec.ImageRegistry, instance.Spec.ImageTagPostfix,
-		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageSHAforDM, res.DefaultDmImageTag)
+		res.DefaultImageRegistry, res.DefaultDmImageName, res.VarImageForDM, res.DefaultDmImageTag)
 	reqLogger.Info("senderImage=" + senderImage)
 
 	// setup the init containers
